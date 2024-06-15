@@ -77,4 +77,29 @@ class User extends Authenticatable
             ? Attribute::get(fn () => $this->profile_photo_path)
             : $this->getPhotoUrl();
     }
+
+	public function userHostingPlans()
+	{
+    return $this->hasMany(UserHostingPlan::class);
+	}
+
+public function domains()
+{
+    return $this->hasMany(Domain::class);
 }
+
+public function emailAccounts()
+{
+    return $this->hasMany(EmailAccount::class);
+}
+
+public function resourceUsages()
+{
+    return $this->hasMany(ResourceUsage::class);
+}
+
+
+
+}
+
+
