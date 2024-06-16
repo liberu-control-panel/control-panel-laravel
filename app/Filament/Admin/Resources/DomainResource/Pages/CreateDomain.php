@@ -15,7 +15,15 @@ class CreateDomain extends CreateRecord
 
     protected function handleRecordCreation(array $data): Domain
     {
-        $domain = static::getModel()::create($data);
+        $user = auth()->user();
+        if ($user->hasReachedDockerComposeLimit()) {
+            throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
+        }
+
+        $domain = static::getModel()::create([
+            ...$data,
+            'hosting_plan_id' => $user->currentHostingPlan()->id,
+        ]);
 
         $composeContent = $this->generateDockerComposeContent($data);
         Storage::disk('local')->put('docker-compose-'.$data['domain_name'].'.yml', $composeContent);
