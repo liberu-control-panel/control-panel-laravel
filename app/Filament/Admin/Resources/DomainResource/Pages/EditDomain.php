@@ -27,9 +27,11 @@ class EditDomain extends EditRecord
             throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
         }
 
+        $hostingPlan = $user->currentHostingPlan();
+
         $record->update($data);
 
-        $composeContent = $this->generateDockerComposeContent($data);
+        $composeContent = $this->generateDockerComposeContent($data, $hostingPlan);
         Storage::disk('local')->put('docker-compose-'.$data['domain_name'].'.yml', $composeContent);
 
         $process = new Process(['docker-compose', '-f', storage_path('app/docker-compose-'.$data['domain_name'].'.yml'), 'up', '-d']);
