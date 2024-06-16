@@ -33,16 +33,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'hosting_plan',
-    ];
-
-    /**
-     * The model's default values for attributes.
-     *
-     * @var array<string, mixed>
-     */
-    protected $attributes = [
-        'hosting_plan' => 'free',
     ];
 
     /**
@@ -106,6 +96,30 @@ public function emailAccounts()
 public function resourceUsages()
 {
     return $this->hasMany(ResourceUsage::class);
+}
+
+public function hasReachedDockerComposeLimit(): bool
+{
+    $currentPlan = $this->currentHostingPlan();
+
+    if (!$currentPlan) {
+        return true; // Default to true if no hosting plan is found
+    }
+
+    if ($currentPlan->name === 'free') {
+        return $this->domains()->count() >= 1;
+    }
+
+    if ($currentPlan->name === 'premium') {
+        return false; // Unlimited instances for premium plan
+    }
+
+    return true; // Default to true for other plans
+}
+
+public function currentHostingPlan()
+{
+    return $this->userHostingPlans()->latest()->first();
 }
 
 
