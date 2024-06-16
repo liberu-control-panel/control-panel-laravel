@@ -23,8 +23,10 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(Domain $record, array $data): Domain
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        $record = $record instanceof Domain ? $record : Domain::findOrFail($record->id);
+
         $user = auth()->user();
         if ($user->hasReachedDockerComposeLimit()) {
             throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
