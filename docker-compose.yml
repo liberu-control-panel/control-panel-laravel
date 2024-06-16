@@ -13,7 +13,7 @@ services:
       - ./html:/usr/share/nginx/html
     labels:
       - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
-  
+
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
     restart: always
@@ -24,3 +24,36 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - NGINX_PROXY_CONTAINER=nginx-proxy
+
+  postfix:
+    image: boky/postfix
+    restart: always
+    environment:
+      - SMTP_SERVER=example.com
+      - SMTP_USERNAME=user@example.com
+      - SMTP_PASSWORD=password
+    ports:
+      - "25:25"
+      - "587:587"
+
+  dovecot:
+    image: dovecot/dovecot
+    restart: always
+    ports:
+      - "110:110"
+      - "143:143"
+      - "993:993"
+      - "995:995"
+    volumes:
+      - ./mail:/var/mail
+
+  bind9:
+    image: internetsystemsconsortium/bind9:9.16
+    restart: always
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./bind:/etc/bind
+      - ./bind/cache:/var/cache/bind
+      - ./bind/records:/var/lib/bind
