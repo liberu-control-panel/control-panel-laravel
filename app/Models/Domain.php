@@ -26,6 +26,7 @@ class Domain extends Model
         'domain_name',
         'registration_date',
         'expiration_date',
+        'hosting_plan_id',
     ];
 
     /**
@@ -44,6 +45,14 @@ class Domain extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the hosting plan associated with the domain.
+     */
+    public function hostingPlan()
+    {
+        return $this->belongsTo(UserHostingPlan::class);
     }
 
     /**

@@ -22,6 +22,11 @@ class EditDomain extends EditRecord
 
     protected function handleRecordUpdate(Domain $record, array $data): Domain
     {
+        $user = auth()->user();
+        if ($user->hasReachedDockerComposeLimit()) {
+            throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
+        }
+
         $record->update($data);
 
         $composeContent = $this->generateDockerComposeContent($data);
