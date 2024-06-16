@@ -2,18 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Database;
-use App\Models\User;
+use App\Models\Domain;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class DatabaseFactory extends Factory
+class DomainFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = Database::class;
+    protected $model = Domain::class;
 
     /**
      * Define the model's default state.
@@ -23,10 +22,15 @@ class DatabaseFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->word,
             'user_id' => function () {
-                return User::factory()->create()->id;
+                return \App\Models\User::factory()->create()->id;
             },
+            'domain_name' => $this->faker->unique()->domainName,
+            'registration_date' => $this->faker->dateTimeBetween('-5 years', 'now'),
+            'expiration_date' => $this->faker->dateTimeBetween('now', '+5 years'),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }
+
