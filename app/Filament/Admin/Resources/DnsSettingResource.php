@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 
 class DnsSettingResource extends Resource
 {
@@ -26,12 +28,9 @@ class DnsSettingResource extends Resource
                 Forms\Components\TextInput::make('domain_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\Select::make('record_type')
-                    ->options([
-                        'A' => 'A',
-                        'MX' => 'MX',
-                    ])
-                    ->required(),
+                Forms\Components\TextInput::make('record_type')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -41,6 +40,10 @@ class DnsSettingResource extends Resource
                 Forms\Components\TextInput::make('ttl')
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('priority')
+                    ->numeric()
+                    ->visibleIf('record_type', 'MX')
+                    ->requiredIf('record_type', 'MX'),
             ]);
     }
 
@@ -57,6 +60,9 @@ class DnsSettingResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('value')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('priority')
+                    ->numeric()
+                    ->visibleIf('record_type', 'MX'),
                 Tables\Columns\TextColumn::make('ttl')
                     ->numeric()
                     ->sortable(),
@@ -96,5 +102,42 @@ class DnsSettingResource extends Resource
             'create' => Pages\CreateDnsSetting::route('/create'),
             'edit' => Pages\EditDnsSetting::route('/{record}/edit'),
         ];
+    }
+
+    protected function updateBindDnsRecord(DnsSetting $dnsSetting): void
+    {
+        switch ($dnsSetting->record_type) {
+            case 'A':
+                $this->generateARecordEntry($dnsSetting);
+                break;
+            case 'MX':
+                $this->generateMxRecordEntry($dnsSetting);
+                break;
+        }
+
+        $this->restartBindContainer();
+    }
+
+    protected function generateARecordEntry(DnsSetting $dnsSetting): void
+    {
+        $entry = "{$dnsSetting->name} IN A {$dnsSetting->value}";
+        $zonePath = "/etc/bind/records/{$dnsSetting->domain->name}.db";
+
+        Storage::disk('bind')->append($zonePath, $entry);
+    }
+
+    protected function generateMxRecordEntry(DnsSetting $dnsSetting): void
+    {
+        $entry = "{$dnsSetting->name} IN MX {$dnsSetting->priority} {$dnsSetting->value}";
+        $zonePath = "/etc/bind/records/{$dnsSetting->domain->name}.db";
+
+        Storage::disk('bind')->append($zonePath, $entry);
+    }
+
+    protected function restartBindContainer(): void
+    {
+        $process = new Process(['docker-compose', 'restart', 'bind9']);
+        $process->setWorkingDirectory(base_path());
+        $process->run();
     }
 }
