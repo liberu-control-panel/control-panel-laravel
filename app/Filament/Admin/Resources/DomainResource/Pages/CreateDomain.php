@@ -15,6 +15,12 @@ class CreateDomain extends CreateRecord
 
     protected function handleRecordCreation(array $data): Domain
     {
+        $user = auth()->user();
+
+        if ($user->hosting_plan === 'free' && $user->domains()->count() >= 1) {
+            throw new \Exception('Free users are limited to one domain.');
+        }
+
         $domain = static::getModel()::create($data);
 
         $composeContent = $this->generateDockerComposeContent($data);
