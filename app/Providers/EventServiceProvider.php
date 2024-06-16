@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {
+    use App\Events\DnsSettingSaved;
+    use App\Listeners\UpdateBindDnsRecords;
+    
     /**
      * The event to listener mappings for the application.
      *
@@ -17,6 +20,9 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        DnsSettingSaved::class => [
+            UpdateBindDnsRecords::class,
         ],
     ];
 
