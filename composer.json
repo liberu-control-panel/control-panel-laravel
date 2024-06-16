@@ -23,6 +23,7 @@
         "stephenjude/filament-jetstream": "^0.0.11"
     },
     "require-dev": {
+        "doctrine/dbal": "^3.8",
         "fakerphp/faker": "^1.23",
         "laravel/pint": "^1.14",
         "laravel/sail": "^1.28",
