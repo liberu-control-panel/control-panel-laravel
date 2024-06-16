@@ -37,6 +37,91 @@
 * https://github.com/liberu-real-estate/real-estate-laravel
 * https://github.com/liberu-social-network/social-network-laravel
 
+### Control Panel Features Summary
+
+#### General Features
+1. **User Authentication and Authorization**
+   - Secure login for administrators and users.
+   - Role-based access control to restrict features based on user roles.
+
+2. **Dashboard**
+   - Overview of system status and resource usage (CPU, memory, disk).
+   - Quick access to recent activities and system alerts.
+
+#### NGINX Virtual Hosts Management
+1. **Create and Manage Virtual Hosts**
+   - Easy-to-use interface for adding, editing, and deleting virtual hosts.
+   - Support for SSL/TLS configuration including Let's Encrypt integration.
+   - Configure root directory, server name, and additional server directives.
+
+2. **Template Management**
+   - Use and customize templates for common configurations.
+   - Option to apply custom configurations per host.
+
+#### BIND DNS Records Management
+1. **DNS Zone Management**
+   - Create, edit, and delete DNS zones.
+   - Overview of existing zones and their status.
+
+2. **DNS Record Management**
+   - Add, edit, and remove DNS records (A, AAAA, CNAME, MX, TXT, etc.).
+   - View all records for a specific zone.
+   - Propagation status and error checking.
+
+#### Postfix and Dovecot Email Management
+1. **Email Domain Management**
+   - Add and manage email domains.
+   - Configure domain-specific settings.
+
+2. **Email Account Management**
+   - Create, edit, and delete email accounts.
+   - Set mailbox quotas and forwarding rules.
+   - Password management and reset functionality.
+
+3. **Email Aliases and Forwarders**
+   - Create and manage email aliases.
+   - Configure email forwarders for account redirection.
+
+#### MySQL Database Management
+1. **Database Creation and Management**
+   - Create, edit, and delete databases.
+   - Assign databases to specific users.
+
+2. **User Management**
+   - Create, edit, and delete database users.
+   - Manage user permissions and access rights.
+
+3. **Backup and Restore**
+   - Scheduled and manual backups of databases.
+   - Restore databases from backups with a few clicks.
+
+#### Docker Compose Integration
+1. **Service Deployment**
+   - One-click deployment of all services using Docker Compose.
+   - Manage individual service status (start, stop, restart).
+
+2. **Configuration Management**
+   - Edit Docker Compose YAML configuration directly from the control panel.
+   - Apply and save changes to configurations seamlessly.
+
+3. **Logs and Monitoring**
+   - View real-time logs for each service.
+   - Monitor health and performance metrics of containers.
+
+4. **Updates and Maintenance**
+   - Automated updates for Docker images.
+   - Maintenance mode to safely perform system updates and backups.
+
+### User Interface
+- **Responsive Design**
+  - Accessible from desktop and mobile devices.
+- **Intuitive Navigation**
+  - User-friendly interface with clear navigation and helpful tooltips.
+- **Search and Filter**
+  - Quickly find specific hosts, records, email accounts, and databases with search and filter options.
+
+This control panel would streamline the management of web hosting, DNS, email, and databases, making it ideal for web administrators and hosting providers.
+
 
 ## Setup
 
