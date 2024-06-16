@@ -6,6 +6,8 @@ use App\Filament\Admin\Resources\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
+use App\Models\Domain;
+
 class ListDomains extends ListRecords
 {
     protected static string $resource = DomainResource::class;
