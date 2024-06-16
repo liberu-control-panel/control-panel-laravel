@@ -9,6 +9,9 @@ use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 
+use App\Models\Domain;
+
+
 class EditDomain extends EditRecord
 {
     protected static string $resource = DomainResource::class;

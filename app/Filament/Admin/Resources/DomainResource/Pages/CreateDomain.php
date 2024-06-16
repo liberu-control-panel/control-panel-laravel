@@ -8,6 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
+use App\Models\Domain;
 
 class CreateDomain extends CreateRecord
 {
