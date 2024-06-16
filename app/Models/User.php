@@ -33,6 +33,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'hosting_plan',
+    ];
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'hosting_plan' => 'free',
     ];
 
     /**
