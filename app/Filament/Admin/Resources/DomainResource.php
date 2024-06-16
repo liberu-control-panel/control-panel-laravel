@@ -33,6 +33,16 @@ class DomainResource extends Resource
                     ->required(),
                 Forms\Components\DatePicker::make('expiration_date')
                     ->required(),
+                Forms\Components\TextInput::make('virtual_host')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('letsencrypt_host')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('letsencrypt_email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 
@@ -87,5 +97,31 @@ class DomainResource extends Resource
             'create' => Pages\CreateDomain::route('/create'),
             'edit' => Pages\EditDomain::route('/{record}/edit'),
         ];
+    }
+
+    protected function generateDockerComposeContent($data): string
+    {
+        return <<<EOT
+version: '3.8'
+
+services:
+  web:
+    image: nginx:latest
+    container_name: {$data['domain_name']}
+    environment:
+      - VIRTUAL_HOST={$data['virtual_host']}
+      - LETSENCRYPT_HOST={$data['letsencrypt_host']}
+      - LETSENCRYPT_EMAIL={$data['letsencrypt_email']}
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./vhost.d:/etc/nginx/conf.d
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external:
+      name: nginx-proxy
+EOT;
     }
 }
