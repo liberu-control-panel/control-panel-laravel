@@ -122,6 +122,11 @@ public function currentHostingPlan()
     return $this->userHostingPlans()->latest()->first();
 }
 
+public function databases()
+{
+    return $this->hasMany(Database::class);
+}
+
 
 
 }

@@ -99,7 +99,7 @@ class DomainResource extends Resource
         ];
     }
 
-    protected function generateDockerComposeContent($data): string
+    protected function generateDockerComposeContent($data, $hostingPlan): string
     {
         return <<<EOT
 version: '3.8'
@@ -117,6 +117,14 @@ services:
       - ./vhost.d:/etc/nginx/conf.d
     networks:
       - nginx-proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: {$hostingPlan->disk_space}M
+        reservations:
+          cpus: '0.25'
+          memory: {$hostingPlan->bandwidth}M
 
 networks:
   nginx-proxy:

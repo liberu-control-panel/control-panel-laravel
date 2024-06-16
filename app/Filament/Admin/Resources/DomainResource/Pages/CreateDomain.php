@@ -20,12 +20,14 @@ class CreateDomain extends CreateRecord
             throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
         }
 
+        $hostingPlan = $user->currentHostingPlan();
+
         $domain = static::getModel()::create([
             ...$data,
-            'hosting_plan_id' => $user->currentHostingPlan()->id,
+            'hosting_plan_id' => $hostingPlan->id,
         ]);
 
-        $composeContent = $this->generateDockerComposeContent($data);
+        $composeContent = $this->generateDockerComposeContent($data, $hostingPlan);
         Storage::disk('local')->put('docker-compose-'.$data['domain_name'].'.yml', $composeContent);
 
         $process = new Process(['docker-compose', '-f', storage_path('app/docker-compose-'.$data['domain_name'].'.yml'), 'up', '-d']);
