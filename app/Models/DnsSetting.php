@@ -2,25 +2,12 @@
 
 namespace App\Models;
 
-use App\Events\DnsSettingSaved;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DnsSetting extends Model
 {
     use HasFactory;
-
-    /**
-     * The "booted" method of the model.
-     *
-     * @return void
-     */
-    protected static function booted()
-    {
-        static::saved(function ($dnsSetting) {
-            event(new DnsSettingSaved($dnsSetting));
-        });
-    }
 
     /**
      * The table associated with the model.
@@ -40,15 +27,7 @@ class DnsSetting extends Model
         'name',
         'value',
         'ttl',
-    ];
-    
-    /**
-     * The validation rules for the model attributes.
-     *
-     * @var array
-     */
-    public $rules = [
-        'record_type' => 'required|in:A,MX',
+        'priority',
     ];
 
     /**
