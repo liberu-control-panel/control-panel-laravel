@@ -26,9 +26,12 @@ class DnsSettingResource extends Resource
                 Forms\Components\TextInput::make('domain_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('record_type')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Select::make('record_type')
+                    ->options([
+                        'A' => 'A',
+                        'MX' => 'MX',
+                    ])
+                    ->required(),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
