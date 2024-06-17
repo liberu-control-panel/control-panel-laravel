@@ -98,11 +98,6 @@ class DnsSettingResource extends Resource {
         ];
     }
 
-    public function __construct(protected DnsSettingService $dnsSettingService)
-    {
-        // ...
-    }
-
     public static function getPages(): array {
         return [
             'index' => Pages\ListDnsSettings::route('/'),
