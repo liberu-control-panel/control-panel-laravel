@@ -17,9 +17,15 @@ class CreateDnsSetting extends CreateRecord {
         // ...
     }
 
-    protected function create(array $data): DnsSetting
+    protected function getFormData(): array
+    {
+        return $this->form->getState();
+    }
+
+    public function create(bool $another = false): void
     {
         try {
+            $data = $this->getFormData();
             $dnsSetting = DnsSetting::create($data);
 
             $this->dnsSettingService->updateBindDnsRecord($dnsSetting);
@@ -29,8 +35,6 @@ class CreateDnsSetting extends CreateRecord {
                 ->body('The DNS setting has been created and BIND records have been updated.')
                 ->success()
                 ->send();
-
-            return $dnsSetting;
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error')

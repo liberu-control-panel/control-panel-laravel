@@ -22,8 +22,9 @@ class EditDnsSetting extends EditRecord {
         ];
     }
 
-    protected function save(array $data): DnsSetting
+    public function save(bool $shouldRedirect = true, bool $shouldSendSavedNotification = true): void
     {
+        $data = $this->form->getState();
         $this->record->update($data);
 
         $this->dnsSettingService->updateBindDnsRecord($this->record);
@@ -34,6 +35,11 @@ class EditDnsSetting extends EditRecord {
             ->success()
             ->send();
 
-        return $this->record;
+        if ($shouldRedirect) {
+            $this->redirect($this->getRedirectUrl());
+        }
+        if ($shouldSendSavedNotification) {
+            $this->notify('saved');
+        }
     }
 }

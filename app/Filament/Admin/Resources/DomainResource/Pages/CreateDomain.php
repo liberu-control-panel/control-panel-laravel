@@ -5,10 +5,9 @@ namespace App\Filament\Admin\Resources\DomainResource\Pages;
 use App\Filament\Admin\Resources\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Facades\Filament;
 
 use App\Models\Domain;
-use App\Services\DockerComposeService;
-
 use App\Services\DockerComposeService;
 use Filament\Notifications\Notification;
 
@@ -21,7 +20,7 @@ class CreateDomain extends CreateRecord
         // ...
     }
 
-    protected function create(array $data): Domain
+    public function create(bool $another = false): void
     {
         $user = auth()->user();
 
@@ -32,19 +31,23 @@ class CreateDomain extends CreateRecord
                 ->danger()
                 ->send();
 
-            return null;
+            return;
         }
 
         $hostingPlan = $user->currentHostingPlan();
 
         $domain = Domain::create([
-            ...$data,
+            ...$this->form->getState(),
             'hosting_plan_id' => $hostingPlan->id,
         ]);
 
-        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
-        $this->dockerCompose->startServices($data['domain_name']);
+        $this->dockerCompose->generateComposeFile($this->form->getState(), $hostingPlan);
+        $this->dockerCompose->startServices($this->form->getState()['domain_name']);
 
-        return $domain;
+        if ($another) {
+            redirect()->route('filament.resources.domains.create');
+        } else {
+            redirect()->route('filament.resources.domains.edit', $domain);
+        }
     }
 }
