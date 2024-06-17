@@ -2,13 +2,10 @@
 
 namespace App\Filament\Admin\Resources\EmailResource;
 
-use App\Models\Email;
-
 class PostfixConfigGenerator
 {
-    public function generate(Email $email): string
+    public function generate(string $email, string $password): string
     {
-        // Generate Postfix configuration based on $email  
-        // ...
+        return "$email $password\n";
     }
 }
