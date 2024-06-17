@@ -17,27 +17,25 @@ class CreateDnsSetting extends CreateRecord {
         // ...
     }
 
-    public function create(array $data): DnsSetting
+    public function create(array $data): void
     {
         try {
             $dnsSetting = DnsSetting::create($data);
-
+    
             $this->dnsSettingService->updateBindDnsRecord($dnsSetting);
-
+    
             Notification::make()
                 ->title('DNS Setting Created')
                 ->body('The DNS setting has been created and BIND records have been updated.')
                 ->success()
                 ->send();
-
-            return $dnsSetting;
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error')
                 ->body('An error occurred while creating the DNS setting: ' . $e->getMessage())
                 ->danger()
                 ->send();
-
+    
             throw $e;
         }
     }
