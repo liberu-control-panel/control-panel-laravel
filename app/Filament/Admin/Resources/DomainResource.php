@@ -99,37 +99,5 @@ class DomainResource extends Resource
         ];
     }
 
-    protected function generateDockerComposeContent($data, $hostingPlan): string
-    {
-        return <<<EOT
-version: '3.8'
 
-services:
-  web:
-    image: nginx:latest
-    container_name: {$data['domain_name']}
-    environment:
-      - VIRTUAL_HOST={$data['virtual_host']}
-      - LETSENCRYPT_HOST={$data['letsencrypt_host']}
-      - LETSENCRYPT_EMAIL={$data['letsencrypt_email']}
-    volumes:
-      - ./html:/usr/share/nginx/html
-      - ./vhost.d:/etc/nginx/conf.d
-    networks:
-      - nginx-proxy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: {$hostingPlan->disk_space}M
-        reservations:
-          cpus: '0.25'
-          memory: {$hostingPlan->bandwidth}M
-
-networks:
-  nginx-proxy:
-    external:
-      name: nginx-proxy
-EOT;
-    }
 }
