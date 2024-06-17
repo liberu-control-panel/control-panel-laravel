@@ -62,18 +62,18 @@ class EmailResource extends Resource
     protected function handleRecordCreation(array $data): Email
     {
         $email = Email::create($data);
-
+    
         // Generate Dovecot configuration
-        $dovecotConfig = $this->generateDovecotConfig($email);
+        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password);
         Storage::disk('dovecot')->put($email->email, $dovecotConfig);
-
-        // Generate Postfix configuration  
-        $postfixConfig = $this->generatePostfixConfig($email);
+    
+        // Generate Postfix configuration
+        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password);
         Storage::disk('postfix')->put($email->email, $postfixConfig);
-
-        // Restart Dovecot and Postfix containers
-        $this->restartContainers();
-
+    
+        // Update Dovecot and Postfix Docker instances
+        $this->callSilent('email-servers:update');
+    
         return $email;
     }
 
@@ -109,21 +109,18 @@ class EmailResource extends Resource
         $email->delete();
     }
 
-    protected function generateDovecotConfig(Email $email): string
+    protected function generateDovecotConfig(string $email, string $password): string
     {
-        // Generate Dovecot configuration based on $email
-        // ...
+        return (new DovecotConfigGenerator)->generate($email, $password);
+    }
+    
+    protected function generatePostfixConfig(string $email, string $password): string
+    {
+        return (new PostfixConfigGenerator)->generate($email, $password);
     }
 
-    protected function generatePostfixConfig(Email $email): string  
+    protected function restartContainers(): void
     {
-        // Generate Postfix configuration based on $email
-        // ...  
-    }
-
-    protected function restartContainers()
-    {
-        // Restart Dovecot and Postfix containers
-        // ...
+        (new ContainerRestarter)->restart();
     }
 }

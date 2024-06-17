@@ -6,15 +6,21 @@ use App\Filament\Admin\Resources\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Process\Process;
-
 use App\Models\Domain;
+use App\Services\DockerComposeService;
 
+
+use App\Services\DockerComposeService;
+use Filament\Notifications\Notification;
 
 class EditDomain extends EditRecord
 {
     protected static string $resource = DomainResource::class;
+
+    public function __construct(protected DockerComposeService $dockerCompose)
+    {
+        // ...
+    }
 
     protected function getHeaderActions(): array
     {
@@ -23,23 +29,27 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(Domain $record, array $data): Domain
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $user = auth()->user();
+    
         if ($user->hasReachedDockerComposeLimit()) {
-            throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
+            Notification::make()
+                ->title('Docker Compose Limit Reached')
+                ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
+                ->danger()
+                ->send();
+    
+            return $record;
         }
-
+    
         $hostingPlan = $user->currentHostingPlan();
-
+    
         $record->update($data);
-
-        $composeContent = $this->generateDockerComposeContent($data, $hostingPlan);
-        Storage::disk('local')->put('docker-compose-'.$data['domain_name'].'.yml', $composeContent);
-
-        $process = new Process(['docker-compose', '-f', storage_path('app/docker-compose-'.$data['domain_name'].'.yml'), 'up', '-d']);
-        $process->run();
-
+    
+        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
+        $this->dockerCompose->startServices($data['domain_name']);
+    
         return $record;
     }
 }
