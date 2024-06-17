@@ -29,27 +29,27 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function save(array $data): Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $user = auth()->user();
-
+    
         if ($user->hasReachedDockerComposeLimit()) {
             Notification::make()
                 ->title('Docker Compose Limit Reached')
                 ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
                 ->danger()
                 ->send();
-
-            return $this->record;
+    
+            return $record;
         }
-
+    
         $hostingPlan = $user->currentHostingPlan();
-
-        $this->record->update($data);
-
+    
+        $record->update($data);
+    
         $this->dockerCompose->generateComposeFile($data, $hostingPlan);
         $this->dockerCompose->startServices($data['domain_name']);
-
-        return $this->record;
+    
+        return $record;
     }
 }
