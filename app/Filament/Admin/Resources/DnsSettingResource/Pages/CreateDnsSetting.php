@@ -1,4 +1,4 @@
-<?php
+69<?php
 
 namespace App\Filament\Admin\Resources\DnsSettingResource\Pages;
 
@@ -17,7 +17,7 @@ class CreateDnsSetting extends CreateRecord {
         // ...
     }
 
-    protected function create(array $data): DnsSetting
+    public function create(array $data): DnsSetting
     {
         try {
             $dnsSetting = DnsSetting::create($data);
