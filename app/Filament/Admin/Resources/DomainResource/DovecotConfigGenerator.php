@@ -2,13 +2,10 @@
 
 namespace App\Filament\Admin\Resources\EmailResource;
 
-use App\Models\Email;
-
 class DovecotConfigGenerator
 {
-    public function generate(Email $email): string
+    public function generate(string $email, string $password): string
     {
-        // Generate Dovecot configuration based on $email
-        // ...
+        return "user $email {\n  password = $password\n}\n";
     }
 }

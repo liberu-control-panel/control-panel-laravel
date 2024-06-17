@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Filament\Admin\Resources\EmailResource\ContainerRestarter;
 use Illuminate\Console\Command;
 
 class UpdateEmailServersCommand extends Command
@@ -14,13 +15,8 @@ class UpdateEmailServersCommand extends Command
     {
         $this->info('Updating Dovecot and Postfix Docker instances...');
 
-        // Restart Dovecot container
-        $dovecotRestart = shell_exec('docker restart dovecot');
-        $this->info($dovecotRestart);
-
-        // Restart Postfix container  
-        $postfixRestart = shell_exec('docker restart postfix');
-        $this->info($postfixRestart);
+        $containerRestarter = new ContainerRestarter();
+        $containerRestarter->restart();
 
         $this->info('Dovecot and Postfix Docker instances updated successfully.');
     }
