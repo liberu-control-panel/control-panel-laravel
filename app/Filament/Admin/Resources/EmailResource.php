@@ -5,9 +5,8 @@ namespace App\Filament\Admin\Resources;
 use App\Filament\Admin\Resources\EmailResource\Pages;
 use App\Models\Email;
 use Filament\Forms;
-use Filament\Resources\Form;
+use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Resources\Table;
 use Filament\Tables;
 
 class EmailResource extends Resource
@@ -16,7 +15,7 @@ class EmailResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-mail';
 
-    public static function form(Form $form): Form
+    public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
