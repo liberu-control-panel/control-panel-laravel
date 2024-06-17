@@ -1,4 +1,4 @@
-69<?php
+<?php
 
 namespace App\Filament\Admin\Resources\DnsSettingResource\Pages;
 
