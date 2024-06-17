@@ -19,7 +19,7 @@ class CreateDomain extends CreateRecord
         // ...
     }
 
-    protected function create(array $data): Domain
+    public function create(array $data): Domain
     {
         $user = auth()->user();
 
