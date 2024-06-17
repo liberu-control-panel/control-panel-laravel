@@ -21,10 +21,8 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(Model $record, array $data): Model
+    protected function handleRecordUpdate(array $data, DockerComposeService $dockerCompose): Model
     {
-        $record = $record instanceof Domain ? $record : Domain::findOrFail($record->id);
-
         $user = auth()->user();
 
         if ($user->hasReachedDockerComposeLimit()) {
@@ -33,13 +31,11 @@ class EditDomain extends EditRecord
 
         $hostingPlan = $user->currentHostingPlan();
 
-        $record->update($data);
-
-        $dockerCompose = new DockerComposeService();
+        $this->record->update($data);
 
         $dockerCompose->generateComposeFile($data, $hostingPlan);
         $dockerCompose->startServices($data['domain_name']);
 
-        return $record;
+        return $this->record;
     }
 }
