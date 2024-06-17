@@ -22,7 +22,7 @@ class EditDnsSetting extends EditRecord {
         ];
     }
 
-    protected function save(array $data): DnsSetting
+    public function save(array $data): DnsSetting
     {
         $this->record->update($data);
 
