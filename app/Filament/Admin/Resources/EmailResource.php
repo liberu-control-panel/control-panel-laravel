@@ -5,7 +5,6 @@ namespace App\Filament\Admin\Resources;
 use App\Filament\Admin\Resources\EmailResource\Pages;
 use App\Models\Email;
 use Filament\Forms;
-use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 
