@@ -6,7 +6,6 @@ use App\Filament\Admin\Resources\DnsSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreateDnsSetting extends CreateRecord
-{
+class CreateDnsSetting extends CreateRecord {
     protected static string $resource = DnsSettingResource::class;
 }
