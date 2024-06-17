@@ -111,19 +111,16 @@ class EmailResource extends Resource
 
     protected function generateDovecotConfig(Email $email): string
     {
-        // Generate Dovecot configuration based on $email
-        // ...
+        return (new DovecotConfigGenerator)->generate($email);
     }
 
-    protected function generatePostfixConfig(Email $email): string  
+    protected function generatePostfixConfig(Email $email): string
     {
-        // Generate Postfix configuration based on $email
-        // ...  
+        return (new PostfixConfigGenerator)->generate($email);
     }
 
-    protected function restartContainers()
+    protected function restartContainers(): void
     {
-        // Restart Dovecot and Postfix containers
-        // ...
+        (new ContainerRestarter)->restart();
     }
 }
