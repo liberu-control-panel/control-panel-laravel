@@ -13,7 +13,14 @@ class CreateDomain extends CreateRecord
 {
     protected static string $resource = DomainResource::class;
 
-    protected function handleRecordCreation(array $data, DockerComposeService $dockerCompose): Domain
+    protected DockerComposeService $dockerCompose;
+
+    public function __construct(DockerComposeService $dockerCompose)
+    {
+        $this->dockerCompose = $dockerCompose;
+    }
+
+    protected function handleRecordCreation(array $data): Domain
     {
         $user = auth()->user();
 
@@ -28,8 +35,8 @@ class CreateDomain extends CreateRecord
             'hosting_plan_id' => $hostingPlan->id,
         ]);
 
-        $dockerCompose->generateComposeFile($data, $hostingPlan);
-        $dockerCompose->startServices($data['domain_name']);
+        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
+        $this->dockerCompose->startServices($data['domain_name']);
 
         return $this->record;
     }
