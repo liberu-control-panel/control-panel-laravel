@@ -23,27 +23,27 @@ class CreateDomain extends CreateRecord
     public function create(array $data): void
     {
         $user = auth()->user();
-    
+
         if ($user->hasReachedDockerComposeLimit()) {
             Notification::make()
                 ->title('Docker Compose Limit Reached')
                 ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
                 ->danger()
                 ->send();
-    
+
             return;
         }
-    
+
         $hostingPlan = $user->currentHostingPlan();
-    
+
         $domain = Domain::create([
             ...$data,
             'hosting_plan_id' => $hostingPlan->id,
         ]);
-    
+
         $this->dockerCompose->generateComposeFile($data, $hostingPlan);
         $this->dockerCompose->startServices($data['domain_name']);
-    
-        return redirect()->route('filament.resources.domains.edit', $domain);
+
+        redirect()->route('filament.resources.domains.edit', $domain);
     }
 }
