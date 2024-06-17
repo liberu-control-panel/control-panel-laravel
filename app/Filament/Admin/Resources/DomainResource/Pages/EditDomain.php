@@ -26,7 +26,7 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(Illuminate\Database\Eloquent\Model $record, array $data): Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Domain $record, array $data): Domain
     {
         $user = auth()->user();
 
