@@ -20,7 +20,7 @@ class CreateDomain extends CreateRecord
         // ...
     }
 
-    public function create(array $data): void
+    public function create(bool $another = false): void
     {
         $user = auth()->user();
 
@@ -37,13 +37,17 @@ class CreateDomain extends CreateRecord
         $hostingPlan = $user->currentHostingPlan();
 
         $domain = Domain::create([
-            ...$data,
+            ...$this->form->getState(),
             'hosting_plan_id' => $hostingPlan->id,
         ]);
 
-        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
-        $this->dockerCompose->startServices($data['domain_name']);
+        $this->dockerCompose->generateComposeFile($this->form->getState(), $hostingPlan);
+        $this->dockerCompose->startServices($this->form->getState()['domain_name']);
 
-        redirect()->route('filament.resources.domains.edit', $domain);
+        if ($another) {
+            redirect()->route('filament.resources.domains.create');
+        } else {
+            redirect()->route('filament.resources.domains.edit', $domain);
+        }
     }
 }
