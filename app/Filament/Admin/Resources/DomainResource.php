@@ -90,6 +90,11 @@ class DomainResource extends Resource
         ];
     }
 
+    public function __construct(protected DomainContainerRestarter $containerRestarter)
+    {
+        // ...
+    }
+
     public static function getPages(): array
     {
         return [

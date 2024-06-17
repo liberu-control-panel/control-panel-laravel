@@ -1,17 +1,14 @@
 <?php
 
-namespace App\Filament\Admin\Resources\EmailResource;
+namespace App\Filament\Admin\Resources\DomainResource;
 
-use Symfony\Component\Process\Process;
-
-class ContainerRestarter
+class DomainContainerRestarter
 {
-    public function restart(): void
+    public function restart(string $domainName): void
     {
-        $dovecotProcess = new Process(['docker', 'restart', 'dovecot']);
-        $dovecotProcess->run();
-
-        $postfixProcess = new Process(['docker', 'restart', 'postfix']);
-        $postfixProcess->run();
+        // Restart necessary containers for the given domain
+        $process = new Process(['docker-compose', 'restart', $domainName]);
+        $process->setWorkingDirectory(base_path());
+        $process->run();
     }
 }

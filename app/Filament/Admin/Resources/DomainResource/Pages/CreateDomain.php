@@ -9,28 +9,35 @@ use Filament\Resources\Pages\CreateRecord;
 use App\Models\Domain;
 use App\Services\DockerComposeService;
 
+use App\Services\DockerComposeService;
+use Filament\Notifications\Notification;
+
 class CreateDomain extends CreateRecord
 {
     protected static string $resource = DomainResource::class;
 
-    protected DockerComposeService $dockerCompose;
-
-    public function __construct(DockerComposeService $dockerCompose)
+    public function __construct(protected DockerComposeService $dockerCompose)
     {
-        $this->dockerCompose = $dockerCompose;
+        // ...
     }
 
-    protected function handleRecordCreation(array $data): Domain
+    protected function create(array $data): Domain
     {
         $user = auth()->user();
 
         if ($user->hasReachedDockerComposeLimit()) {
-            throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
+            Notification::make()
+                ->title('Docker Compose Limit Reached')
+                ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
+                ->danger()
+                ->send();
+
+            return null;
         }
 
         $hostingPlan = $user->currentHostingPlan();
 
-        $this->record->create([
+        $domain = Domain::create([
             ...$data,
             'hosting_plan_id' => $hostingPlan->id,
         ]);
@@ -38,6 +45,6 @@ class CreateDomain extends CreateRecord
         $this->dockerCompose->generateComposeFile($data, $hostingPlan);
         $this->dockerCompose->startServices($data['domain_name']);
 
-        return $this->record;
+        return $domain;
     }
 }

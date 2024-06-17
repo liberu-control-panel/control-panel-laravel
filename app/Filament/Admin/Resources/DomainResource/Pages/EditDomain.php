@@ -10,9 +10,17 @@ use App\Models\Domain;
 use App\Services\DockerComposeService;
 
 
+use App\Services\DockerComposeService;
+use Filament\Notifications\Notification;
+
 class EditDomain extends EditRecord
 {
     protected static string $resource = DomainResource::class;
+
+    public function __construct(protected DockerComposeService $dockerCompose)
+    {
+        // ...
+    }
 
     protected function getHeaderActions(): array
     {
@@ -21,20 +29,26 @@ class EditDomain extends EditRecord
         ];
     }
 
-    protected function handleRecordUpdate(array $data, DockerComposeService $dockerCompose): Model
+    protected function save(array $data): Model
     {
         $user = auth()->user();
 
         if ($user->hasReachedDockerComposeLimit()) {
-            throw new \Exception('You have reached the limit of Docker Compose instances for your hosting plan.');
+            Notification::make()
+                ->title('Docker Compose Limit Reached')
+                ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
+                ->danger()
+                ->send();
+
+            return $this->record;
         }
 
         $hostingPlan = $user->currentHostingPlan();
 
         $this->record->update($data);
 
-        $dockerCompose->generateComposeFile($data, $hostingPlan);
-        $dockerCompose->startServices($data['domain_name']);
+        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
+        $this->dockerCompose->startServices($data['domain_name']);
 
         return $this->record;
     }
