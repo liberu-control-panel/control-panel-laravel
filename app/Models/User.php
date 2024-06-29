@@ -10,6 +10,7 @@ use JoelButcher\Socialstream\HasConnectedAccounts;
 use JoelButcher\Socialstream\SetsProfilePhotoFromUrl;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
+use Laravel\Jetstream\HasTeams;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -17,14 +18,24 @@ class User extends Authenticatable
 {
     use HasApiTokens;
     use HasConnectedAccounts;
+    use HasRoles;
     use HasFactory;
     use HasProfilePhoto {
         HasProfilePhoto::profilePhotoUrl as getPhotoUrl;
     }
     use Notifiable;
-    use HasRoles;
     use SetsProfilePhotoFromUrl;
     use TwoFactorAuthenticatable;
+    use HasTeams;
+
+    /**
+     * Get the teams the user belongs to.
+     */
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_user')->withTimestamps();
+    }
+    use Laravel\Jetstream\HasTeams;
 
     /**
      * The attributes that are mass assignable.
@@ -80,57 +91,11 @@ class User extends Authenticatable
             : $this->getPhotoUrl();
     }
 
-	public function userHostingPlans()
-	{
-    return $this->hasMany(UserHostingPlan::class);
-	}
-
-public function domains()
-{
-    return $this->hasMany(Domain::class);
-}
-
-public function emailAccounts()
-{
-    return $this->hasMany(EmailAccount::class);
-}
-
-public function resourceUsages()
-{
-    return $this->hasMany(ResourceUsage::class);
-}
-
-public function hasReachedDockerComposeLimit(): bool
-{
-    $currentPlan = $this->currentHostingPlan();
-
-    if (!$currentPlan) {
-        return true; // Default to true if no hosting plan is found
+    /**
+     * Get the teams the user owns.
+     */
+    public function ownedTeams()
+    {
+        return $this->hasMany(Team::class);
     }
-
-    if ($currentPlan->name === 'free') {
-        return $this->domains()->count() >= 1;
-    }
-
-    if ($currentPlan->name === 'premium') {
-        return false; // Unlimited instances for premium plan
-    }
-
-    return true; // Default to true for other plans
 }
-
-public function currentHostingPlan()
-{
-    return $this->userHostingPlans()->latest()->first();
-}
-
-public function databases()
-{
-    return $this->hasMany(Database::class);
-}
-
-
-
-}
-
-
