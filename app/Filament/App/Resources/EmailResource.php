@@ -1,12 +1,17 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\App\Resources;
 
-use App\Filament\Admin\Resources\EmailResource\Pages;
+use App\Filament\App\Resources\EmailResource\Pages;
 use App\Models\Email;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
+use App\Filament\App\Resources\EmailResource\DovecotConfigGenerator;
+use App\Filament\App\Resources\EmailResource\PostfixConfigGenerator;
+use App\Filament\App\Resources\EmailResource\ContainerRestarter;
 
 class EmailResource extends Resource
 {
