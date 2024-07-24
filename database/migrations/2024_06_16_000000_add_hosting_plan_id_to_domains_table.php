@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('domains', function (Blueprint $table) {
-            $table->id();
-            $table->string('domain_name');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        Schema::table('domains', function (Blueprint $table) {
             $table->foreignId('hosting_plan_id')->constrained('user_hosting_plans')->onDelete('cascade');
-            $table->timestamps();
         });
     }
 
