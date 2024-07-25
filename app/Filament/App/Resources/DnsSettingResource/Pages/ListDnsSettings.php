@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Admin\Resources\DnsSettingResource\Pages;
+namespace App\Filament\App\Resources\DnsSettingResource\Pages;
 
-use App\Filament\Admin\Resources\DnsSettingResource;
+use App\Filament\App\Resources\DnsSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

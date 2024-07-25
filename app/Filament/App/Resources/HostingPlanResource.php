@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\App\Resources;
 
-use App\Filament\Admin\Resources\HostingPlanResource\Pages;
-use App\Filament\Admin\Resources\HostingPlanResource\RelationManagers;
+use App\Filament\App\Resources\HostingPlanResource\Pages;
+use App\Filament\App\Resources\HostingPlanResource\RelationManagers;
 use App\Models\HostingPlan;
 use Filament\Forms;
 use Filament\Forms\Form;

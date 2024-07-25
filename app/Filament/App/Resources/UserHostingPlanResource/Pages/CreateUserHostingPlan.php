@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Admin\Resources\UserHostingPlanResource\Pages;
+namespace App\Filament\App\Resources\UserHostingPlanResource\Pages;
 
-use App\Filament\Admin\Resources\UserHostingPlanResource;
+use App\Filament\App\Resources\UserHostingPlanResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
