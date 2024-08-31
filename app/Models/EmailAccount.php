@@ -27,6 +27,11 @@ class EmailAccount extends Model
         'email_address',
         'password',
         'quota',
+        'forwarding_rules',
+    ];
+
+    protected $casts = [
+        'forwarding_rules' => 'array',
     ];
 
     /**
