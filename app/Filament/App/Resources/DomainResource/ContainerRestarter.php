@@ -2,13 +2,19 @@
 
 namespace App\Filament\Admin\Resources\DomainResource;
 
-class DomainContainerRestarter
+use Symfony\Component\Process\Process;
+
+class ContainerRestarter
 {
-    public function restart(string $domainName): void
+    public function restart(): void
     {
-        // Restart necessary containers for the given domain
-        $process = new Process(['docker-compose', 'restart', $domainName]);
+        // Restart Postfix and Dovecot containers
+        $process = new Process(['docker-compose', 'restart', 'postfix', 'dovecot']);
         $process->setWorkingDirectory(base_path());
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException('Failed to restart containers: ' . $process->getErrorOutput());
+        }
     }
 }

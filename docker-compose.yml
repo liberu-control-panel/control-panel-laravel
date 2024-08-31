@@ -25,27 +25,36 @@ services:
     environment:
       - NGINX_PROXY_CONTAINER=nginx-proxy
 
-  postfix:
-    image: boky/postfix
-    restart: always
-    environment:
-      - SMTP_SERVER=example.com
-      - SMTP_USERNAME=user@example.com
-      - SMTP_PASSWORD=password
-    ports:
-      - "25:25"
-      - "587:587"
+  version: '3'
 
-  dovecot:
-    image: dovecot/dovecot
-    restart: always
-    ports:
-      - "110:110"
-      - "143:143"
-      - "993:993"
-      - "995:995"
-    volumes:
-      - ./mail:/var/mail
+  services:
+    postfix:
+      image: postfix:latest
+      volumes:
+        - ./postfix_data:/var/spool/postfix
+        - ./postfix_config:/etc/postfix
+      environment:
+        - MAILNAME=example.com
+      ports:
+        - "25:25"
+        - "587:587"
+
+    dovecot:
+      image: dovecot:latest
+      volumes:
+        - ./dovecot_data:/var/mail
+        - ./dovecot_config:/etc/dovecot
+      ports:
+        - "110:110"
+        - "143:143"
+        - "993:993"
+        - "995:995"
+
+  volumes:
+    postfix_data:
+    postfix_config:
+    dovecot_data:
+    dovecot_config:
 
   bind9:
     image: internetsystemsconsortium/bind9:9.16
