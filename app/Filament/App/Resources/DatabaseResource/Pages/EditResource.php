@@ -7,6 +7,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use App\Services\MySqlDatabaseService;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class EditResource extends EditRecord
 {
