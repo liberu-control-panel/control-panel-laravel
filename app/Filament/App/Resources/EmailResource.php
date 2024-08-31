@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Filament\App\Resources\EmailResource\DovecotConfigGenerator;
 use App\Filament\App\Resources\EmailResource\PostfixConfigGenerator;
 use App\Filament\App\Resources\EmailResource\ContainerRestarter;
+use Filament\Forms\Components\Repeater;
 
 class EmailResource extends Resource
 {
@@ -31,6 +32,16 @@ class EmailResource extends Resource
                     ->password()
                     ->required()
                     ->maxLength(255),
+                Repeater::make('forwarding_rules')
+                    ->schema([
+                        Forms\Components\TextInput::make('destination')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->columns(1)
+                    ->createItemButtonLabel('Add Forwarding Rule')
+                    ->label('Forwarding Rules'),
             ]);
     }
 
@@ -42,6 +53,9 @@ class EmailResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
+                Tables\Columns\TagsColumn::make('forwarding_rules')
+                    ->getStateUsing(fn ($record) => $record->forwarding_rules ? array_column($record->forwarding_rules, 'destination') : [])
+                    ->label('Forwarding To'),
             ])
             ->filters([
                 //
@@ -67,11 +81,11 @@ class EmailResource extends Resource
         $email = Email::create($data);
 
         // Generate Dovecot configuration
-        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password);
+        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password, $email->forwarding_rules);
         Storage::disk('dovecot_config')->put($email->email . '.conf', $dovecotConfig);
 
         // Generate Postfix configuration
-        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password);
+        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password, $email->forwarding_rules);
         Storage::disk('postfix_config')->put($email->email . '.cf', $postfixConfig);
 
         // Create mailbox directory
@@ -88,11 +102,11 @@ class EmailResource extends Resource
         $email->update($data);
 
         // Update Dovecot configuration
-        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password);
+        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password, $email->forwarding_rules);
         Storage::disk('dovecot_config')->put($email->email . '.conf', $dovecotConfig);
 
         // Update Postfix configuration
-        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password);
+        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password, $email->forwarding_rules);
         Storage::disk('postfix_config')->put($email->email . '.cf', $postfixConfig);
 
         // Update Dovecot and Postfix Docker instances
@@ -123,14 +137,14 @@ class EmailResource extends Resource
         $this->callSilent('email-servers:update');
     }
 
-    protected function generateDovecotConfig(string $email, string $password): string
+    protected function generateDovecotConfig(string $email, string $password, array $forwardingRules): string
     {
-        return (new DovecotConfigGenerator)->generate($email, $password);
+        return (new DovecotConfigGenerator)->generate($email, $password, $forwardingRules);
     }
-    
-    protected function generatePostfixConfig(string $email, string $password): string
+
+    protected function generatePostfixConfig(string $email, string $password, array $forwardingRules): string
     {
-        return (new PostfixConfigGenerator)->generate($email, $password);
+        return (new PostfixConfigGenerator)->generate($email, $password, $forwardingRules);
     }
 
     protected function restartContainers(): void
