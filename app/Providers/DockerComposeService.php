@@ -52,10 +52,44 @@ services:
           cpus: '0.25'
           memory: {$hostingPlan->bandwidth}M
 
+  sftp:
+    image: atmoz/sftp
+    container_name: {$data['domain_name']}_sftp
+    volumes:
+      - ./html:/home/{$data['domain_name']}/html
+    ports:
+      - "2222:22"
+    command: {$data['domain_name']}:{$data['sftp_password']}:1001
+
+  ssh:
+    image: linuxserver/openssh-server
+    container_name: {$data['domain_name']}_ssh
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_NAME={$data['domain_name']}
+      - USER_PASSWORD={$data['ssh_password']}
+    volumes:
+      - ./html:/home/{$data['domain_name']}/html
+    ports:
+      - "2223:2222"
+
 networks:
   nginx-proxy:
     external:
       name: nginx-proxy
 EOT;
+    }
+
+    public function generateSftpPassword(): string
+    {
+        return bin2hex(random_bytes(8));
+    }
+
+    public function generateSshPassword(): string
+    {
+        return bin2hex(random_bytes(8));
     }
 }
