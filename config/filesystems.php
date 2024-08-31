@@ -56,6 +56,30 @@ return [
             'throw' => false,
         ],
 
+        'dovecot_config' => [
+            'driver' => 'local',
+            'root' => base_path('dovecot_config'),
+            'throw' => false,
+        ],
+
+        'dovecot_data' => [
+            'driver' => 'local',
+            'root' => base_path('dovecot_data'),
+            'throw' => false,
+        ],
+
+        'postfix_config' => [
+            'driver' => 'local',
+            'root' => base_path('postfix_config'),
+            'throw' => false,
+        ],
+
+        'postfix_data' => [
+            'driver' => 'local',
+            'root' => base_path('postfix_data'),
+            'throw' => false,
+        ],
+
     ],
 
     /*

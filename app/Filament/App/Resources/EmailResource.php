@@ -62,79 +62,95 @@ class EmailResource extends Resource
         ];
     }
 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
+
     protected function handleRecordCreation(array $data): Email
     {
-        $email = Email::create($data);
+        try {
+            $email = Email::create($data);
 
-        // Generate Dovecot configuration
-        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password);
-        Storage::disk('dovecot_config')->put($email->email . '.conf', $dovecotConfig);
+            Queue::push(new GenerateEmailConfigurations($email));
+            Queue::push(new UpdateEmailServers());
 
-        // Generate Postfix configuration
-        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password);
-        Storage::disk('postfix_config')->put($email->email . '.cf', $postfixConfig);
-
-        // Create mailbox directory
-        Storage::disk('dovecot_data')->makeDirectory($email->email);
-
-        // Update Dovecot and Postfix Docker instances
-        $this->updateEmailServers();
-
-        return $email;
+            Log::info("Email account creation job queued", ['email' => $email->email]);
+            return $email;
+        } catch (\Exception $e) {
+            Log::error("Failed to queue email account creation", ['email' => $data['email'], 'error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     protected function handleRecordUpdate(Email $email, array $data): Email
     {
-        $email->update($data);
+        try {
+            $email->update($data);
 
-        // Update Dovecot configuration
-        $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password);
-        Storage::disk('dovecot_config')->put($email->email . '.conf', $dovecotConfig);
+            Queue::push(new UpdateEmailConfigurations($email));
+            Queue::push(new UpdateEmailServers());
 
-        // Update Postfix configuration
-        $postfixConfig = $this->generatePostfixConfig($email->email, $email->password);
-        Storage::disk('postfix_config')->put($email->email . '.cf', $postfixConfig);
-
-        // Update Dovecot and Postfix Docker instances
-        $this->updateEmailServers();
-
-        return $email;
+            Log::info("Email account update job queued", ['email' => $email->email]);
+            return $email;
+        } catch (\Exception $e) {
+            Log::error("Failed to queue email account update", ['email' => $email->email, 'error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     protected function handleRecordDeletion(Email $email)
     {
-        // Remove Dovecot configuration
-        Storage::disk('dovecot_config')->delete($email->email . '.conf');
+        try {
+            Queue::push(new DeleteEmailConfigurations($email));
+            Queue::push(new UpdateEmailServers());
 
-        // Remove Postfix configuration
-        Storage::disk('postfix_config')->delete($email->email . '.cf');
+            $email->delete();
 
-        // Remove mailbox directory
-        Storage::disk('dovecot_data')->deleteDirectory($email->email);
-
-        // Update Dovecot and Postfix Docker instances
-        $this->updateEmailServers();
-
-        $email->delete();
+            Log::info("Email account deletion job queued", ['email' => $email->email]);
+        } catch (\Exception $e) {
+            Log::error("Failed to queue email account deletion", ['email' => $email->email, 'error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     protected function updateEmailServers()
     {
-        $this->callSilent('email-servers:update');
+        try {
+            Queue::push(new UpdateEmailServers());
+            Log::info("Email servers update job queued");
+        } catch (\Exception $e) {
+            Log::error("Failed to queue email servers update", ['error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     protected function generateDovecotConfig(string $email, string $password): string
     {
-        return (new DovecotConfigGenerator)->generate($email, $password);
+        try {
+            return (new DovecotConfigGenerator)->generate($email, $password);
+        } catch (\Exception $e) {
+            Log::error("Failed to generate Dovecot configuration", ['email' => $email, 'error' => $e->getMessage()]);
+            throw $e;
+        }
     }
-    
+
     protected function generatePostfixConfig(string $email, string $password): string
     {
-        return (new PostfixConfigGenerator)->generate($email, $password);
+        try {
+            return (new PostfixConfigGenerator)->generate($email, $password);
+        } catch (\Exception $e) {
+            Log::error("Failed to generate Postfix configuration", ['email' => $email, 'error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     protected function restartContainers(): void
     {
-        (new ContainerRestarter)->restart();
+        try {
+            (new ContainerRestarter)->restart();
+            Log::info("Containers restarted successfully");
+        } catch (\Exception $e) {
+            Log::error("Failed to restart containers", ['error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 }
