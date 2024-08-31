@@ -39,8 +39,8 @@ RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
 
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-RUN apk update; \
-    apk upgrade; \
+RUN apk update \
+    apk upgrade \
     apk add --no-cache \
     curl \
     wget \
