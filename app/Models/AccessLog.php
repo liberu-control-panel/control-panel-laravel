@@ -5,16 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ResourceUsage extends Model
+class AccessLog extends Model
 {
     use HasFactory;
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'resource_usage';
 
     /**
      * The attributes that are mass assignable.
@@ -23,20 +16,15 @@ class ResourceUsage extends Model
      */
     protected $fillable = [
         'user_id',
-        'disk_usage',
-        'bandwidth_usage',
-        'cpu_usage',
-        'memory_usage',
-        'month',
-        'year',
+        'action',
+        'ip_address',
     ];
 
     /**
-     * Get the user that owns the resource usage.
+     * Get the user that owns the access log.
      */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 }
-
