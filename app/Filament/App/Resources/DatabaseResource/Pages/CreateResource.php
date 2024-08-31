@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Services\MySqlDatabaseService;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateResource extends CreateRecord
 {
