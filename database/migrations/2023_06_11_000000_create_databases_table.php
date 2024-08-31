@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('databases', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('charset')->default('utf8mb4');
+            $table->string('collation')->default('utf8mb4_unicode_ci');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
