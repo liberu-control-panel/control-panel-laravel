@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Models\Backup;
+use App\Services\BackupService;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,7 +14,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $backups = Backup::all();
+
+        foreach ($backups as $backup) {
+            $schedule->call(function () use ($backup) {
+                $backupService = new BackupService();
+                $backupService->createBackup($backup);
+            })->cron($this->getCronExpression($backup));
+        }
     }
 
     /**
@@ -21,7 +30,24 @@ class Kernel extends ConsoleKernel
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
-    
+
         require base_path('routes/console.php');
+    }
+
+    private function getCronExpression(Backup $backup): string
+    {
+        $time = $backup->time;
+        $frequency = $backup->frequency;
+
+        switch ($frequency) {
+            case 'daily':
+                return "{$time->format('i')} {$time->format('H')} * * *";
+            case 'weekly':
+                return "{$time->format('i')} {$time->format('H')} * * 0";
+            case 'monthly':
+                return "{$time->format('i')} {$time->format('H')} 1 * *";
+            default:
+                return "0 0 * * *"; // Default to daily at midnight
+        }
     }
 }
