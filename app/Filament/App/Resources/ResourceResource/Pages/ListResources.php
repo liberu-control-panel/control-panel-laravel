@@ -16,4 +16,9 @@ class ListResources extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getTableQuery()
+    {
+        return parent::getTableQuery()->where('user_id', auth()->id());
+    }
 }
