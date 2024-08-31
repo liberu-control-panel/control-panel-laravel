@@ -8,6 +8,14 @@ running_migrations_and_seeders=${RUNNING_MIGRATIONS_AND_SEEDERS:-"false"}
 echo "Container mode: $container_mode"
 
 initialStuff() {
+    # Wait for the database to be ready
+    until nc -z -v -w30 mysql 3306
+    do
+      echo "Waiting for database connection..."
+      # wait for 5 seconds before check again
+      sleep 5
+    done
+
     php artisan storage:link; \
     php artisan optimize:clear; \
     php artisan event:cache; \
@@ -16,7 +24,7 @@ initialStuff() {
 
     if [ ${running_migrations_and_seeders} = "true" ]; then
         echo "Running migrations and seeding database ..."
-        php artisan migrate --isolated --seed --force;
+        docker-compose run --rm migrations
     fi
 }
 

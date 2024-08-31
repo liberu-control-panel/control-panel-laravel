@@ -74,9 +74,33 @@ volumes:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
       MYSQL_DATABASE: myapp
+      MYSQL_USER: myapp
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    secrets:
+      - db_root_password
+      - db_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    image: ${DOCKER_IMAGE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mysql
+      - DB_DATABASE=myapp
+      - DB_USERNAME=myapp
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    command: ["php", "artisan", "migrate", "--seed"]
