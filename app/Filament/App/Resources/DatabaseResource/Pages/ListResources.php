@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\DatabaseResource\Pages;
 use App\Filament\App\Resources\DatabaseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListResources extends ListRecords
 {
@@ -17,7 +18,7 @@ class ListResources extends ListRecords
         ];
     }
 
-    protected function getTableQuery()
+    protected function getTableQuery(): ?Builder
     {
         return parent::getTableQuery()->where('user_id', auth()->id());
     }
