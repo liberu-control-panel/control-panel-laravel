@@ -2,7 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
-use App\Filament\App\Resources\ResourceResource\Pages;
+use App\Filament\App\Resources\DatabaseResource\Pages;
 use App\Models\Database;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -10,7 +10,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use App\Services\MySqlDatabaseService;
 
-class ResourceResource extends Resource
+class DatabaseResource extends Resource
 {
     protected static ?string $model = Database::class;
 
@@ -85,9 +85,9 @@ class ResourceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListResources::route('/'),
-            'create' => Pages\CreateResource::route('/create'),
-            'edit' => Pages\EditResource::route('/{record}/edit'),
+            'index' => Pages\ListDatabases::route('/'),
+            'create' => Pages\CreateDatabase::route('/create'),
+            'edit' => Pages\EditDatabase::route('/{record}/edit'),
         ];
     }
 }

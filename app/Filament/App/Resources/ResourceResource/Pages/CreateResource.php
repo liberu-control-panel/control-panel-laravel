@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\App\Resources\ResourceResource\Pages;
+namespace App\Filament\App\Resources\DatabaseResource\Pages;
 
-use App\Filament\App\Resources\ResourceResource;
+use App\Filament\App\Resources\DatabaseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Services\MySqlDatabaseService;
 use Filament\Notifications\Notification;
 
-class CreateResource extends CreateRecord
+class CreateDatabase extends CreateRecord
 {
-    protected static string $resource = ResourceResource::class;
+    protected static string $resource = DatabaseResource::class;
 
     protected function handleRecordCreation(array $data): Model
     {
