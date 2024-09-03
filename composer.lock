@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d82990ca66a350a90c279f6acc12efc3",
+    "content-hash": "8839d81d0c26e86e7beb1b34bb1f2896",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -2524,6 +2524,53 @@
                 }
             ],
             "time": "2023-12-03T19:50:20+00:00"
+        },
+        {
+            "name": "intelrx/sitesettings",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Raza9798/Site-Settings.git",
+                "reference": "268c7031057f955b1bc6aa5da3b959caad9c30f2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Raza9798/Site-Settings/zipball/268c7031057f955b1bc6aa5da3b959caad9c30f2",
+                "reference": "268c7031057f955b1bc6aa5da3b959caad9c30f2",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Intelrx\\Sitesettings\\SitesettingsProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Intelrx\\Sitesettings\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "raza9798",
+                    "email": "m.raza9798@gmail.com"
+                }
+            ],
+            "description": "Application global properties",
+            "support": {
+                "issues": "https://github.com/Raza9798/Site-Settings/issues",
+                "source": "https://github.com/Raza9798/Site-Settings/tree/1.0.0"
+            },
+            "time": "2024-08-29T20:56:05+00:00"
         },
         {
             "name": "joelbutcher/socialstream",
