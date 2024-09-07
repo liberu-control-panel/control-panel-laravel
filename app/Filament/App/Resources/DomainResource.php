@@ -43,6 +43,20 @@ class DomainResource extends Resource
                     ->email()
                     ->required()
                     ->maxLength(255),
+                Forms\Components\TextInput::make('sftp_username')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('sftp_password')
+                    ->password()
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('ssh_username')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('ssh_password')
+                    ->password()
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 

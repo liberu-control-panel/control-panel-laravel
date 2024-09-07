@@ -8,6 +8,7 @@
     ],
     "license": "MIT",
     "require": {
+        "phpseclib/phpseclib": "~3.0",
         "php": "^8.3",
         "bezhansalleh/filament-shield": "*",
         "filament/filament": "^3.2",

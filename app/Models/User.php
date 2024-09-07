@@ -123,4 +123,9 @@ class User extends Authenticatable implements HasDefaultTenant, HasTenants, Fila
     {
         return $this->belongsTo(Team::class, 'current_team_id');
     }
+
+    public function domains()
+    {
+        return $this->hasMany(Domain::class);
+    }
 }
