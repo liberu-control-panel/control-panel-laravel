@@ -18,6 +18,23 @@ class EditDomain extends EditRecord
         // ...
     }
 
+    protected function getFormSchema(): array
+    {
+        return [
+            ...parent::getFormSchema(),
+            Forms\Components\TextInput::make('sftp_username')
+                ->required(),
+            Forms\Components\TextInput::make('sftp_password')
+                ->password()
+                ->required(),
+            Forms\Components\TextInput::make('ssh_username')
+                ->required(),
+            Forms\Components\TextInput::make('ssh_password')
+                ->password()
+                ->required(),
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [

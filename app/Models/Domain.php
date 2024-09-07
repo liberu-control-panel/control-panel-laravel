@@ -27,6 +27,10 @@ class Domain extends Model
         'registration_date',
         'expiration_date',
         'hosting_plan_id',
+        'sftp_username',
+        'sftp_password',
+        'ssh_username',
+        'ssh_password',
     ];
 
     /**
@@ -37,6 +41,16 @@ class Domain extends Model
     protected $casts = [
         'registration_date' => 'date',
         'expiration_date' => 'date',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'sftp_password',
+        'ssh_password',
     ];
 
     /**
