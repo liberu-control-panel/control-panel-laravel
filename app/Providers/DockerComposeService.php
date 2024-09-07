@@ -10,7 +10,7 @@ class DockerComposeService
     public function generateComposeFile(array $data, $hostingPlan): void
     {
         $composeContent = $this->generateContent($data, $hostingPlan);
-        
+
         Storage::disk('local')->put(
             'docker-compose-'.$data['domain_name'].'.yml',
             $composeContent
@@ -42,7 +42,7 @@ services:
       - ./html:/usr/share/nginx/html
       - ./vhost.d:/etc/nginx/conf.d
     networks:
-      - nginx-proxy
+      - proxy-network
     deploy:
       resources:
         limits:
@@ -52,10 +52,34 @@ services:
           cpus: '0.25'
           memory: {$hostingPlan->bandwidth}M
 
+  control-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=mysql
+      - DB_DATABASE=myapp
+      - DB_USERNAME=myapp
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - VIRTUAL_HOST=${CONTROL_PANEL_DOMAIN}
+      - LETSENCRYPT_HOST=${CONTROL_PANEL_DOMAIN}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - mysql
+    secrets:
+      - db_password
+    networks:
+      - proxy-network
+
 networks:
-  nginx-proxy:
+  proxy-network:
     external:
-      name: nginx-proxy
+      name: proxy-network
 EOT;
     }
 }

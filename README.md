@@ -129,34 +129,79 @@
 This control panel would streamline the management of web hosting, DNS, email, and databases, making it ideal for web administrators and hosting providers.
 
 
-## Setup
+## Setup with Docker
 
-1. Ensure your environment is set up with PHP 8.3 and Composer installed.
-2. Download the project files from this GitHub repository.
-3. Open a terminal in the project folder. If you are on Windows and have Git Bash installed, you can use it for the following steps.
-4. Run the following command:
+1. Ensure you have Docker and Docker Compose installed on your system.
+2. Clone this repository:
+   ```
+   git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+   cd control-panel-laravel
+   ```
+3. Copy the `.env.example` file to `.env`:
+   ```
+   cp .env.example .env
+   ```
+4. Update the `.env` file with your desired configuration, especially the `CONTROL_PANEL_DOMAIN` and `LETSENCRYPT_EMAIL` variables.
+5. Run the setup script:
+   ```
+   ./setup.sh
+   ```
 
-```bash
-./setup.sh
-```
+The setup script will:
+- Build the Docker images
+- Start the Docker containers
+- Run database migrations
+- Seed the database
+- Optimize Laravel
 
-and everything should be installed automatically if you are using Linux you just run the script as you normally run scripts in the terminal.
+Once the setup is complete, you can access the control panel at `http://localhost` or the domain you specified in the `.env` file.
 
-NOTE 1: The script will ask you if you want to have your .env be overwritten by .env.example, in case you have already an .env configuration available please answer with "n" (No).
+## Docker Commands
 
-NOTE 2: This script will run seeders, please make sure you are aware of this and don't run this script if you don't want this to happen.
-```bash
-composer install
-php artisan key:generate
-php artisan migrate --seed
-```
-This will install the necessary dependencies, generate an application key, and set up your database with initial data.
+- To start the containers:
+  ```
+  docker-compose up -d
+  ```
 
-NOTE 3: Ensure your `.env` file is correctly configured with your database connection details before running migrations.
+- To stop the containers:
+  ```
+  docker-compose down
+  ```
+
+- To view container logs:
+  ```
+  docker-compose logs
+  ```
+
+- To run artisan commands:
+  ```
+  docker-compose exec control-panel php artisan <command>
+  ```
+
+## Development Workflow
+
+1. Make changes to your code locally.
+2. The changes will be reflected in the running Docker containers due to volume mapping.
+3. If you need to rebuild the containers after making changes to the Dockerfile or docker-compose.yml:
+   ```
+   docker-compose up -d --build
+   ```
+
+## Troubleshooting
+
+- If you encounter permission issues, you may need to adjust the ownership of the project files:
+  ```
+  sudo chown -R $USER:$USER .
+  ```
+
+- If the containers are not starting properly, check the logs:
+  ```
+  docker-compose logs
+  ```
 
 ## Building with Docker
 
-Alternatively, you can build and run the project using Docker. To build the Dockerfile, follow these steps:
+To build the Dockerfile manually:
 
 1. Ensure you have Docker installed on your system.
 2. Open a terminal in the project folder.
@@ -169,7 +214,7 @@ Alternatively, you can build and run the project using Docker. To build the Dock
    docker run -p 8000:8000 control-panel-laravel
    ```
 
-NOTE 3: Ensure your `.env` file is correctly configured with your database connection details before running migrations.
+NOTE: Ensure your `.env` file is correctly configured with your database connection details before running migrations.
 
 ### Using Laravel Sail
 

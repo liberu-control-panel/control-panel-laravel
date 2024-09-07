@@ -13,6 +13,8 @@ services:
       - ./html:/usr/share/nginx/html
     labels:
       - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
+    networks:
+      - proxy-network
 
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
@@ -24,37 +26,34 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - NGINX_PROXY_CONTAINER=nginx-proxy
+    networks:
+      - proxy-network
 
-  version: '3'
+  postfix:
+    image: postfix:latest
+    volumes:
+      - ./postfix_data:/var/spool/postfix
+      - ./postfix_config:/etc/postfix
+    environment:
+      - MAILNAME=example.com
+    ports:
+      - "25:25"
+      - "587:587"
+    networks:
+      - proxy-network
 
-  services:
-    postfix:
-      image: postfix:latest
-      volumes:
-        - ./postfix_data:/var/spool/postfix
-        - ./postfix_config:/etc/postfix
-      environment:
-        - MAILNAME=example.com
-      ports:
-        - "25:25"
-        - "587:587"
-
-    dovecot:
-      image: dovecot:latest
-      volumes:
-        - ./dovecot_data:/var/mail
-        - ./dovecot_config:/etc/dovecot
-      ports:
-        - "110:110"
-        - "143:143"
-        - "993:993"
-        - "995:995"
-
-  volumes:
-    postfix_data:
-    postfix_config:
-    dovecot_data:
-    dovecot_config:
+  dovecot:
+    image: dovecot:latest
+    volumes:
+      - ./dovecot_data:/var/mail
+      - ./dovecot_config:/etc/dovecot
+    ports:
+      - "110:110"
+      - "143:143"
+      - "993:993"
+      - "995:995"
+    networks:
+      - proxy-network
 
   bind9:
     image: internetsystemsconsortium/bind9:9.16
@@ -66,9 +65,8 @@ services:
       - ./bind:/etc/bind
       - ./bind/cache:/var/cache/bind
       - ./bind/records:/var/lib/bind
-
-volumes:
-  mysql-data:
+    networks:
+      - proxy-network
 
   mysql:
     image: mysql:8.0
@@ -90,6 +88,32 @@ volumes:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - proxy-network
+
+  control-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=mysql
+      - DB_DATABASE=myapp
+      - DB_USERNAME=myapp
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - VIRTUAL_HOST=${CONTROL_PANEL_DOMAIN}
+      - LETSENCRYPT_HOST=${CONTROL_PANEL_DOMAIN}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - mysql
+    secrets:
+      - db_password
+    networks:
+      - proxy-network
 
   migrations:
     image: ${DOCKER_IMAGE}
@@ -104,3 +128,22 @@ volumes:
     secrets:
       - db_password
     command: ["php", "artisan", "migrate", "--seed"]
+    networks:
+      - proxy-network
+
+volumes:
+  mysql-data:
+  postfix_data:
+  postfix_config:
+  dovecot_data:
+  dovecot_config:
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  db_password:
+    file: ./secrets/db_password.txt
+
+networks:
+  proxy-network:
+    driver: bridge
