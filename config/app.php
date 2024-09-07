@@ -171,7 +171,7 @@ return [
         App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\Filament\AppPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
-
+	App\Providers\DockerComposeServiceProvider::class,
         App\Providers\TeamServiceProvider::class,
         App\Providers\JetstreamServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,

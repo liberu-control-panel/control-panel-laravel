@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Providers;
 
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 
-class DockerComposeService
+class DockerComposeServiceProvider
 {
     public function generateComposeFile(array $data, $hostingPlan): void
     {
