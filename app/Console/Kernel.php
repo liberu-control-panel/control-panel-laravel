@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Models\Backup;
 use App\Services\BackupService;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -18,10 +19,18 @@ class Kernel extends ConsoleKernel
 
         foreach ($backups as $backup) {
             $schedule->call(function () use ($backup) {
-                $backupService = new BackupService();
-                $backupService->createBackup($backup);
+                try {
+                    $backupService = new BackupService();
+                    $backupService->createBackup($backup);
+                    Log::info("Backup created successfully for {$backup->name}");
+                } catch (\Exception $e) {
+                    Log::error("Failed to create backup for {$backup->name}: " . $e->getMessage());
+                }
             })->cron($this->getCronExpression($backup));
         }
+
+        // Add a daily log cleanup task
+        $schedule->command('log:clear')->daily();
     }
 
     /**

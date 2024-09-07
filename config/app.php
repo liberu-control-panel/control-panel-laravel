@@ -176,6 +176,11 @@ return [
         App\Providers\JetstreamServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         Intelrx\Sitesettings\SitesettingsProvider::class,
+
+        /*
+         * Docker-specific Service Providers...
+         */
+        App\Providers\DockerServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -192,6 +197,18 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
         'SiteConfig' => Intelrx\Sitesettings\SiteConfig::class,
+        'Docker' => App\Facades\Docker::class,
     ])->toArray(),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Docker Environment
+    |--------------------------------------------------------------------------
+    |
+    | This value determines if the application is running in a Docker environment.
+    |
+    */
+
+    'docker' => env('DOCKER_ENVIRONMENT', false),
 
 ];
