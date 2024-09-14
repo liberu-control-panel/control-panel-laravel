@@ -80,6 +80,7 @@ class MonitoringResource extends Resource
             'index' => Pages\ListMonitoring::route('/'),
             'create' => Pages\CreateMonitoring::route('/create'),
             'edit' => Pages\EditMonitoring::route('/{record}/edit'),
+            'view' => Pages\ViewMonitoring::route('/{record}'),
         ];
     }
 }
