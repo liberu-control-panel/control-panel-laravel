@@ -174,7 +174,6 @@ return [
         App\Providers\TeamServiceProvider::class,
         App\Providers\JetstreamServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
-        Intelrx\Sitesettings\SitesettingsProvider::class,
 
         /*
          * Docker-specific Service Providers...
@@ -195,7 +194,6 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
-        'SiteConfig' => Intelrx\Sitesettings\SiteConfig::class,
         'Docker' => App\Facades\Docker::class,
     ])->toArray(),
 
