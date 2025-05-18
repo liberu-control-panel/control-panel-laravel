@@ -26,4 +26,5 @@ use Illuminate\Support\Facades\Schema;
         Schema::table('domains', function (Blueprint $table) {
             $table->dropColumn(['sftp_username', 'sftp_password', 'ssh_username', 'ssh_password']);
         });
-    };
+    }
+};
