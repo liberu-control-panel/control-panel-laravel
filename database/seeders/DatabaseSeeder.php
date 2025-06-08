@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             HostingPlanSeeder::class,
-            SiteSettingsSeeder::class,
+          //  SiteSettingsSeeder::class,
         ]);
     }
 }
