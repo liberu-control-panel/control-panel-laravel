@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +13,7 @@ class MySqlDatabaseService
         try {
             DB::statement("CREATE DATABASE `$name` CHARACTER SET $charset COLLATE $collation");
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create database: " . $e->getMessage());
             return false;
         }
@@ -23,7 +24,7 @@ class MySqlDatabaseService
         try {
             DB::statement("ALTER DATABASE `$name` CHARACTER SET $charset COLLATE $collation");
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to modify database: " . $e->getMessage());
             return false;
         }
@@ -34,7 +35,7 @@ class MySqlDatabaseService
         try {
             DB::statement("DROP DATABASE `$name`");
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to drop database: " . $e->getMessage());
             return false;
         }

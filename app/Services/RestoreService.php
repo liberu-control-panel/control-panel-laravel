@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use ZipArchive;
 use App\Models\Backup;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
@@ -19,7 +20,7 @@ class RestoreService
         $tempPath = storage_path('app/temp_backup.zip');
         file_put_contents($tempPath, $decryptedContent);
 
-        $zip = new \ZipArchive();
+        $zip = new ZipArchive();
         $zip->open($tempPath);
 
         // Restore database

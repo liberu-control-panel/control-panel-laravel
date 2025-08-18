@@ -2,11 +2,19 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\App\Resources\DnsSettingResource\Pages\ListDnsSettings;
+use App\Filament\App\Resources\DnsSettingResource\Pages\CreateDnsSetting;
+use App\Filament\App\Resources\DnsSettingResource\Pages\EditDnsSetting;
 use App\Filament\App\Resources\DnsSettingResource\Pages;
 use App\Filament\App\Resources\DnsSettingResource\RelationManagers;
 use App\Models\DnsSetting;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -20,32 +28,32 @@ use App\Services\DnsSettingService;
 class DnsSettingResource extends Resource {
     protected static ?string $model = DnsSetting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public function __construct(protected DnsSettingService $dnsSettingService)
     {
         // ...
     }
 
-    public static function form(Form $form): Form {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('domain_id')
+    public static function form(Schema $schema): Schema {
+        return $schema
+            ->components([
+                TextInput::make('domain_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('record_type')
+                TextInput::make('record_type')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('value')
+                TextInput::make('value')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('ttl')
+                TextInput::make('ttl')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('priority')
+                TextInput::make('priority')
                     ->numeric()
                     ->visibleIf('record_type', 'MX')
                     ->requiredIf('record_type', 'MX'),
@@ -55,26 +63,26 @@ class DnsSettingResource extends Resource {
     public static function table(Table $table): Table {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('domain_id')
+                TextColumn::make('domain_id')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('record_type')
+                TextColumn::make('record_type')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('value')
+                TextColumn::make('value')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('priority')
+                TextColumn::make('priority')
                     ->numeric()
                     ->visibleIf('record_type', 'MX'),
-                Tables\Columns\TextColumn::make('ttl')
+                TextColumn::make('ttl')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -82,12 +90,12 @@ class DnsSettingResource extends Resource {
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -100,9 +108,9 @@ class DnsSettingResource extends Resource {
 
     public static function getPages(): array {
         return [
-            'index' => Pages\ListDnsSettings::route('/'),
-            'create' => Pages\CreateDnsSetting::route('/create'),
-            'edit' => Pages\EditDnsSetting::route('/{record}/edit'),
+            'index' => ListDnsSettings::route('/'),
+            'create' => CreateDnsSetting::route('/create'),
+            'edit' => EditDnsSetting::route('/{record}/edit'),
         ];
     }
 }

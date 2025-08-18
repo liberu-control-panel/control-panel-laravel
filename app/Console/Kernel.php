@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use Exception;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Models\Backup;
@@ -23,7 +24,7 @@ class Kernel extends ConsoleKernel
                     $backupService = new BackupService();
                     $backupService->createBackup($backup);
                     Log::info("Backup created successfully for {$backup->name}");
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error("Failed to create backup for {$backup->name}: " . $e->getMessage());
                 }
             })->cron($this->getCronExpression($backup));

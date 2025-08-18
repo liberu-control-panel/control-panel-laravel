@@ -12,14 +12,14 @@ class DnsSettingSaved
     /**
      * The DnsSetting instance.
      *
-     * @var \App\Models\DnsSetting
+     * @var DnsSetting
      */
     public $dnsSetting;
 
     /**
      * Create a new event instance.
      *
-     * @param  \App\Models\DnsSetting  $dnsSetting
+     * @param DnsSetting $dnsSetting
      * @return void
      */
     public function __construct(DnsSetting $dnsSetting)

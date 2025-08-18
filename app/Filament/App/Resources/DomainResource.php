@@ -2,11 +2,20 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\App\Resources\DomainResource\Pages\ListDomains;
+use App\Filament\App\Resources\DomainResource\Pages\CreateDomain;
+use App\Filament\App\Resources\DomainResource\Pages\EditDomain;
 use App\Filament\App\Resources\DomainResource\Pages;
 use App\Filament\App\Resources\DomainResource\RelationManagers;
 use App\Models\Domain;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,43 +26,43 @@ class DomainResource extends Resource
 {
     protected static ?string $model = Domain::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('user_id')
+        return $schema
+            ->components([
+                TextInput::make('user_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('domain_name')
+                TextInput::make('domain_name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\DatePicker::make('registration_date')
+                DatePicker::make('registration_date')
                     ->required(),
-                Forms\Components\DatePicker::make('expiration_date')
+                DatePicker::make('expiration_date')
                     ->required(),
-                Forms\Components\TextInput::make('virtual_host')
+                TextInput::make('virtual_host')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('letsencrypt_host')
+                TextInput::make('letsencrypt_host')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('letsencrypt_email')
+                TextInput::make('letsencrypt_email')
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('sftp_username')
+                TextInput::make('sftp_username')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('sftp_password')
+                TextInput::make('sftp_password')
                     ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('ssh_username')
+                TextInput::make('ssh_username')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('ssh_password')
+                TextInput::make('ssh_password')
                     ->password()
                     ->required()
                     ->maxLength(255),
@@ -64,22 +73,22 @@ class DomainResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
+                TextColumn::make('user_id')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('domain_name')
+                TextColumn::make('domain_name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('registration_date')
+                TextColumn::make('registration_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('expiration_date')
+                TextColumn::make('expiration_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -87,12 +96,12 @@ class DomainResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -112,9 +121,9 @@ class DomainResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDomains::route('/'),
-            'create' => Pages\CreateDomain::route('/create'),
-            'edit' => Pages\EditDomain::route('/{record}/edit'),
+            'index' => ListDomains::route('/'),
+            'create' => CreateDomain::route('/create'),
+            'edit' => EditDomain::route('/{record}/edit'),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use ZipArchive;
 use App\Models\Backup;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
@@ -15,8 +16,8 @@ class BackupService
         $backupPath = storage_path('app/backups/' . $backupName);
 
         // Create a zip file containing the database dump and the storage folder
-        $zip = new \ZipArchive();
-        $zip->open($backupPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip = new ZipArchive();
+        $zip->open($backupPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
         // Add database dump
         $databaseDump = $this->getDatabaseDump();

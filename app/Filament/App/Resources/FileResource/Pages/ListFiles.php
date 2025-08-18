@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\FileResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\App\Resources\FileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -14,7 +15,7 @@ class ListFiles extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 

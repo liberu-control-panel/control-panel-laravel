@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\DnsSettingResource\Pages;
 
+use Filament\Actions\DeleteAction;
 use App\Filament\App\Resources\DnsSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -18,7 +19,7 @@ class EditDnsSetting extends EditRecord {
 
     protected function getHeaderActions(): array {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

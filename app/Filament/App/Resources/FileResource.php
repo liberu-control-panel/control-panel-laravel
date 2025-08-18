@@ -2,6 +2,12 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use App\Filament\App\Resources\FileResource\Pages\ListFiles;
+use App\Filament\App\Resources\FileResource\Pages\EditFile;
 use App\Filament\App\Resources\FileResource\Pages;
 use App\Models\Domain;
 use Filament\Forms;
@@ -17,12 +23,12 @@ class FileResource extends Resource
 {
     protected static ?string $model = Domain::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document';
 
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 // Add form fields if needed
             ]);
     }
@@ -31,22 +37,22 @@ class FileResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('domain_name')
+                TextColumn::make('domain_name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')
+                TextColumn::make('user.name')
                     ->searchable(),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\Action::make('manage_files')
+            ->recordActions([
+                Action::make('manage_files')
                     ->label('Manage Files')
                     ->url(fn (Domain $record): string => route('filament.app.resources.files.list', ['record' => $record]))
                     ->icon('heroicon-o-folder-open'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+            ->toolbarActions([
+                BulkActionGroup::make([
                     //
                 ]),
             ]);
@@ -62,8 +68,8 @@ class FileResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListFiles::route('/'),
-            'edit' => Pages\EditFile::route('/{record}/edit'),
+            'index' => ListFiles::route('/'),
+            'edit' => EditFile::route('/{record}/edit'),
         ];
     }
 

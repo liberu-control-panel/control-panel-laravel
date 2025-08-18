@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\DnsSettingResource\Pages;
 
+use Exception;
 use App\Filament\App\Resources\DnsSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
@@ -35,7 +36,7 @@ class CreateDnsSetting extends CreateRecord {
                 ->body('The DNS setting has been created and BIND records have been updated.')
                 ->success()
                 ->send();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Notification::make()
                 ->title('Error')
                 ->body('An error occurred while creating the DNS setting: ' . $e->getMessage())

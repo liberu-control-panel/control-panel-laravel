@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\DomainResource;
 
+use RuntimeException;
 use Symfony\Component\Process\Process;
 
 class ContainerRestarter
@@ -14,7 +15,7 @@ class ContainerRestarter
         $process->run();
 
         if (!$process->isSuccessful()) {
-            throw new \RuntimeException('Failed to restart containers: ' . $process->getErrorOutput());
+            throw new RuntimeException('Failed to restart containers: ' . $process->getErrorOutput());
         }
     }
 }

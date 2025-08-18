@@ -2,6 +2,14 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\TagsColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\App\Resources\EmailResource\Pages\ManageEmails;
 use App\Filament\App\Resources\EmailResource\Pages;
 use App\Models\Email;
 use Filament\Forms;
@@ -18,23 +26,23 @@ class EmailResource extends Resource
 {
     protected static ?string $model = Email::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-mail';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-mail';
 
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('email')
+        return $schema
+            ->components([
+                TextInput::make('email')
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('password')
+                TextInput::make('password')
                     ->password()
                     ->required()
                     ->maxLength(255),
                 Repeater::make('forwarding_rules')
                     ->schema([
-                        Forms\Components\TextInput::make('destination')
+                        TextInput::make('destination')
                             ->email()
                             ->required()
                             ->maxLength(255),
@@ -49,30 +57,30 @@ class EmailResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime(),
-                Tables\Columns\TagsColumn::make('forwarding_rules')
+                TagsColumn::make('forwarding_rules')
                     ->getStateUsing(fn ($record) => $record->forwarding_rules ? array_column($record->forwarding_rules, 'destination') : [])
                     ->label('Forwarding To'),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                DeleteBulkAction::make(),
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageEmails::route('/'),
+            'index' => ManageEmails::route('/'),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\DomainResource\Pages;
 
+use App\Filament\App\Resources\DomainResource\Pages\Forms\Components\TextInput;
 use App\Filament\App\Resources\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
@@ -24,14 +25,14 @@ class CreateDomain extends CreateRecord
     {
         return [
             ...parent::getFormSchema(),
-            Forms\Components\TextInput::make('sftp_username')
+            TextInput::make('sftp_username')
                 ->required(),
-            Forms\Components\TextInput::make('sftp_password')
+            TextInput::make('sftp_password')
                 ->password()
                 ->required(),
-            Forms\Components\TextInput::make('ssh_username')
+            TextInput::make('ssh_username')
                 ->required(),
-            Forms\Components\TextInput::make('ssh_password')
+            TextInput::make('ssh_password')
                 ->password()
                 ->required(),
         ];

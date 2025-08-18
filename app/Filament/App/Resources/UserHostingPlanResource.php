@@ -2,11 +2,20 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\App\Resources\UserHostingPlanResource\Pages\ListUserHostingPlans;
+use App\Filament\App\Resources\UserHostingPlanResource\Pages\CreateUserHostingPlan;
+use App\Filament\App\Resources\UserHostingPlanResource\Pages\EditUserHostingPlan;
 use App\Filament\App\Resources\UserHostingPlanResource\Pages;
 use App\Filament\App\Resources\UserHostingPlanResource\RelationManagers;
 use App\Models\UserHostingPlan;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,21 +26,21 @@ class UserHostingPlanResource extends Resource
 {
     protected static ?string $model = UserHostingPlan::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('user_id')
+        return $schema
+            ->components([
+                TextInput::make('user_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('hosting_plan_id')
+                TextInput::make('hosting_plan_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\DatePicker::make('start_date')
+                DatePicker::make('start_date')
                     ->required(),
-                Forms\Components\DatePicker::make('end_date'),
+                DatePicker::make('end_date'),
             ]);
     }
 
@@ -39,23 +48,23 @@ class UserHostingPlanResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
+                TextColumn::make('user_id')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('hosting_plan_id')
+                TextColumn::make('hosting_plan_id')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('start_date')
+                TextColumn::make('start_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('end_date')
+                TextColumn::make('end_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -63,12 +72,12 @@ class UserHostingPlanResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -83,9 +92,9 @@ class UserHostingPlanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUserHostingPlans::route('/'),
-            'create' => Pages\CreateUserHostingPlan::route('/create'),
-            'edit' => Pages\EditUserHostingPlan::route('/{record}/edit'),
+            'index' => ListUserHostingPlans::route('/'),
+            'create' => CreateUserHostingPlan::route('/create'),
+            'edit' => EditUserHostingPlan::route('/{record}/edit'),
         ];
     }
 }

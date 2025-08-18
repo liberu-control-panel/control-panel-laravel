@@ -2,6 +2,17 @@
 
 namespace App\Filament\App\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\App\Resources\DatabaseResource\Pages\ListResources;
+use App\Filament\App\Resources\DatabaseResource\Pages\CreateResource;
+use App\Filament\App\Resources\DatabaseResource\Pages\EditResource;
 use App\Filament\App\Resources\DatabaseResource\Pages;
 use App\Models\Database;
 use Filament\Forms;
@@ -14,16 +25,16 @@ class DatabaseResource extends Resource
 {
     protected static ?string $model = Database::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Select::make('charset')
+                Select::make('charset')
                     ->required()
                     ->options([
                         'utf8mb4' => 'UTF-8 Unicode (utf8mb4)',
@@ -31,7 +42,7 @@ class DatabaseResource extends Resource
                         // Add more options as needed
                     ])
                     ->default('utf8mb4'),
-                Forms\Components\Select::make('collation')
+                Select::make('collation')
                     ->required()
                     ->options([
                         'utf8mb4_unicode_ci' => 'UTF-8 Unicode (utf8mb4_unicode_ci)',
@@ -46,26 +57,26 @@ class DatabaseResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('charset'),
-                Tables\Columns\TextColumn::make('collation'),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('charset'),
+                TextColumn::make('collation'),
+                TextColumn::make('created_at')
                     ->dateTime(),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make()
                     ->before(function (Database $record, MySqlDatabaseService $service) {
                         $service->dropDatabase($record->name);
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->before(function (Collection $records, MySqlDatabaseService $service) {
                             foreach ($records as $record) {
                                 $service->dropDatabase($record->name);
@@ -85,9 +96,9 @@ class DatabaseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListResources::route('/'),
-            'create' => Pages\CreateResource::route('/create'),
-            'edit' => Pages\EditResource::route('/{record}/edit'),
+            'index' => ListResources::route('/'),
+            'create' => CreateResource::route('/create'),
+            'edit' => EditResource::route('/{record}/edit'),
         ];
     }
 }

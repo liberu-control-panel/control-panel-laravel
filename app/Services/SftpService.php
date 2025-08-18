@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use phpseclib3\Net\SFTP;
 use App\Models\Domain;
 
@@ -13,7 +14,7 @@ class SftpService
     {
         $this->sftp = new SFTP($domain->domain_name, 2222);
         if (!$this->sftp->login($domain->sftp_username, $domain->sftp_password)) {
-            throw new \Exception('Login failed');
+            throw new Exception('Login failed');
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use Exception;
 use App\Events\DnsSettingSaved;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +12,7 @@ class UpdateBindDnsRecords implements ShouldQueue
     /**
      * Handle the event.
      *
-     * @param  \App\Events\DnsSettingSaved  $event
+     * @param DnsSettingSaved $event
      * @return void
      */
     public function handle(DnsSettingSaved $event)
@@ -36,7 +37,7 @@ class UpdateBindDnsRecords implements ShouldQueue
             file_put_contents($zoneFile, $recordLine . "\n", FILE_APPEND);
 
             exec('docker-compose restart bind9');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to update Bind9 DNS records: ' . $e->getMessage());
         }
     }
