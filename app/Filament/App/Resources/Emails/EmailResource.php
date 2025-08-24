@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\Emails;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
@@ -9,7 +9,7 @@ use Filament\Tables\Columns\TagsColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\App\Resources\EmailResource\Pages\ManageEmails;
+use App\Filament\App\Resources\Emails\Pages\ManageEmails;
 use App\Filament\App\Resources\EmailResource\Pages;
 use App\Models\Email;
 use Filament\Forms;

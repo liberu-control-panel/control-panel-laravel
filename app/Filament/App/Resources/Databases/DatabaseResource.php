@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\Databases;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
@@ -10,9 +10,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\App\Resources\DatabaseResource\Pages\ListResources;
-use App\Filament\App\Resources\DatabaseResource\Pages\CreateResource;
-use App\Filament\App\Resources\DatabaseResource\Pages\EditResource;
+use App\Filament\App\Resources\Databases\Pages\ListResources;
+use App\Filament\App\Resources\Databases\Pages\CreateResource;
+use App\Filament\App\Resources\Databases\Pages\EditResource;
 use App\Filament\App\Resources\DatabaseResource\Pages;
 use App\Models\Database;
 use Filament\Forms;

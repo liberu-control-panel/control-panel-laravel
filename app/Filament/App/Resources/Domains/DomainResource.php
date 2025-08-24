@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\Domains;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
@@ -9,9 +9,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\App\Resources\DomainResource\Pages\ListDomains;
-use App\Filament\App\Resources\DomainResource\Pages\CreateDomain;
-use App\Filament\App\Resources\DomainResource\Pages\EditDomain;
+use App\Filament\App\Resources\Domains\Pages\ListDomains;
+use App\Filament\App\Resources\Domains\Pages\CreateDomain;
+use App\Filament\App\Resources\Domains\Pages\EditDomain;
 use App\Filament\App\Resources\DomainResource\Pages;
 use App\Filament\App\Resources\DomainResource\RelationManagers;
 use App\Models\Domain;

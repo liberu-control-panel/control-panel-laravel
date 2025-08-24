@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\App\Resources\DnsSettingResource\Pages;
+namespace App\Filament\App\Resources\DnsSettings\Pages;
 
 use Filament\Actions\CreateAction;
-use App\Filament\App\Resources\DnsSettingResource;
+use App\Filament\App\Resources\DnsSettings\DnsSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

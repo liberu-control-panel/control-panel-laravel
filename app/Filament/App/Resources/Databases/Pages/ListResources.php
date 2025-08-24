@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\App\Resources\DatabaseResource\Pages;
+namespace App\Filament\App\Resources\Databases\Pages;
 
 use Filament\Actions\CreateAction;
-use App\Filament\App\Resources\DatabaseResource;
+use App\Filament\App\Resources\Databases\DatabaseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;

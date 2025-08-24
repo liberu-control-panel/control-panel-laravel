@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\App\Resources\DomainResource\Pages;
+namespace App\Filament\App\Resources\Domains\Pages;
 
 use App\Filament\App\Resources\DomainResource\Pages\Forms\Components\TextInput;
-use App\Filament\App\Resources\DomainResource;
+use App\Filament\App\Resources\Domains\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Facades\Filament;

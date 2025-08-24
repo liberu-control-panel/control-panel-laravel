@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\Files;
 
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
-use App\Filament\App\Resources\FileResource\Pages\ListFiles;
-use App\Filament\App\Resources\FileResource\Pages\EditFile;
+use App\Filament\App\Resources\Files\Pages\ListFiles;
+use App\Filament\App\Resources\Files\Pages\EditFile;
 use App\Filament\App\Resources\FileResource\Pages;
 use App\Models\Domain;
 use Filament\Forms;

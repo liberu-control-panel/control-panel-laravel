@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\DnsSettings;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
@@ -8,9 +8,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\App\Resources\DnsSettingResource\Pages\ListDnsSettings;
-use App\Filament\App\Resources\DnsSettingResource\Pages\CreateDnsSetting;
-use App\Filament\App\Resources\DnsSettingResource\Pages\EditDnsSetting;
+use App\Filament\App\Resources\DnsSettings\Pages\ListDnsSettings;
+use App\Filament\App\Resources\DnsSettings\Pages\CreateDnsSetting;
+use App\Filament\App\Resources\DnsSettings\Pages\EditDnsSetting;
 use App\Filament\App\Resources\DnsSettingResource\Pages;
 use App\Filament\App\Resources\DnsSettingResource\RelationManagers;
 use App\Models\DnsSetting;

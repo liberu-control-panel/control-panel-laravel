@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\App\Resources\HostingPlanResource\Pages;
+namespace App\Filament\App\Resources\HostingPlans\Pages;
 
 use Filament\Actions\DeleteAction;
-use App\Filament\App\Resources\HostingPlanResource;
+use App\Filament\App\Resources\HostingPlans\HostingPlanResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\App\Resources\FileResource\Pages;
+namespace App\Filament\App\Resources\Files\Pages;
 
 use Filament\Actions\DeleteAction;
-use App\Filament\App\Resources\FileResource;
+use App\Filament\App\Resources\Files\FileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;

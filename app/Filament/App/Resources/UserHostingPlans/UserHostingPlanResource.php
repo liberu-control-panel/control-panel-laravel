@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\App\Resources\UserHostingPlans;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
@@ -9,9 +9,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use App\Filament\App\Resources\UserHostingPlanResource\Pages\ListUserHostingPlans;
-use App\Filament\App\Resources\UserHostingPlanResource\Pages\CreateUserHostingPlan;
-use App\Filament\App\Resources\UserHostingPlanResource\Pages\EditUserHostingPlan;
+use App\Filament\App\Resources\UserHostingPlans\Pages\ListUserHostingPlans;
+use App\Filament\App\Resources\UserHostingPlans\Pages\CreateUserHostingPlan;
+use App\Filament\App\Resources\UserHostingPlans\Pages\EditUserHostingPlan;
 use App\Filament\App\Resources\UserHostingPlanResource\Pages;
 use App\Filament\App\Resources\UserHostingPlanResource\RelationManagers;
 use App\Models\UserHostingPlan;
