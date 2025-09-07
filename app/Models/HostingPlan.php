@@ -27,6 +27,15 @@ class HostingPlan extends Model
         'disk_space',
         'bandwidth',
         'price',
+        'cpu_limit',
+        'memory_limit',
+        'max_databases',
+        'max_email_accounts',
+        'max_subdomains',
+        'max_ftp_accounts',
+        'php_versions',
+        'features',
+        'is_active',
     ];
 
     /**
@@ -36,6 +45,9 @@ class HostingPlan extends Model
      */
     protected $casts = [
         'price' => 'decimal:2',
+        'php_versions' => 'array',
+        'features' => 'array',
+        'is_active' => 'boolean',
     ];
 
     /**
