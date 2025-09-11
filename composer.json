@@ -9,7 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
-        "bezhansalleh/filament-shield": "4.0.0-beta2",
+        "bezhansalleh/filament-shield": "4.0.2",
         "filament/filament": "^4.0",
         "guzzlehttp/guzzle": "^7.8",
         "joelbutcher/socialstream": "^6.0",
