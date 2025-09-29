@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\EmailAccount;
 use Illuminate\Support\Facades\Hash;
@@ -58,7 +59,7 @@ class EmailService
             $this->reloadMailServices($domain);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create mailbox for {$emailAccount->email_address}: " . $e->getMessage());
             return false;
         }
@@ -178,7 +179,7 @@ class EmailService
             $emailAccount->delete();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete email account {$emailAccount->email_address}: " . $e->getMessage());
             return false;
         }
@@ -267,7 +268,7 @@ class EmailService
             $dovecotProcess->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to update password for {$emailAccount->email_address}: " . $e->getMessage());
             return false;
         }
@@ -323,7 +324,7 @@ class EmailService
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create email alias {$alias}: " . $e->getMessage());
             return false;
         }
@@ -369,7 +370,7 @@ class EmailService
             }
 
             return $usage;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get mailbox usage for {$emailAccount->email_address}: " . $e->getMessage());
             return [
                 'size_bytes' => 0,
@@ -408,7 +409,7 @@ class EmailService
             ];
 
             return $results;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to test email configuration for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'postfix' => ['status' => 'error', 'message' => $e->getMessage()],
@@ -511,7 +512,7 @@ class EmailService
                 'total_messages' => $messageCount,
                 'quota_usage_percent' => $totalQuota > 0 ? round(($totalUsage / ($totalQuota * 1024 * 1024)) * 100, 2) : 0
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get email stats for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'account_count' => 0,

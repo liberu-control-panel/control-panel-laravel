@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\Database;
 use App\Models\DatabaseUser;
@@ -61,7 +62,7 @@ class DatabaseService
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create database {$database->name} in container: " . $e->getMessage());
             return false;
         }
@@ -149,7 +150,7 @@ class DatabaseService
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create database user {$databaseUser->username}: " . $e->getMessage());
             return false;
         }
@@ -292,7 +293,7 @@ class DatabaseService
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete database {$database->name}: " . $e->getMessage());
             return false;
         }
@@ -348,7 +349,7 @@ class DatabaseService
             }
 
             return 0;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get database size for {$database->name}: " . $e->getMessage());
             return 0;
         }
@@ -392,7 +393,7 @@ class DatabaseService
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create backup for database {$database->name}: " . $e->getMessage());
             return false;
         }
@@ -408,7 +409,7 @@ class DatabaseService
             $containerName = "{$domain->domain_name}_database";
 
             if (!file_exists($backupFile)) {
-                throw new \Exception("Backup file not found: {$backupFile}");
+                throw new Exception("Backup file not found: {$backupFile}");
             }
 
             // Copy backup file to container
@@ -419,7 +420,7 @@ class DatabaseService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception("Failed to copy backup file to container");
+                throw new Exception("Failed to copy backup file to container");
             }
 
             // Restore database
@@ -445,7 +446,7 @@ class DatabaseService
             $cleanupProcess->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to restore backup for database {$database->name}: " . $e->getMessage());
             return false;
         }
@@ -498,7 +499,7 @@ class DatabaseService
             }
 
             return $stats;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get database stats for {$database->name}: " . $e->getMessage());
             return [
                 'size' => 0,

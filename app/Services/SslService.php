@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\Domain;
 use App\Models\SslCertificate;
 use Illuminate\Support\Facades\Storage;
@@ -95,7 +97,7 @@ class SslService
             $this->installCertificate($domain, $sslCertificate);
 
             return $sslCertificate;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to generate Let's Encrypt certificate for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -113,7 +115,7 @@ class SslService
 
             // Validate certificate
             if (!$this->validateCertificate($certificate, $privateKey)) {
-                throw new \Exception('Invalid certificate or private key');
+                throw new Exception('Invalid certificate or private key');
             }
 
             // Parse certificate info
@@ -136,7 +138,7 @@ class SslService
             $this->installCertificate($domain, $sslCertificate);
 
             return $sslCertificate;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to install custom certificate for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -159,7 +161,7 @@ class SslService
             $keyProcess->run();
 
             if (!$keyProcess->isSuccessful()) {
-                throw new \Exception('Failed to generate private key');
+                throw new Exception('Failed to generate private key');
             }
 
             // Generate certificate
@@ -170,7 +172,7 @@ class SslService
             $certProcess->run();
 
             if (!$certProcess->isSuccessful()) {
-                throw new \Exception('Failed to generate certificate');
+                throw new Exception('Failed to generate certificate');
             }
 
             // Read certificate files
@@ -201,7 +203,7 @@ class SslService
             unlink($certPath);
 
             return $sslCertificate;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to generate self-signed certificate for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -236,7 +238,7 @@ class SslService
 
             // Reload Nginx
             return $this->webServerService->reloadNginx($domain);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to install certificate for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -291,7 +293,7 @@ class SslService
 
             // Reinstall certificate
             return $this->installCertificate($domain, $sslCertificate);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to renew certificate for {$sslCertificate->domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -325,7 +327,7 @@ class SslService
             $publicKeyDetails = openssl_pkey_get_details($publicKey);
 
             return $privateKeyDetails['key'] === $publicKeyDetails['key'];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Certificate validation failed: " . $e->getMessage());
             return false;
         }
@@ -346,7 +348,7 @@ class SslService
                 'issuer' => $certData['issuer'],
                 'serial_number' => $certData['serialNumber'] ?? null
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to parse certificate: " . $e->getMessage());
             return [
                 'issued_at' => now(),
@@ -407,7 +409,7 @@ class SslService
                 'days_until_expiry' => max(0, $expiresAt->diffInDays(now())),
                 'issuer' => $certInfo['issuer']['CN'] ?? 'Unknown'
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to check certificate status for {$sslCertificate->domain->domain_name}: " . $e->getMessage());
             return [
                 'status' => 'error',
@@ -420,7 +422,7 @@ class SslService
     /**
      * Get certificates expiring soon
      */
-    public function getCertificatesExpiringSoon(int $days = 30): \Illuminate\Database\Eloquent\Collection
+    public function getCertificatesExpiringSoon(int $days = 30): Collection
     {
         return SslCertificate::where('auto_renew', true)
             ->where('expires_at', '<=', now()->addDays($days))
@@ -478,7 +480,7 @@ class SslService
             $sslCertificate->delete();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to remove certificate for {$sslCertificate->domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -539,7 +541,7 @@ class SslService
                 'message' => 'SSL configuration test completed',
                 'tests' => $tests
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'status' => 'error',
                 'message' => $e->getMessage(),

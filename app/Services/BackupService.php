@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\Backup;
 use App\Models\Database;
@@ -48,13 +49,13 @@ class BackupService
             // Backup files
             $filesBackupPath = $backupDir . '/files.tar.gz';
             if (!$this->backupFiles($domain, $filesBackupPath)) {
-                throw new \Exception('Files backup failed');
+                throw new Exception('Files backup failed');
             }
 
             // Backup databases
             $databasesBackupPath = $backupDir . '/databases';
             if (!$this->backupDatabases($domain, $databasesBackupPath)) {
-                throw new \Exception('Database backup failed');
+                throw new Exception('Database backup failed');
             }
 
             // Backup email
@@ -81,7 +82,7 @@ class BackupService
             $this->cleanupDirectory($backupDir);
 
             return $backup;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Full backup failed for {$domain->domain_name}: " . $e->getMessage());
 
             if (isset($backup)) {
@@ -115,7 +116,7 @@ class BackupService
             $backupPath = $this->getBackupPath($domain, $backup, 'files.tar.gz');
 
             if (!$this->backupFiles($domain, $backupPath)) {
-                throw new \Exception('Files backup failed');
+                throw new Exception('Files backup failed');
             }
 
             $fileSize = file_exists($backupPath) ? filesize($backupPath) : 0;
@@ -128,7 +129,7 @@ class BackupService
             ]);
 
             return $backup;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Files backup failed for {$domain->domain_name}: " . $e->getMessage());
 
             if (isset($backup)) {
@@ -162,7 +163,7 @@ class BackupService
             $backupDir = $this->createBackupDirectory($domain, $backup);
 
             if (!$this->backupDatabases($domain, $backupDir)) {
-                throw new \Exception('Database backup failed');
+                throw new Exception('Database backup failed');
             }
 
             // Create archive of database backups
@@ -182,7 +183,7 @@ class BackupService
             $this->cleanupDirectory($backupDir);
 
             return $backup;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Database backup failed for {$domain->domain_name}: " . $e->getMessage());
 
             if (isset($backup)) {
@@ -214,7 +215,7 @@ class BackupService
             $process->run();
 
             if (!$process->isSuccessful()) {
-                throw new \Exception('Failed to create files archive: ' . $process->getErrorOutput());
+                throw new Exception('Failed to create files archive: ' . $process->getErrorOutput());
             }
 
             // Copy archive from container
@@ -224,7 +225,7 @@ class BackupService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to copy files archive: ' . $copyProcess->getErrorOutput());
+                throw new Exception('Failed to copy files archive: ' . $copyProcess->getErrorOutput());
             }
 
             // Clean up container
@@ -234,7 +235,7 @@ class BackupService
             $cleanupProcess->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Files backup failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -261,7 +262,7 @@ class BackupService
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Database backup failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -295,7 +296,7 @@ class BackupService
             $process->run();
 
             if (!$process->isSuccessful()) {
-                throw new \Exception('Failed to create email archive: ' . $process->getErrorOutput());
+                throw new Exception('Failed to create email archive: ' . $process->getErrorOutput());
             }
 
             // Copy archive from container
@@ -305,7 +306,7 @@ class BackupService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to copy email archive: ' . $copyProcess->getErrorOutput());
+                throw new Exception('Failed to copy email archive: ' . $copyProcess->getErrorOutput());
             }
 
             // Clean up container
@@ -315,7 +316,7 @@ class BackupService
             $cleanupProcess->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Email backup failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -330,7 +331,7 @@ class BackupService
             $domain = $backup->domain;
 
             if (!file_exists($backup->file_path)) {
-                throw new \Exception('Backup file not found');
+                throw new Exception('Backup file not found');
             }
 
             // Extract backup
@@ -348,7 +349,7 @@ class BackupService
                     $success = $this->restoreDatabaseBackup($domain, $extractDir, $options);
                     break;
                 default:
-                    throw new \Exception('Unknown backup type');
+                    throw new Exception('Unknown backup type');
             }
 
             // Clean up extraction directory
@@ -357,7 +358,7 @@ class BackupService
             }
 
             return $success;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Backup restore failed for {$backup->domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -388,7 +389,7 @@ class BackupService
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Full backup restore failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -409,7 +410,7 @@ class BackupService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to copy backup to container');
+                throw new Exception('Failed to copy backup to container');
             }
 
             // Clear existing files if requested
@@ -428,7 +429,7 @@ class BackupService
             $extractProcess->run();
 
             if (!$extractProcess->isSuccessful()) {
-                throw new \Exception('Failed to extract files: ' . $extractProcess->getErrorOutput());
+                throw new Exception('Failed to extract files: ' . $extractProcess->getErrorOutput());
             }
 
             // Clean up
@@ -438,7 +439,7 @@ class BackupService
             $cleanupProcess->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Files restore failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -462,7 +463,7 @@ class BackupService
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Database restore failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -483,7 +484,7 @@ class BackupService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to copy email backup to container');
+                throw new Exception('Failed to copy email backup to container');
             }
 
             // Extract email
@@ -494,7 +495,7 @@ class BackupService
             $extractProcess->run();
 
             if (!$extractProcess->isSuccessful()) {
-                throw new \Exception('Failed to extract email: ' . $extractProcess->getErrorOutput());
+                throw new Exception('Failed to extract email: ' . $extractProcess->getErrorOutput());
             }
 
             // Clean up
@@ -504,7 +505,7 @@ class BackupService
             $cleanupProcess->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Email restore failed for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -521,7 +522,7 @@ class BackupService
             Log::info("Automated backup scheduled for {$domain->domain_name}", $schedule);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to schedule automated backups for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -542,7 +543,7 @@ class BackupService
             $backup->delete();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete backup {$backup->id}: " . $e->getMessage());
             return false;
         }
@@ -568,7 +569,7 @@ class BackupService
                 'latest_backup' => $completedBackups->sortByDesc('created_at')->first(),
                 'oldest_backup' => $completedBackups->sortBy('created_at')->first()
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get backup stats for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'total_backups' => 0,

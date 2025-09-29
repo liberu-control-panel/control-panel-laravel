@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\Subdomain;
 use App\Models\Container;
@@ -233,7 +234,7 @@ class WebServerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to reload Nginx for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -254,7 +255,7 @@ class WebServerService
                 'output' => $process->getOutput(),
                 'error' => $process->getErrorOutput()
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'output' => '',
@@ -294,7 +295,7 @@ class WebServerService
             }
 
             return $stats;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get web server stats for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'active_connections' => 0,
@@ -355,7 +356,7 @@ class WebServerService
             }
 
             return $this->reloadNginx($domain);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to set maintenance mode for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\Container;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,7 @@ class ContainerManagerService
             $this->createContainerRecords($domain, $services);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create hosting environment for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -302,7 +303,7 @@ class ContainerManagerService
             $process->run();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to destroy hosting environment for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -341,7 +342,7 @@ class ContainerManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }

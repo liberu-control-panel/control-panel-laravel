@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
@@ -34,11 +35,11 @@ class FileManagerService
             $process->run();
 
             if (!$process->isSuccessful()) {
-                throw new \Exception('Failed to list directory: ' . $process->getErrorOutput());
+                throw new Exception('Failed to list directory: ' . $process->getErrorOutput());
             }
 
             return $this->parseDirectoryListing($process->getOutput(), $path);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get directory listing for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'success' => false,
@@ -135,14 +136,14 @@ class FileManagerService
             $process->run();
 
             if (!$process->isSuccessful()) {
-                throw new \Exception('Failed to create directory: ' . $process->getErrorOutput());
+                throw new Exception('Failed to create directory: ' . $process->getErrorOutput());
             }
 
             // Set proper permissions
             $this->setPermissions($domain, $fullPath, '755');
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create directory {$name} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -171,14 +172,14 @@ class FileManagerService
             Storage::delete($tempPath);
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to upload file: ' . $copyProcess->getErrorOutput());
+                throw new Exception('Failed to upload file: ' . $copyProcess->getErrorOutput());
             }
 
             // Set proper permissions
             $this->setPermissions($domain, $fullPath, '644');
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to upload file {$file->getClientOriginalName()} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -203,11 +204,11 @@ class FileManagerService
             $copyProcess->run();
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to download file: ' . $copyProcess->getErrorOutput());
+                throw new Exception('Failed to download file: ' . $copyProcess->getErrorOutput());
             }
 
             return $tempFile;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to download file {$filePath} for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -229,7 +230,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete {$path} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -253,7 +254,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to rename {$oldPath} to {$newName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -276,7 +277,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to copy {$sourcePath} to {$destinationPath} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -298,11 +299,11 @@ class FileManagerService
             $process->run();
 
             if (!$process->isSuccessful()) {
-                throw new \Exception('Failed to read file: ' . $process->getErrorOutput());
+                throw new Exception('Failed to read file: ' . $process->getErrorOutput());
             }
 
             return $process->getOutput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get content of {$filePath} for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -331,11 +332,11 @@ class FileManagerService
             unlink($tempFile);
 
             if (!$copyProcess->isSuccessful()) {
-                throw new \Exception('Failed to save file: ' . $copyProcess->getErrorOutput());
+                throw new Exception('Failed to save file: ' . $copyProcess->getErrorOutput());
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to save content to {$filePath} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -357,7 +358,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to set permissions for {$path} on {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -380,7 +381,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to change ownership for {$path} on {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -443,7 +444,7 @@ class FileManagerService
             $usage['breakdown'] = $breakdown;
 
             return $usage;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to get disk usage for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'path' => $path,
@@ -505,7 +506,7 @@ class FileManagerService
                 'results' => $results,
                 'count' => count($results)
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to search files for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'success' => false,
@@ -540,7 +541,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create archive for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -570,7 +571,7 @@ class FileManagerService
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to extract archive for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }

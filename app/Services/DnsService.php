@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Models\Domain;
 use App\Models\DnsSetting;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,7 @@ class DnsService
             $this->createDefaultDnsRecords($domain);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create DNS zone for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
@@ -171,7 +172,7 @@ EOT;
             $this->reloadBind();
 
             return $dnsRecord;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to add DNS record for {$domain->domain_name}: " . $e->getMessage());
             return null;
         }
@@ -192,7 +193,7 @@ EOT;
             $this->reloadBind();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to update DNS record {$dnsRecord->id}: " . $e->getMessage());
             return false;
         }
@@ -214,7 +215,7 @@ EOT;
             $this->reloadBind();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete DNS record {$dnsRecord->id}: " . $e->getMessage());
             return false;
         }
@@ -276,7 +277,7 @@ EOT;
             $process->run();
 
             return $process->isSuccessful();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to reload BIND: " . $e->getMessage());
             return false;
         }
@@ -314,7 +315,7 @@ EOT;
             }
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'domain' => $domain->domain_name,
                 'type' => $recordType,
@@ -339,7 +340,7 @@ EOT;
                 'response' => trim($process->getOutput()),
                 'error' => $process->getErrorOutput()
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'response' => '',
@@ -444,7 +445,7 @@ EOT;
                 'fully_propagated' => $propagatedCount === count($nameservers),
                 'results' => $results
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to check DNS propagation for {$domain->domain_name}: " . $e->getMessage());
             return [
                 'domain' => $domain->domain_name,
@@ -497,7 +498,7 @@ EOT;
             $this->reloadBind();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to create reverse DNS zone for {$ipAddress}: " . $e->getMessage());
             return false;
         }
@@ -561,7 +562,7 @@ EOT;
             $this->reloadBind();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Failed to delete DNS zone for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
