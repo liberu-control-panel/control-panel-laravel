@@ -23,7 +23,47 @@ Key features
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
 - MySQL database + user lifecycle and backup/restore helpers
-- Docker Compose orchestration: deploy, view logs, and manage services
+- Kubernetes and Docker orchestration: deploy, monitor, and manage services
+- Secure SSH-based remote server management
+
+## Quick Start
+
+### Kubernetes Deployment (Recommended)
+
+See the detailed [Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md) for complete instructions.
+
+**Prerequisites:**
+- Kubernetes cluster (v1.20+)
+- NGINX Ingress Controller
+- cert-manager (optional but recommended)
+- SSH access to Kubernetes server
+
+**Quick Setup:**
+
+1. Clone and configure:
+```bash
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+cp .env.example .env
+```
+
+2. Set environment variables in `.env`:
+```env
+KUBERNETES_ENABLED=true
+KUBECTL_PATH=/usr/local/bin/kubectl
+SSH_TIMEOUT=30
+```
+
+3. Install and migrate:
+```bash
+composer install
+php artisan migrate --force
+php artisan db:seed
+```
+
+4. Add your Kubernetes server via the web interface with SSH credentials.
+
+### Docker Deployment (Legacy)
 
 Quickstart (Docker)
 
@@ -60,6 +100,39 @@ Notes
 
 - The `setup.sh` script in the repo automates build + migrations + seeding for supported environments.
 - For development using Laravel Sail follow Sail's instructions (see repository docs).
+
+## Documentation
+
+- **[SSH Configuration Guide](docs/SSH_CONFIGURATION.md)** - How to configure secure SSH connections
+- **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Complete Kubernetes deployment instructions  
+- **[Security Best Practices](docs/SECURITY.md)** - Essential security guidelines
+
+## Architecture
+
+### Kubernetes Deployment
+
+```
+Control Panel (Laravel Application)
+    │ SSH Connection (Encrypted)
+    ▼
+Remote Kubernetes Server
+├── Namespace: hosting-example-com
+│   ├── Deployment: NGINX + PHP-FPM
+│   ├── Service: Load balancer
+│   ├── Ingress: TLS termination
+│   ├── PVC: Persistent storage
+│   ├── StatefulSet: Database (MySQL/PostgreSQL)
+│   └── Security: RBAC + NetworkPolicy
+```
+
+### Security Layers
+
+1. **SSH Layer**: Encrypted connections with key-based or password authentication
+2. **Kubernetes RBAC**: Namespace isolation and limited privileges
+3. **NetworkPolicies**: Traffic segmentation between services
+4. **Resource Quotas**: Prevent resource exhaustion
+5. **Pod Security**: Run as non-root, drop capabilities
+6. **Secrets Management**: Encrypted credential storage
 
 ## Our projects
 
