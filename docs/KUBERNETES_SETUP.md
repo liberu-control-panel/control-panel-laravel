@@ -1,6 +1,14 @@
 # Kubernetes Setup Guide
 
-This guide walks you through setting up a Kubernetes cluster for use with the Liberu Control Panel.
+This guide walks you through setting up a Kubernetes cluster for use with the Liberu Control Panel, including deploying the control panel itself on Kubernetes.
+
+## Overview
+
+The Liberu Control Panel can be deployed in two ways:
+1. **On Kubernetes** - The control panel application runs inside Kubernetes (recommended for production)
+2. **Managing Kubernetes** - The control panel manages remote Kubernetes clusters for hosting customer applications
+
+This guide covers both scenarios.
 
 ## Prerequisites
 
@@ -8,6 +16,7 @@ This guide walks you through setting up a Kubernetes cluster for use with the Li
 - kubectl CLI tool installed
 - Cluster admin access
 - Basic knowledge of Kubernetes concepts
+- Helm 3.0+ (for Helm-based deployment)
 
 ## Required Components
 
@@ -100,11 +109,140 @@ Most cloud providers have built-in storage provisioners:
 - **EKS**: `gp2`, `gp3`
 - **AKS**: `default`, `managed-premium`
 
-## Server Configuration
+## Part 1: Deploying the Control Panel on Kubernetes
+
+This section covers deploying the Liberu Control Panel application itself on Kubernetes.
+
+### Deployment Options
+
+#### Option 1: Using Helm (Recommended)
+
+Helm provides the easiest way to deploy with customizable values.
+
+```bash
+# Clone the repository
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+
+# Generate application key
+APP_KEY=$(php artisan key:generate --show)
+
+# Create a values file
+cat > values-production.yaml <<EOF
+app:
+  env: production
+  debug: false
+  key: "$APP_KEY"
+  url: https://control.yourdomain.com
+
+mysql:
+  auth:
+    password: "your-secure-database-password"
+    rootPassword: "your-secure-root-password"
+
+ingress:
+  hosts:
+    - host: control.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: control-panel-tls
+      hosts:
+        - control.yourdomain.com
+EOF
+
+# Install with Helm
+helm install control-panel ./helm/control-panel \
+  -f values-production.yaml \
+  --namespace control-panel \
+  --create-namespace
+```
+
+See [helm/control-panel/README.md](../helm/control-panel/README.md) for complete Helm documentation.
+
+#### Option 2: Using Kustomize
+
+For more control over manifests, use kubectl with Kustomize.
+
+```bash
+# Set required variables
+export APP_KEY="base64:YOUR_GENERATED_APP_KEY"
+export DB_PASSWORD="your-secure-password"
+export DB_ROOT_PASSWORD="your-secure-root-password"
+export DOMAIN="control.yourdomain.com"
+export ENVIRONMENT="production"
+
+# Run deployment script
+./k8s/deploy.sh
+```
+
+Or manually:
+
+```bash
+# Update secrets in k8s/base/secret.yaml
+# Update domain in k8s/base/ingress.yaml
+
+# Deploy
+kubectl apply -k k8s/overlays/production
+```
+
+See [k8s/README.md](../k8s/README.md) for complete Kustomize documentation.
+
+#### Option 3: Using Makefile
+
+Quick deployment using make commands:
+
+```bash
+# Deploy to production
+make deploy-prod
+
+# Check status
+make status
+
+# Run migrations
+make migrate
+
+# View logs
+make logs
+```
+
+### Post-Deployment Steps
+
+After deploying, complete these steps:
+
+```bash
+# 1. Wait for pods to be ready
+kubectl wait --for=condition=available --timeout=300s \
+  deployment/control-panel -n control-panel
+
+# 2. Run migrations
+kubectl exec -n control-panel deployment/control-panel -c php-fpm -- \
+  php artisan migrate --force
+
+# 3. Seed database (optional)
+kubectl exec -n control-panel deployment/control-panel -c php-fpm -- \
+  php artisan db:seed
+
+# 4. Create admin user
+kubectl exec -it -n control-panel deployment/control-panel -c php-fpm -- \
+  php artisan make:filament-user
+```
+
+### Accessing the Application
+
+Once deployed, access your control panel at:
+- https://control.yourdomain.com (or your configured domain)
+
+The Ingress will automatically provision a Let's Encrypt SSL certificate via cert-manager.
+
+## Part 2: Managing Remote Kubernetes Clusters
+
+This section covers configuring the control panel to manage remote Kubernetes clusters for hosting customer applications.
 
 ### SSH User Setup
 
-Create a dedicated user for the control panel:
+Create a dedicated user on the remote Kubernetes server:
 
 ```bash
 # Create user
@@ -170,11 +308,26 @@ roleRef:
 kubectl apply -f controlpanel-rbac.yaml
 ```
 
-## Control Panel Configuration
+## Control Panel Configuration in the Web UI
 
-### Environment Variables
+Once the control panel is deployed and you can access it via the web interface:
 
-Configure in `.env`:
+1. Navigate to **Servers** → **Create Server**
+2. Fill in the server details:
+   - **Name**: Production K8s Cluster
+   - **Hostname**: kubernetes-server.example.com
+   - **Type**: Kubernetes
+   - **SSH Port**: 22
+   - **SSH Username**: controlpanel
+   - **SSH Authentication**: Key-based or password
+3. Click **Test Connection** to verify
+4. Save the server
+
+Now you can deploy customer domains/applications to this Kubernetes cluster from the control panel.
+
+## Configuration Reference
+
+### Environment Variables (Control Panel Application)
 
 ```env
 # Kubernetes Settings

@@ -30,42 +30,65 @@ Key features
 
 ### Kubernetes Deployment (Recommended)
 
-See the detailed [Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md) for complete instructions.
+Deploy the control panel on Kubernetes for production use. See the detailed [Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md) for complete instructions.
 
 **Prerequisites:**
 - Kubernetes cluster (v1.20+)
 - NGINX Ingress Controller
-- cert-manager (optional but recommended)
-- SSH access to Kubernetes server
+- cert-manager (for automatic SSL certificates)
+- kubectl and Helm installed locally
 
-**Quick Setup:**
+#### Option 1: Deploy with Helm
 
-1. Clone and configure:
 ```bash
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
-cp .env.example .env
+
+# Generate app key
+APP_KEY=$(php artisan key:generate --show)
+
+# Install with Helm
+helm install control-panel ./helm/control-panel \
+  --set app.key="$APP_KEY" \
+  --set app.url="https://control.yourdomain.com" \
+  --set mysql.auth.password="secure-password" \
+  --set mysql.auth.rootPassword="secure-root-password" \
+  --set ingress.hosts[0].host="control.yourdomain.com" \
+  --namespace control-panel \
+  --create-namespace
 ```
 
-2. Set environment variables in `.env`:
-```env
-KUBERNETES_ENABLED=true
-KUBECTL_PATH=/usr/local/bin/kubectl
-SSH_TIMEOUT=30
-```
+#### Option 2: Deploy with Kustomize
 
-3. Install and migrate:
 ```bash
-composer install
-php artisan migrate --force
-php artisan db:seed
+export APP_KEY="base64:YOUR_KEY"
+export DB_PASSWORD="secure-password"
+export DB_ROOT_PASSWORD="secure-root-password"
+export DOMAIN="control.yourdomain.com"
+
+./k8s/deploy.sh
 ```
 
-4. Add your Kubernetes server via the web interface with SSH credentials.
+#### Option 3: Deploy with Makefile
+
+```bash
+make deploy-prod
+make migrate
+make status
+```
+
+### Managing Kubernetes Clusters
+
+After deploying the control panel, you can use it to manage remote Kubernetes clusters:
+
+1. Access the web interface at your configured domain
+2. Navigate to **Servers** → **Create Server**
+3. Add your Kubernetes cluster details with SSH credentials
+4. Deploy customer applications to managed Kubernetes clusters
 
 ### Docker Deployment (Legacy)
 
-Quickstart (Docker)
+For development or legacy deployments, use Docker Compose:
 
 1. Clone the repository and switch to the project directory:
 
@@ -103,13 +126,44 @@ Notes
 
 ## Documentation
 
-- **[SSH Configuration Guide](docs/SSH_CONFIGURATION.md)** - How to configure secure SSH connections
-- **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Complete Kubernetes deployment instructions  
+- **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on Kubernetes and manage clusters
+- **[Kubernetes Manifests](k8s/README.md)** - Raw Kubernetes manifests and Kustomize overlays
+- **[Helm Chart](helm/control-panel/README.md)** - Helm chart for easy deployment
+- **[SSH Configuration Guide](docs/SSH_CONFIGURATION.md)** - Configure secure SSH connections
 - **[Security Best Practices](docs/SECURITY.md)** - Essential security guidelines
+- **[Makefile Reference](#makefile-commands)** - Common deployment commands
 
-## Architecture
+## Deployment Architecture
 
-### Kubernetes Deployment
+### Control Panel on Kubernetes
+
+When deployed on Kubernetes, the control panel uses this architecture:
+
+```
+┌─────────────────────────────────────────┐
+│           Ingress (TLS)                 │
+│  control-panel.yourdomain.com           │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│        Control Panel Service            │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│   Control Panel Deployment (2-10 pods)  │
+│  ┌──────────────┐  ┌─────────────────┐ │
+│  │   NGINX      │  │   PHP-FPM       │ │
+│  │   (Alpine)   │  │  (Laravel App)  │ │
+│  └──────────────┘  └─────────────────┘ │
+└─────────┬───────────────────┬───────────┘
+          │                   │
+    ┌─────▼──────┐     ┌─────▼──────┐
+    │   Redis    │     │   MySQL    │
+    │  (Cache)   │     │ StatefulSet│
+    └────────────┘     └────────────┘
+```
+
+### Managing Remote Kubernetes Clusters
 
 ```
 Control Panel (Laravel Application)
@@ -133,6 +187,41 @@ Remote Kubernetes Server
 4. **Resource Quotas**: Prevent resource exhaustion
 5. **Pod Security**: Run as non-root, drop capabilities
 6. **Secrets Management**: Encrypted credential storage
+
+## Makefile Commands
+
+The project includes a Makefile for common Kubernetes operations:
+
+```bash
+make help           # Show all available commands
+make deploy-dev     # Deploy to development environment
+make deploy-prod    # Deploy to production environment
+make validate       # Validate Kubernetes manifests
+make status         # Check deployment status
+make logs           # View application logs
+make migrate        # Run database migrations
+make seed           # Seed database
+make shell          # Open shell in application pod
+make helm-install   # Install using Helm chart
+make helm-upgrade   # Upgrade Helm release
+make clean          # Remove deployment
+```
+
+Example workflow:
+
+```bash
+# Deploy to production
+make deploy-prod
+
+# Check status
+make status
+
+# Run migrations
+make migrate
+
+# View real-time logs
+make logs
+```
 
 ## Our projects
 
