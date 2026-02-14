@@ -27,6 +27,7 @@ class Domain extends Model
         'registration_date',
         'expiration_date',
         'hosting_plan_id',
+        'server_id',
         'sftp_username',
         'sftp_password',
         'ssh_username',
@@ -67,6 +68,14 @@ class Domain extends Model
     public function hostingPlan()
     {
         return $this->belongsTo(UserHostingPlan::class);
+    }
+
+    /**
+     * Get the server where this domain is hosted.
+     */
+    public function server()
+    {
+        return $this->belongsTo(Server::class);
     }
 
     /**
