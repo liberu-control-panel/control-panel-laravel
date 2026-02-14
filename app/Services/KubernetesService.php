@@ -11,10 +11,19 @@ use Exception;
 class KubernetesService
 {
     protected SshConnectionService $sshService;
+    protected ?KubernetesSecurityService $securityService = null;
 
     public function __construct(SshConnectionService $sshService)
     {
         $this->sshService = $sshService;
+    }
+
+    /**
+     * Set security service (optional dependency injection)
+     */
+    public function setSecurityService(KubernetesSecurityService $securityService): void
+    {
+        $this->securityService = $securityService;
     }
 
     /**
@@ -37,6 +46,11 @@ class KubernetesService
 
             // Create namespace if it doesn't exist
             $this->createNamespace($server, $namespace);
+
+            // Apply security policies if security service is available
+            if ($this->securityService) {
+                $this->securityService->applyAllSecurityPolicies($server, $namespace, $domain);
+            }
 
             // Apply manifests
             foreach ($manifests as $name => $manifest) {
@@ -625,7 +639,7 @@ EOT;
     /**
      * Get namespace for a domain
      */
-    protected function getNamespace(Domain $domain): string
+    public function getNamespace(Domain $domain): string
     {
         $prefix = config('kubernetes.namespace_prefix', 'hosting-');
         return $prefix . $this->sanitizeName($domain->domain_name);
