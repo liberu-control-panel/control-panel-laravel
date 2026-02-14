@@ -27,3 +27,8 @@ Homestead.json
 .phpunit.result.cache
 rr
 .rr.yaml
+
+# Kubernetes temporary files
+k8s/overlays/*/ingress-patch.yaml
+*.tgz
+helm/control-panel/charts/
