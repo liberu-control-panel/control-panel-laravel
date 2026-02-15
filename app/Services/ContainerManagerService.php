@@ -478,13 +478,76 @@ class ContainerManagerService
     public function restartService(Domain $domain, string $serviceName): bool
     {
         try {
+            $server = $domain->server ?? Server::getDefault();
+            
+            if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+                // Restart Kubernetes pod
+                return $this->restartKubernetesPod($domain, $serviceName);
+            } else {
+                // Restart Docker container
+                return $this->restartDockerContainer($domain, $serviceName);
+            }
+        } catch (Exception $e) {
+            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Restart Kubernetes pod for a service
+     */
+    protected function restartKubernetesPod(Domain $domain, string $serviceName): bool
+    {
+        try {
+            // For domain services, use sanitized domain name
+            // Main deployment is just the domain name, others have suffix
+            $deploymentName = $serviceName === 'web' 
+                ? $this->sanitizeDomainName($domain->domain_name)
+                : $this->sanitizeDomainName($domain->domain_name) . '-' . $serviceName;
+            
+            $process = new Process(['kubectl', 'rollout', 'restart', 'deployment', $deploymentName]);
+            $process->run();
+
+            return $process->isSuccessful();
+        } catch (Exception $e) {
+            Log::error("Failed to restart Kubernetes pod {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Sanitize domain name for Kubernetes (DNS-1123 subdomain)
+     */
+    protected function sanitizeDomainName(string $name): string
+    {
+        // Convert to lowercase and replace invalid characters
+        $sanitized = strtolower($name);
+        $sanitized = preg_replace('/[^a-z0-9-.]/', '-', $sanitized);
+        $sanitized = preg_replace('/-+/', '-', $sanitized);
+        $sanitized = trim($sanitized, '-.');
+        
+        // Kubernetes names must be <= 63 characters
+        if (strlen($sanitized) > 63) {
+            $sanitized = substr($sanitized, 0, 63);
+            $sanitized = rtrim($sanitized, '-.');
+        }
+        
+        return $sanitized;
+    }
+    
+    /**
+     * Restart Docker container for a service
+     */
+    protected function restartDockerContainer(Domain $domain, string $serviceName): bool
+    {
+        try {
             $composeFile = storage_path("app/docker-compose-{$domain->domain_name}.yml");
             $process = new Process(['docker-compose', '-f', $composeFile, 'restart', $serviceName]);
             $process->run();
 
             return $process->isSuccessful();
         } catch (Exception $e) {
-            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            Log::error("Failed to restart Docker container {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
     }

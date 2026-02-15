@@ -9,15 +9,15 @@ class UpdateEmailServersCommand extends Command
 {
     protected $signature = 'email-servers:update';
 
-    protected $description = 'Update Dovecot and Postfix Docker instances with new email account configurations';
+    protected $description = 'Update Dovecot and Postfix services with new email account configurations';
 
     public function handle()
     {
-        $this->info('Updating Dovecot and Postfix Docker instances...');
+        $this->info('Updating Dovecot and Postfix services...');
 
         $containerRestarter = new ContainerRestarter();
         $containerRestarter->restart();
 
-        $this->info('Dovecot and Postfix Docker instances updated successfully.');
+        $this->info('Dovecot and Postfix services updated successfully.');
     }
 }
