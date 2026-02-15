@@ -30,6 +30,9 @@ class Server extends Model
         'port',
         'ip_address',
         'type',
+        'deployment_mode',
+        'cloud_provider',
+        'auto_scaling_enabled',
         'status',
         'description',
         'metadata',
@@ -45,6 +48,7 @@ class Server extends Model
     protected $casts = [
         'metadata' => 'array',
         'is_default' => 'boolean',
+        'auto_scaling_enabled' => 'boolean',
         'max_domains' => 'integer',
         'port' => 'integer',
     ];
@@ -144,5 +148,37 @@ class Server extends Model
     public static function getDefault()
     {
         return self::where('is_default', true)->active()->first();
+    }
+
+    /**
+     * Check if server supports auto-scaling
+     */
+    public function supportsAutoScaling(): bool
+    {
+        return $this->isKubernetes() && !empty($this->cloud_provider);
+    }
+
+    /**
+     * Check if auto-scaling is enabled for this server
+     */
+    public function isAutoScalingEnabled(): bool
+    {
+        return $this->auto_scaling_enabled && $this->supportsAutoScaling();
+    }
+
+    /**
+     * Check if server is Docker type
+     */
+    public function isDocker(): bool
+    {
+        return $this->type === self::TYPE_DOCKER;
+    }
+
+    /**
+     * Check if server is Standalone type
+     */
+    public function isStandalone(): bool
+    {
+        return $this->type === self::TYPE_STANDALONE;
     }
 }
