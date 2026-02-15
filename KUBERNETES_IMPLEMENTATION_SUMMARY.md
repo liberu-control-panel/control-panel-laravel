@@ -10,7 +10,7 @@ This implementation adds comprehensive Kubernetes support to the Liberu Control 
 
 #### `install-k8s.sh`
 Automated Kubernetes cluster installation script supporting:
-- **Operating Systems**: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9
+- **Operating Systems**: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9/10
 - **Node Types**: Automatic detection and configuration for master or worker nodes
 - **Components Installed**:
   - Containerd runtime

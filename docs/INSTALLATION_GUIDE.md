@@ -16,9 +16,9 @@ The installation script supports the following operating systems:
 
 - **Ubuntu LTS**: 20.04, 22.04, 24.04
 - **Debian**: 11 (Bullseye), 12 (Bookworm)
-- **AlmaLinux**: 8, 9
-- **RHEL (Red Hat Enterprise Linux)**: 8, 9
-- **Rocky Linux**: 8, 9
+- **AlmaLinux**: 8, 9, 10
+- **RHEL (Red Hat Enterprise Linux)**: 8, 9, 10
+- **Rocky Linux**: 8, 9, 10
 
 ## Quick Start
 
