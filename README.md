@@ -26,6 +26,8 @@ Key features
 - Kubernetes and Docker orchestration: deploy, monitor, and manage services
 - Secure SSH-based remote server management
 - **S3-compatible storage support** for persistent volumes (AWS S3, MinIO, DigitalOcean Spaces, etc.)
+- **WordPress auto-deployment** with one-click installation and automatic updates
+- **Git repository deployment** from GitHub, GitLab, Bitbucket with webhook support
 
 ## Quick Start
 
@@ -173,6 +175,7 @@ Notes
 
 ## Documentation
 
+### Infrastructure & Deployment
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
 - **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
@@ -182,6 +185,12 @@ Notes
 - **[Mail Services](helm/mail-services/README.md)** - Postfix and Dovecot mail services
 - **[DNS Cluster](helm/dns-cluster/README.md)** - PowerDNS DNS cluster setup
 - **[PHP Multi-Version](helm/php-versions/README.md)** - PHP 8.1-8.5 multi-version support
+
+### Application Deployment
+- **[WordPress Auto-Deployment](docs/WORDPRESS_DEPLOYMENT.md)** - Install and manage WordPress sites with one-click deployment
+- **[Git Repository Deployment](docs/GIT_DEPLOYMENT.md)** - Deploy applications from GitHub, GitLab, Bitbucket, or any Git repository
+
+### Security & Configuration
 - **[SSH Configuration Guide](docs/SSH_CONFIGURATION.md)** - Configure secure SSH connections
 - **[Security Best Practices](docs/SECURITY.md)** - Essential security guidelines
 - **[Makefile Reference](#makefile-commands)** - Common deployment commands
