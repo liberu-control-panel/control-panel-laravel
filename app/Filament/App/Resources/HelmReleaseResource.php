@@ -175,19 +175,34 @@ class HelmReleaseResource extends Resource
                             $record->namespace
                         );
 
-                        if ($status) {
-                            $record->update([
-                                'status' => $status['info']['status'] ?? 'unknown',
-                                'chart_version' => $status['chart']['metadata']['version'] ?? null,
-                            ]);
+                        if ($status && isset($status['info'])) {
+                            $updateData = [];
+                            
+                            if (isset($status['info']['status'])) {
+                                $updateData['status'] = $status['info']['status'];
+                            }
+                            
+                            if (isset($status['chart']['metadata']['version'])) {
+                                $updateData['chart_version'] = $status['chart']['metadata']['version'];
+                            }
+                            
+                            if (!empty($updateData)) {
+                                $record->update($updateData);
 
-                            Notification::make()
-                                ->title('Status synced successfully')
-                                ->success()
-                                ->send();
+                                Notification::make()
+                                    ->title('Status synced successfully')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('No status information available')
+                                    ->warning()
+                                    ->send();
+                            }
                         } else {
                             Notification::make()
                                 ->title('Failed to sync status')
+                                ->body('Could not retrieve release information from server')
                                 ->danger()
                                 ->send();
                         }

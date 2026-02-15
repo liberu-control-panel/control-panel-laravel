@@ -4,7 +4,7 @@ postfix:
   enabled: true
   image:
     repository: boky/postfix
-    tag: latest
+    tag: v4.0.0
     pullPolicy: IfNotPresent
   
   replicaCount: 2
@@ -34,7 +34,7 @@ dovecot:
   enabled: true
   image:
     repository: dovecot/dovecot
-    tag: latest
+    tag: 2.3.21
     pullPolicy: IfNotPresent
   
   replicaCount: 2

@@ -4,7 +4,7 @@ powerdns:
   enabled: true
   image:
     repository: pschiffe/pdns-mysql
-    tag: latest
+    tag: 4.8
     pullPolicy: IfNotPresent
   
   replicaCount: 3
@@ -49,7 +49,7 @@ powerdnsAdmin:
   enabled: true
   image:
     repository: ngoduykhanh/powerdns-admin
-    tag: latest
+    tag: 0.4.1
     pullPolicy: IfNotPresent
     
   replicaCount: 2

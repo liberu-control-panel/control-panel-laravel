@@ -180,6 +180,12 @@ BASH;
 
             // Execute installation
             $output = $this->sshService->execute($connection, $command);
+            
+            // Extract version from output if available
+            $version = null;
+            if (preg_match('/CHART:\s+([^\s]+)-([^\s]+)/', $output, $matches)) {
+                $version = $matches[2];
+            }
 
             Log::info("Installed chart {$chartKey} as {$releaseName} on {$server->name}");
 
@@ -189,6 +195,7 @@ BASH;
                 'output' => $output,
                 'release' => $releaseName,
                 'namespace' => $namespace,
+                'version' => $version,
             ];
         } catch (Exception $e) {
             Log::error("Failed to install chart {$chartKey}: {$e->getMessage()}");
@@ -224,14 +231,11 @@ BASH;
         $parts[] = '--namespace ' . escapeshellarg($namespace);
         $parts[] = '--create-namespace';
 
-        // Add values
-        foreach ($values as $key => $value) {
-            if (is_array($value)) {
-                // Handle nested values
-                $parts[] = '--set ' . escapeshellarg($key . '=' . json_encode($value));
-            } else {
-                $parts[] = '--set ' . escapeshellarg("{$key}={$value}");
-            }
+        // Add values - use values file for complex structures
+        if (!empty($values)) {
+            $valuesFile = tempnam(sys_get_temp_dir(), 'helm_values_') . '.yaml';
+            file_put_contents($valuesFile, yaml_emit($values));
+            $parts[] = '--values ' . escapeshellarg($valuesFile);
         }
 
         // Wait for deployment
@@ -343,12 +347,13 @@ BASH;
     /**
      * Get default values for a chart
      */
-    public function getDefaultValues(string $chartKey): array
+    public function getDefaultValues(string $chartKey, ?array $existingPasswords = null): array
     {
         $defaults = [
             'mariadb' => [
                 'auth.database' => 'myapp',
                 'auth.username' => 'myapp',
+                'auth.password' => $existingPasswords['db_password'] ?? bin2hex(random_bytes(16)),
                 'architecture' => 'replication',
                 'secondary.replicaCount' => '2',
                 'metrics.enabled' => 'true',
@@ -363,8 +368,8 @@ BASH;
                 'dovecot.persistence.size' => '20Gi',
             ],
             'dns-cluster' => [
-                'powerdns.mysql.password' => bin2hex(random_bytes(16)),
-                'powerdns.api.key' => bin2hex(random_bytes(16)),
+                'powerdns.mysql.password' => $existingPasswords['dns_db_password'] ?? bin2hex(random_bytes(16)),
+                'powerdns.api.key' => $existingPasswords['dns_api_key'] ?? bin2hex(random_bytes(16)),
             ],
             'php-versions' => [
                 'phpVersions[0].enabled' => 'true',

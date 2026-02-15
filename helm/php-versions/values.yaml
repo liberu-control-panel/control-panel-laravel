@@ -76,6 +76,20 @@ opcache:
   maxAcceleratedFiles: 10000
   revalidateFreq: 2
 
+# Security: Functions to disable
+# Customize based on your security requirements
+disabledFunctions:
+  - exec
+  - passthru
+  - shell_exec
+  - system
+  - proc_open
+  - popen
+  # Uncomment if you don't need these:
+  # - curl_exec
+  # - curl_multi_exec
+  # - parse_ini_file
+
 # NodeSelector for scheduling
 nodeSelector: {}
 

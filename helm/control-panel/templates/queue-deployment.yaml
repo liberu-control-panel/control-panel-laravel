@@ -58,9 +58,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - php
-            - artisan
-            - queue:monitor
+            - sh
+            - -c
+            - ps aux | grep -v grep | grep -q 'artisan queue:work'
           initialDelaySeconds: 60
           periodSeconds: 30
           failureThreshold: 3

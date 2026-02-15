@@ -154,7 +154,9 @@ data:
     php_admin_value[error_log] = /var/log/fpm-php.www.log
     php_admin_flag[log_errors] = on
     
-    ; Security
-    php_admin_value[disable_functions] = exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source
+    ; Security - Disabled functions
+    {{- if $.Values.disabledFunctions }}
+    php_admin_value[disable_functions] = {{ join "," $.Values.disabledFunctions }}
+    {{- end }}
 {{- end }}
 {{- end }}
