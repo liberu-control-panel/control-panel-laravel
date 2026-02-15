@@ -171,6 +171,12 @@ mysql:
   auth:
     password: "your-secure-database-password"
     rootPassword: "your-secure-root-password"
+  primary:
+    persistence:
+      storageClass: "s3-storage"  # Use S3 storage for database
+  secondary:
+    persistence:
+      storageClass: "s3-storage"  # Use S3 storage for replicas
 
 ingress:
   hosts:

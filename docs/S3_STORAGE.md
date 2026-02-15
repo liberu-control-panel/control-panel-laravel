@@ -37,6 +37,7 @@ The Liberu Control Panel supports S3-compatible object storage for persistent vo
 - Static assets and public files
 - Mail storage (when using mail services)
 - DNS zone files (when using DNS cluster)
+- **Database persistent volumes (MariaDB, PostgreSQL)**
 - Database backups
 
 ## Supported S3 Services
@@ -65,6 +66,10 @@ Before configuring S3 storage, ensure you have:
 3. **Endpoint URL**: Get the endpoint URL for your S3 service
 4. **Region**: Know the region where your bucket is located
 5. **Kubernetes Cluster**: Running Kubernetes cluster (installed via `install-k8s.sh`)
+6. **S3 CSI Driver** (for database storage): For using S3 with databases like MariaDB, you'll need:
+   - A CSI driver that supports block storage over S3 (e.g., MinIO DirectPV, s3fs-fuse)
+   - Or a storage solution that provides S3-compatible block volumes
+   - Note: Standard S3 object storage works well for application files, but databases may require block storage emulation
 
 ## Installation Options
 
@@ -223,6 +228,28 @@ helm install dns-cluster ./helm/dns-cluster \
   --set s3.bucket="dns-storage" \
   --set s3.region="$S3_REGION"
 ```
+
+### Installing MariaDB with S3 Storage
+
+When using the automated installation script (`install-control-panel.sh`), MariaDB is automatically configured to use S3 storage if enabled. For manual installation:
+
+```bash
+helm install mariadb bitnami/mariadb \
+  --namespace control-panel \
+  --set auth.rootPassword="secure-password" \
+  --set auth.database=controlpanel \
+  --set auth.username=controlpanel \
+  --set auth.password="secure-password" \
+  --set primary.persistence.enabled=true \
+  --set primary.persistence.size=20Gi \
+  --set primary.persistence.storageClass="s3-storage" \
+  --set architecture=replication \
+  --set secondary.replicaCount=2 \
+  --set secondary.persistence.storageClass="s3-storage" \
+  --set metrics.enabled=true
+```
+
+**Note**: For MariaDB with S3 storage, ensure your S3-compatible storage supports block storage mode or use a CSI driver that provides block device emulation over S3 (like [MinIO DirectPV](https://github.com/minio/directpv) or [S3FS-FUSE](https://github.com/s3fs-fuse/s3fs-fuse) with appropriate configuration).
 
 ### Updating Existing Installation
 

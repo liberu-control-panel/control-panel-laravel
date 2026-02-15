@@ -137,18 +137,31 @@ add_helm_repos() {
 install_mariadb() {
     log_info "Installing MariaDB cluster..."
     
-    helm upgrade --install mariadb bitnami/mariadb \
+    # Build helm install command with base parameters
+    MARIADB_CMD="helm upgrade --install mariadb bitnami/mariadb \
         --namespace $NAMESPACE \
-        --set auth.rootPassword="$DB_ROOT_PASSWORD" \
+        --set auth.rootPassword=\"$DB_ROOT_PASSWORD\" \
         --set auth.database=controlpanel \
         --set auth.username=controlpanel \
-        --set auth.password="$DB_PASSWORD" \
+        --set auth.password=\"$DB_PASSWORD\" \
         --set primary.persistence.enabled=true \
         --set primary.persistence.size=20Gi \
         --set architecture=replication \
         --set secondary.replicaCount=2 \
-        --set metrics.enabled=true \
-        --wait
+        --set metrics.enabled=true"
+    
+    # Add S3 storage class if enabled
+    if [[ "$S3_ENABLED" == "true" ]]; then
+        MARIADB_CMD="$MARIADB_CMD \
+            --set primary.persistence.storageClass=\"s3-storage\" \
+            --set secondary.persistence.storageClass=\"s3-storage\""
+        log_info "Configuring MariaDB with S3 storage class"
+    fi
+    
+    MARIADB_CMD="$MARIADB_CMD --wait"
+    
+    # Execute the helm command
+    eval $MARIADB_CMD
     
     log_success "MariaDB cluster installed"
     log_info "Root password: $DB_ROOT_PASSWORD"

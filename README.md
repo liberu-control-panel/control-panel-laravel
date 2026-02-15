@@ -59,6 +59,7 @@ sudo ./install-k8s.sh
 **Storage Options:**
 - During installation, you'll be prompted to configure S3-compatible storage
 - Supports AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2, and more
+- **All services including MariaDB can use S3 storage** for persistent volumes
 - See [S3 Storage Guide](docs/S3_STORAGE.md) for detailed configuration
 
 ### Kubernetes Deployment (Manual)
