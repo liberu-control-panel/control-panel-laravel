@@ -44,6 +44,7 @@ class User extends Authenticatable implements HasDefaultTenant, HasTenants, Fila
         'name',
         'email',
         'password',
+        'username',
     ];
 
     /**
