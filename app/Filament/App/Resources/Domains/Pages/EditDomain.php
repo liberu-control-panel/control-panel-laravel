@@ -7,7 +7,7 @@ use Filament\Actions\DeleteAction;
 use App\Filament\App\Resources\Domains\DomainResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use App\Services\DockerComposeService;
+use App\Services\ContainerManagerService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,7 +15,7 @@ class EditDomain extends EditRecord
 {
     protected static string $resource = DomainResource::class;
 
-    public function __construct(protected DockerComposeService $dockerCompose)
+    public function __construct(protected ContainerManagerService $containerManager)
     {
         // ...
     }
@@ -48,10 +48,10 @@ class EditDomain extends EditRecord
     {
         $user = auth()->user();
     
-        if ($user->hasReachedDockerComposeLimit()) {
+        if ($user->hasReachedDeploymentLimit()) {
             Notification::make()
-                ->title('Docker Compose Limit Reached')
-                ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
+                ->title('Deployment Limit Reached')
+                ->body('You have reached the limit of deployments for your hosting plan.')
                 ->danger()
                 ->send();
     
@@ -62,8 +62,8 @@ class EditDomain extends EditRecord
     
         $record->update($data);
     
-        $this->dockerCompose->generateComposeFile($data, $hostingPlan);
-        $this->dockerCompose->startServices($data['domain_name']);
+        // Update hosting environment (automatically selects Docker or Kubernetes)
+        $this->containerManager->createHostingEnvironment($record, $data);
     
         return $record;
     }

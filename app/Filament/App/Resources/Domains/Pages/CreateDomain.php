@@ -9,14 +9,14 @@ use Filament\Resources\Pages\CreateRecord;
 use Filament\Facades\Filament;
 
 use App\Models\Domain;
-use App\Services\DockerComposeService;
+use App\Services\ContainerManagerService;
 use Filament\Notifications\Notification;
 
 class CreateDomain extends CreateRecord
 {
     protected static string $resource = DomainResource::class;
 
-    public function __construct(protected DockerComposeService $dockerCompose)
+    public function __construct(protected ContainerManagerService $containerManager)
     {
         // ...
     }
@@ -42,10 +42,10 @@ class CreateDomain extends CreateRecord
     {
         $user = auth()->user();
 
-        if ($user->hasReachedDockerComposeLimit()) {
+        if ($user->hasReachedDeploymentLimit()) {
             Notification::make()
-                ->title('Docker Compose Limit Reached')
-                ->body('You have reached the limit of Docker Compose instances for your hosting plan.')
+                ->title('Deployment Limit Reached')
+                ->body('You have reached the limit of deployments for your hosting plan.')
                 ->danger()
                 ->send();
 
@@ -59,8 +59,8 @@ class CreateDomain extends CreateRecord
             'hosting_plan_id' => $hostingPlan->id,
         ]);
 
-        $this->dockerCompose->generateComposeFile($this->form->getState(), $hostingPlan);
-        $this->dockerCompose->startServices($this->form->getState()['domain_name']);
+        // Create hosting environment (automatically selects Docker or Kubernetes)
+        $this->containerManager->createHostingEnvironment($domain, $this->form->getState());
 
         if ($another) {
             redirect()->route('filament.resources.domains.create');

@@ -478,13 +478,51 @@ class ContainerManagerService
     public function restartService(Domain $domain, string $serviceName): bool
     {
         try {
+            $server = $domain->server ?? Server::getDefault();
+            
+            if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+                // Restart Kubernetes pod
+                return $this->restartKubernetesPod($domain, $serviceName);
+            } else {
+                // Restart Docker container
+                return $this->restartDockerContainer($domain, $serviceName);
+            }
+        } catch (Exception $e) {
+            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Restart Kubernetes pod for a service
+     */
+    protected function restartKubernetesPod(Domain $domain, string $serviceName): bool
+    {
+        try {
+            $deploymentName = "{$domain->domain_name}-{$serviceName}";
+            $process = new Process(['kubectl', 'rollout', 'restart', 'deployment', $deploymentName]);
+            $process->run();
+
+            return $process->isSuccessful();
+        } catch (Exception $e) {
+            Log::error("Failed to restart Kubernetes pod {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Restart Docker container for a service
+     */
+    protected function restartDockerContainer(Domain $domain, string $serviceName): bool
+    {
+        try {
             $composeFile = storage_path("app/docker-compose-{$domain->domain_name}.yml");
             $process = new Process(['docker-compose', '-f', $composeFile, 'restart', $serviceName]);
             $process->run();
 
             return $process->isSuccessful();
         } catch (Exception $e) {
-            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            Log::error("Failed to restart Docker container {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
     }
