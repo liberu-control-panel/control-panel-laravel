@@ -23,12 +23,12 @@ If you need to switch to PostgreSQL, follow these steps:
 
 2. **Backup your existing MariaDB data:**
    ```bash
-   # Create a backup directory
-   mkdir -p backups/$(date +%Y%m%d)
+   # Create a backup directory with timestamp
+   mkdir -p backups/$(date +%Y%m%d_%H%M%S)
    
    # Export the database
    docker compose up -d mysql
-   docker compose exec mysql mysqldump -u root -p myapp > backups/$(date +%Y%m%d)/myapp_backup.sql
+   docker compose exec mysql mysqldump -u root -p myapp > backups/$(date +%Y%m%d_%H%M%S)/myapp_backup.sql
    docker compose down
    ```
 
@@ -107,9 +107,9 @@ If you're currently using PostgreSQL and want to switch to MariaDB:
 
 2. **Backup your PostgreSQL data:**
    ```bash
-   mkdir -p backups/$(date +%Y%m%d)
+   mkdir -p backups/$(date +%Y%m%d_%H%M%S)
    docker compose --profile postgresql up -d postgresql
-   docker compose exec postgresql pg_dump -U myapp myapp > backups/$(date +%Y%m%d)/myapp_backup.sql
+   docker compose exec postgresql pg_dump -U myapp myapp > backups/$(date +%Y%m%d_%H%M%S)/myapp_backup.sql
    docker compose --profile postgresql down
    ```
 
