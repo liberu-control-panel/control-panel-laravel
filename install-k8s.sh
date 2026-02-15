@@ -2,13 +2,14 @@
 
 ################################################################################
 # Kubernetes Installation Script for Control Panel
-# Supports: Ubuntu LTS (20.04, 22.04, 24.04) and AlmaLinux/RHEL 8/9
+# Supports: 
+# - Self-managed: Ubuntu LTS (20.04, 22.04, 24.04) and AlmaLinux/RHEL 8/9
+# - Managed: AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS
 # 
 # This script:
-# - Detects the OS and configures appropriate repositories
-# - Determines if the node should be a master or worker
-# - Installs Kubernetes components (kubelet, kubeadm, kubectl)
-# - Initializes the cluster (master) or provides join instructions (worker)
+# - Detects if running on managed Kubernetes (EKS, AKS, GKE, DOKS)
+# - For self-managed: Installs complete cluster with kubeadm
+# - For managed: Configures kubectl and installs required add-ons only
 # - Installs essential add-ons (NGINX Ingress, cert-manager, etc.)
 ################################################################################
 
@@ -27,6 +28,7 @@ POD_NETWORK_CIDR="${POD_NETWORK_CIDR:-10.244.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.96.0.0/12}"
 CONTROL_PANEL_DOMAIN="${CONTROL_PANEL_DOMAIN:-control.example.com}"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@example.com}"
+MANAGED_K8S="${MANAGED_K8S:-auto}"  # auto, eks, aks, gke, doks, or none
 
 # Logging functions
 log_info() {
@@ -64,6 +66,212 @@ detect_os() {
         log_error "Cannot detect OS. /etc/os-release not found."
         exit 1
     fi
+}
+
+# Detect if running on managed Kubernetes
+detect_managed_k8s() {
+    if [[ "$MANAGED_K8S" != "auto" ]]; then
+        log_info "Managed Kubernetes mode set via environment: $MANAGED_K8S"
+        return
+    fi
+    
+    log_info "Detecting managed Kubernetes environment..."
+    
+    # Check for AWS EKS
+    if curl -s --max-time 2 http://169.254.169.254/latest/meta-data/instance-id &>/dev/null; then
+        if systemctl list-unit-files | grep -q amazon-ssm-agent; then
+            MANAGED_K8S="eks"
+            log_info "Detected AWS EKS environment"
+            return
+        fi
+    fi
+    
+    # Check for Azure AKS
+    if curl -s -H Metadata:true --max-time 2 "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep -q "azure" &>/dev/null; then
+        MANAGED_K8S="aks"
+        log_info "Detected Azure AKS environment"
+        return
+    fi
+    
+    # Check for Google GKE
+    if curl -s -H "Metadata-Flavor: Google" --max-time 2 http://metadata.google.internal/computeMetadata/v1/instance/attributes/cluster-name &>/dev/null; then
+        MANAGED_K8S="gke"
+        log_info "Detected Google GKE environment"
+        return
+    fi
+    
+    # Check for DigitalOcean DOKS
+    if curl -s --max-time 2 http://169.254.169.254/metadata/v1/region | grep -q "digitalocean" &>/dev/null; then
+        MANAGED_K8S="doks"
+        log_info "Detected DigitalOcean DOKS environment"
+        return
+    fi
+    
+    # Check if kubectl is already configured (manual managed setup)
+    if command -v kubectl &>/dev/null && kubectl cluster-info &>/dev/null; then
+        log_info "kubectl is already configured with cluster access"
+        echo ""
+        read -p "Are you using a managed Kubernetes service (EKS/AKS/GKE/DOKS)? [y/N]: " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Select your managed Kubernetes provider:"
+            echo "1) AWS EKS"
+            echo "2) Azure AKS"
+            echo "3) Google GKE"
+            echo "4) DigitalOcean DOKS"
+            read -p "Enter choice [1-4]: " managed_choice
+            case $managed_choice in
+                1) MANAGED_K8S="eks" ;;
+                2) MANAGED_K8S="aks" ;;
+                3) MANAGED_K8S="gke" ;;
+                4) MANAGED_K8S="doks" ;;
+                *) MANAGED_K8S="none" ;;
+            esac
+            log_info "Using managed Kubernetes: $MANAGED_K8S"
+            return
+        fi
+    fi
+    
+    MANAGED_K8S="none"
+    log_info "No managed Kubernetes detected - will install self-managed cluster"
+}
+
+# Skip to managed Kubernetes setup
+setup_managed_k8s() {
+    log_info "Setting up for managed Kubernetes ($MANAGED_K8S)..."
+    echo ""
+    log_warning "This script detected you're using a managed Kubernetes service."
+    log_info "The control plane is already managed by your cloud provider."
+    echo ""
+    log_info "This script will:"
+    echo "  1. Verify kubectl is properly configured"
+    echo "  2. Install essential add-ons (NGINX Ingress, cert-manager, Metrics Server)"
+    echo "  3. Skip kubeadm cluster initialization (not needed for managed K8s)"
+    echo ""
+    read -p "Continue with managed Kubernetes setup? [Y/n]: " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        log_info "Setup cancelled"
+        exit 0
+    fi
+    
+    # Verify kubectl access
+    verify_kubectl_access
+    
+    # Install add-ons
+    install_addons_managed
+    
+    # Display next steps
+    display_managed_next_steps
+}
+
+# Verify kubectl access for managed K8s
+verify_kubectl_access() {
+    log_info "Verifying kubectl access to cluster..."
+    
+    if ! command -v kubectl &>/dev/null; then
+        log_error "kubectl is not installed"
+        echo ""
+        log_info "Please install kubectl first. See:"
+        log_info "  - EKS: https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html"
+        log_info "  - AKS: https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough"
+        log_info "  - GKE: https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl"
+        log_info "  - DOKS: https://docs.digitalocean.com/products/kubernetes/how-to/connect-to-cluster/"
+        exit 1
+    fi
+    
+    if ! kubectl cluster-info &>/dev/null; then
+        log_error "kubectl is not configured to access a cluster"
+        echo ""
+        log_info "Please configure kubectl first. See:"
+        case $MANAGED_K8S in
+            eks)
+                log_info "  aws eks update-kubeconfig --region <region> --name <cluster-name>"
+                log_info "  https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html"
+                ;;
+            aks)
+                log_info "  az aks get-credentials --resource-group <rg> --name <cluster-name>"
+                log_info "  https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough"
+                ;;
+            gke)
+                log_info "  gcloud container clusters get-credentials <cluster-name> --region <region>"
+                log_info "  https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl"
+                ;;
+            doks)
+                log_info "  doctl kubernetes cluster kubeconfig save <cluster-name>"
+                log_info "  https://docs.digitalocean.com/products/kubernetes/how-to/connect-to-cluster/"
+                ;;
+        esac
+        exit 1
+    fi
+    
+    log_success "kubectl is properly configured"
+    log_info "Connected to cluster: $(kubectl config current-context)"
+}
+
+# Install add-ons for managed Kubernetes
+install_addons_managed() {
+    log_info "Installing essential add-ons for managed Kubernetes..."
+    
+    # Check if NGINX Ingress is needed
+    case $MANAGED_K8S in
+        eks)
+            log_info "For EKS, you can use AWS Load Balancer Controller or NGINX Ingress"
+            read -p "Install NGINX Ingress Controller? [Y/n]: " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                install_nginx_ingress
+            fi
+            ;;
+        aks|gke|doks)
+            log_info "Installing NGINX Ingress Controller..."
+            install_nginx_ingress
+            ;;
+    esac
+    
+    # Install cert-manager
+    install_cert_manager
+    
+    # Install Metrics Server (if not already present)
+    install_metrics_server_if_needed
+}
+
+# Install Metrics Server if not present
+install_metrics_server_if_needed() {
+    log_info "Checking for Metrics Server..."
+    
+    if kubectl get deployment metrics-server -n kube-system &>/dev/null; then
+        log_success "Metrics Server is already installed"
+    else
+        log_info "Installing Metrics Server..."
+        install_metrics_server
+    fi
+}
+
+# Display next steps for managed Kubernetes
+display_managed_next_steps() {
+    echo ""
+    echo "========================================="
+    echo "MANAGED KUBERNETES SETUP COMPLETE"
+    echo "========================================="
+    echo ""
+    log_success "Your managed Kubernetes cluster is ready for the control panel"
+    echo ""
+    echo "========================================="
+    echo "NEXT STEPS"
+    echo "========================================="
+    echo ""
+    echo "1. Get the Ingress external IP/hostname:"
+    echo "   kubectl get service -n ingress-nginx ingress-nginx-controller"
+    echo ""
+    echo "2. Point your domain DNS to the Ingress IP/hostname"
+    echo ""
+    echo "3. Deploy the control panel:"
+    echo "   ./install-control-panel.sh"
+    echo ""
+    echo "4. For detailed documentation on managed Kubernetes, see:"
+    echo "   docs/MANAGED_KUBERNETES_SETUP.md"
+    echo ""
 }
 
 # Check if node is master or worker
@@ -414,6 +622,15 @@ main() {
     
     check_root
     detect_os
+    detect_managed_k8s
+    
+    # If managed Kubernetes detected, use simplified setup
+    if [[ "$MANAGED_K8S" != "none" ]]; then
+        setup_managed_k8s
+        exit 0
+    fi
+    
+    # Self-managed cluster setup
     determine_node_type
     
     # Common setup for all nodes

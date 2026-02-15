@@ -6,18 +6,21 @@ This guide covers the complete installation and setup of the Liberu Control Pane
 
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
-3. [Installation Steps](#installation-steps)
-4. [Services Included](#services-included)
-5. [Configuration](#configuration)
-6. [Post-Installation](#post-installation)
-7. [Management](#management)
-8. [Troubleshooting](#troubleshooting)
+3. [Installation Options](#installation-options)
+4. [Self-Managed Cluster Installation](#self-managed-cluster-installation)
+5. [Managed Kubernetes Installation](#managed-kubernetes-installation)
+6. [Services Included](#services-included)
+7. [Configuration](#configuration)
+8. [Post-Installation](#post-installation)
+9. [Management](#management)
+10. [Troubleshooting](#troubleshooting)
 
 ## Overview
 
 This installation provides a complete, production-ready hosting control panel on Kubernetes with:
 
 - **Kubernetes Cluster Setup**: Automated installation on Ubuntu LTS and AlmaLinux/RHEL
+- **Managed Kubernetes Support**: Full support for EKS, AKS, GKE, and DOKS
 - **Control Panel**: Laravel-based web interface with Filament admin panel
 - **NGINX Ingress**: With automatic Let's Encrypt SSL certificates
 - **Database**: MariaDB cluster with multi-user support
@@ -27,9 +30,37 @@ This installation provides a complete, production-ready hosting control panel on
 - **PHP Multi-Version**: Support for PHP 8.1, 8.2, 8.3, 8.4, and 8.5
 - **Laravel Services**: Queue workers, scheduler, and Octane support
 
+## Installation Options
+
+### Option 1: Self-Managed Kubernetes Cluster
+
+Install a complete Kubernetes cluster from scratch on your own servers.
+
+**Best for:**
+- Full control over infrastructure
+- On-premises deployments
+- Custom network configurations
+- Learning Kubernetes internals
+
+**See:** [Self-Managed Cluster Installation](#self-managed-cluster-installation)
+
+### Option 2: Managed Kubernetes Services
+
+Use cloud-managed Kubernetes services like AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS.
+
+**Best for:**
+- Production deployments
+- Reduced operational overhead
+- Automatic control plane management
+- Cloud-native integrations
+
+**See:** [Managed Kubernetes Installation](#managed-kubernetes-installation) and [docs/MANAGED_KUBERNETES_SETUP.md](MANAGED_KUBERNETES_SETUP.md)
+
 ## Prerequisites
 
 ### Hardware Requirements
+
+#### For Self-Managed Clusters
 
 **Master Node (Control Plane):**
 - 4 CPU cores minimum (8 recommended)
@@ -42,16 +73,20 @@ This installation provides a complete, production-ready hosting control panel on
 - 4GB RAM minimum (8GB recommended)
 - 50GB disk space minimum
 
+#### For Managed Kubernetes
+
+Managed by your cloud provider - see [docs/MANAGED_KUBERNETES_SETUP.md](MANAGED_KUBERNETES_SETUP.md) for provider-specific requirements.
+
 ### Software Requirements
 
-- **Operating System**: Ubuntu LTS (20.04/22.04/24.04) or AlmaLinux/RHEL 8/9
+- **Operating System**: Ubuntu LTS (20.04/22.04/24.04) or AlmaLinux/RHEL 8/9 (self-managed only)
 - **Root access** or sudo privileges
 - **Network**: Internet connectivity for downloading packages
 - **Ports**: Required ports open (see [Port Requirements](#port-requirements))
 
 ### Port Requirements
 
-**Master Node:**
+**Master Node (Self-Managed):**
 - 6443: Kubernetes API server
 - 2379-2380: etcd server client API
 - 10250: Kubelet API
@@ -67,7 +102,57 @@ This installation provides a complete, production-ready hosting control panel on
 - 10250: Kubelet API
 - 30000-32767: NodePort Services
 
-## Installation Steps
+**Managed Kubernetes:**
+- Ports managed by cloud provider
+- Only need 80/443 for Ingress (handled by load balancer)
+
+## Managed Kubernetes Installation
+
+If you're using a managed Kubernetes service (AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS), follow these steps:
+
+### Quick Start
+
+1. **Create your cluster using your cloud provider's tools**
+   - See detailed instructions in [docs/MANAGED_KUBERNETES_SETUP.md](MANAGED_KUBERNETES_SETUP.md)
+
+2. **Configure kubectl access**
+   ```bash
+   # AWS EKS
+   aws eks update-kubeconfig --region us-west-2 --name control-panel-cluster
+   
+   # Azure AKS
+   az aks get-credentials --resource-group control-panel-rg --name control-panel-cluster
+   
+   # Google GKE
+   gcloud container clusters get-credentials control-panel-cluster --region us-central1
+   
+   # DigitalOcean DOKS
+   doctl kubernetes cluster kubeconfig save control-panel-cluster
+   ```
+
+3. **Run the installation script**
+   ```bash
+   # The script will auto-detect managed Kubernetes
+   sudo ./install-k8s.sh
+   
+   # Or explicitly specify managed mode
+   sudo MANAGED_K8S=eks ./install-k8s.sh
+   ```
+
+4. **Deploy the control panel**
+   ```bash
+   ./install-control-panel.sh
+   ```
+
+For comprehensive managed Kubernetes documentation including:
+- Provider-specific setup instructions
+- Cost optimization tips
+- Security best practices
+- Troubleshooting guides
+
+**See:** [docs/MANAGED_KUBERNETES_SETUP.md](MANAGED_KUBERNETES_SETUP.md)
+
+## Self-Managed Cluster Installation
 
 ### Step 1: Install Kubernetes Cluster
 
@@ -104,6 +189,25 @@ The script will:
 
 #### For Worker Nodes:
 
+**Option 1: Use the simplified join-node.sh script (Recommended)**
+
+```bash
+# Clone the repository
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+
+# Get join command from master node
+# On master: kubeadm token create --print-join-command
+
+# Run join script (will prompt for join command)
+sudo ./join-node.sh
+
+# Or pass join command directly
+sudo JOIN_COMMAND="kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>" ./join-node.sh
+```
+
+**Option 2: Use install-k8s.sh**
+
 ```bash
 # Clone the repository
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
@@ -116,6 +220,26 @@ export JOIN_COMMAND="kubeadm join <master-ip>:6443 --token <token> --discovery-t
 
 # Run installation
 sudo ./install-k8s.sh
+```
+
+### Simplified Node Joining
+
+The `join-node.sh` script provides an easier way to join worker nodes:
+
+**Features:**
+- Interactive prompts for join command
+- Automatic validation of join command format
+- Checks for existing cluster membership
+- Validates prerequisites before joining
+- Clear error messages and guidance
+
+**Usage:**
+```bash
+# Interactive mode
+sudo ./join-node.sh
+
+# Non-interactive mode
+sudo JOIN_COMMAND="kubeadm join ..." ./join-node.sh
 ```
 
 ### Step 2: Install Control Panel and Services
