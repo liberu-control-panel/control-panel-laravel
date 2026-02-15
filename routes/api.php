@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualHostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,3 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/dns/bulk', [DnsController::class, 'bulkStore']);
 });
 
+// Webhook routes for Git deployments (no auth required, validated via signature)
+Route::prefix('webhooks')->group(function () {
+    Route::post('github/{deployment}', [WebhookController::class, 'github'])->name('webhooks.github');
+    Route::post('gitlab/{deployment}', [WebhookController::class, 'gitlab'])->name('webhooks.gitlab');
+    Route::post('generic/{deployment}', [WebhookController::class, 'generic'])->name('webhooks.generic');
+});
