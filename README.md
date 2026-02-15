@@ -166,6 +166,29 @@ docker compose exec control-panel php artisan db:seed --class=DatabaseSeeder
 
 5. Open your browser at http://localhost (or the domain set in `CONTROL_PANEL_DOMAIN`).
 
+#### Database Backend Options
+
+The control panel supports both **MariaDB** (default) and **PostgreSQL** as database backends:
+
+**MariaDB/MySQL (Default)**
+```bash
+# Default - MariaDB starts automatically with docker-compose up
+docker compose up -d
+```
+
+**PostgreSQL (Optional)**
+```bash
+# Start with PostgreSQL profile
+docker compose --profile postgresql up -d
+
+# Update .env file:
+DB_CONNECTION=pgsql
+DB_HOST=postgresql
+DB_PORT=5432
+```
+
+The default configuration uses MariaDB 11.2. To switch to PostgreSQL, use the `--profile postgresql` flag and update your `.env` file accordingly.
+
 Notes
 
 - The `setup.sh` script in the repo automates build + migrations + seeding for supported environments.

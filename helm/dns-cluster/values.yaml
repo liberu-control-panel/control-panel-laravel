@@ -1,6 +1,8 @@
 # Default values for dns-cluster
 
 # Database backend selection: mysql or postgresql
+# MariaDB/MySQL is the default and recommended backend
+# PostgreSQL is available as an alternative option
 databaseBackend: mysql
 
 powerdns:
