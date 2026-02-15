@@ -218,8 +218,14 @@ class LaravelApplicationService
             try {
                 $installPath = $this->getInstallationPath($domain, $app);
 
+                // Get the current branch name
+                $currentBranch = trim($this->sshService->executeCommand(
+                    $connection,
+                    "cd {$installPath} && git rev-parse --abbrev-ref HEAD"
+                ));
+
                 // Pull latest changes from repository
-                $this->sshService->executeCommand($connection, "cd {$installPath} && git pull origin main");
+                $this->sshService->executeCommand($connection, "cd {$installPath} && git pull origin {$currentBranch}");
 
                 // Update Composer dependencies
                 $composerCmd = $this->getComposerCommand();
