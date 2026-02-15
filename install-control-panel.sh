@@ -32,6 +32,15 @@ DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$(openssl rand -base64 32)}"
 DB_PASSWORD="${DB_PASSWORD:-$(openssl rand -base64 32)}"
 APP_KEY="${APP_KEY:-}"
 
+# S3 Storage Configuration (for persistent volumes)
+S3_ENABLED="${S3_ENABLED:-}"
+S3_ENDPOINT="${S3_ENDPOINT:-}"
+S3_ACCESS_KEY="${S3_ACCESS_KEY:-}"
+S3_SECRET_KEY="${S3_SECRET_KEY:-}"
+S3_BUCKET="${S3_BUCKET:-}"
+S3_REGION="${S3_REGION:-us-east-1}"
+STORAGE_CLASS="${STORAGE_CLASS:-standard}"
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -47,6 +56,36 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Prompt for S3 storage configuration
+prompt_s3_configuration() {
+    log_info "Storage Configuration"
+    echo ""
+    echo "Kubernetes persistent volumes can use S3-compatible storage (e.g., MinIO, AWS S3, DigitalOcean Spaces)"
+    echo "for better scalability and data persistence across cluster nodes."
+    echo ""
+    read -p "Do you want to configure S3-compatible storage for persistent volumes? (y/n) " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        S3_ENABLED="true"
+        
+        echo ""
+        read -p "Enter S3 endpoint URL (e.g., https://s3.amazonaws.com or https://minio.example.com): " S3_ENDPOINT
+        read -p "Enter S3 access key: " S3_ACCESS_KEY
+        read -s -p "Enter S3 secret key: " S3_SECRET_KEY
+        echo
+        read -p "Enter S3 bucket name for persistent volumes: " S3_BUCKET
+        read -p "Enter S3 region (default: us-east-1): " S3_REGION_INPUT
+        S3_REGION="${S3_REGION_INPUT:-us-east-1}"
+        
+        log_success "S3 storage configuration saved"
+    else
+        S3_ENABLED="false"
+        log_info "Using default Kubernetes storage class for persistent volumes"
+    fi
+    echo ""
 }
 
 # Check prerequisites
@@ -153,17 +192,34 @@ install_control_panel() {
         exit 1
     fi
     
-    helm upgrade --install control-panel ./helm/control-panel \
+    # Build helm install command with base parameters
+    HELM_CMD="helm upgrade --install control-panel ./helm/control-panel \
         --namespace $NAMESPACE \
-        --set app.key="$APP_KEY" \
-        --set app.url="https://$DOMAIN" \
-        --set ingress.hosts[0].host="$DOMAIN" \
-        --set ingress.tls[0].hosts[0]="$DOMAIN" \
+        --set app.key=\"$APP_KEY\" \
+        --set app.url=\"https://$DOMAIN\" \
+        --set ingress.hosts[0].host=\"$DOMAIN\" \
+        --set ingress.tls[0].hosts[0]=\"$DOMAIN\" \
         --set ingress.tls[0].secretName=control-panel-tls \
         --set mysql.enabled=false \
         --set redis.enabled=false \
-        --set replicaCount=3 \
-        --wait
+        --set replicaCount=3"
+    
+    # Add S3 configuration if enabled
+    if [[ "$S3_ENABLED" == "true" ]]; then
+        HELM_CMD="$HELM_CMD \
+            --set s3.enabled=true \
+            --set s3.endpoint=\"$S3_ENDPOINT\" \
+            --set s3.accessKey=\"$S3_ACCESS_KEY\" \
+            --set s3.secretKey=\"$S3_SECRET_KEY\" \
+            --set s3.bucket=\"$S3_BUCKET\" \
+            --set s3.region=\"$S3_REGION\" \
+            --set persistence.storageClass=\"s3-storage\""
+    fi
+    
+    HELM_CMD="$HELM_CMD --wait"
+    
+    # Execute the helm command
+    eval $HELM_CMD
     
     log_success "Control Panel installed"
 }
@@ -265,6 +321,15 @@ display_access_info() {
     echo "Redis:"
     echo "  Host: redis-master.$NAMESPACE.svc.cluster.local"
     echo ""
+    
+    if [[ "$S3_ENABLED" == "true" ]]; then
+        echo "S3 Storage:"
+        echo "  Endpoint: $S3_ENDPOINT"
+        echo "  Bucket: $S3_BUCKET"
+        echo "  Region: $S3_REGION"
+        echo ""
+    fi
+    
     echo "IMPORTANT: Save these credentials securely!"
     echo ""
     echo "To access the application:"
@@ -295,9 +360,22 @@ Database:
 Application:
   APP_KEY: $APP_KEY
 
-Installation Date: $(date)
 EOF
 
+    if [[ "$S3_ENABLED" == "true" ]]; then
+        cat >> /tmp/control-panel-config.txt <<EOF
+S3 Storage:
+  Endpoint: $S3_ENDPOINT
+  Access Key: $S3_ACCESS_KEY
+  Secret Key: $S3_SECRET_KEY
+  Bucket: $S3_BUCKET
+  Region: $S3_REGION
+
+EOF
+    fi
+
+    echo "Installation Date: $(date)" >> /tmp/control-panel-config.txt
+    
     log_success "Configuration saved to /tmp/control-panel-config.txt"
 }
 
@@ -308,6 +386,7 @@ main() {
     echo ""
     
     check_prerequisites
+    prompt_s3_configuration
     create_namespace
     add_helm_repos
     

@@ -226,6 +226,11 @@ Control Panel (Laravel + Octane)
 - Independent service scaling
 - Resource limits and requests
 - Efficient resource utilization
+- **S3-compatible storage for persistent volumes**
+  - AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2
+  - Automatic scaling without capacity planning
+  - Cross-node data accessibility
+  - High durability (11 nines)
 
 ### Monitoring
 - Health checks (liveness/readiness)
@@ -234,6 +239,17 @@ Control Panel (Laravel + Octane)
 - Resource monitoring
 - Log aggregation ready
 
+### Storage Options
+- **S3-Compatible Storage**: Scalable object storage for persistent volumes
+  - Automatic configuration via installation script
+  - Support for multiple S3-compatible providers
+  - Seamless integration with Helm charts
+  - Secure credential management via Kubernetes secrets
+- **Traditional Storage**: Standard Kubernetes persistent volumes
+  - Local storage
+  - Network-attached storage (NFS, iSCSI)
+  - Cloud provider storage classes (EBS, GCE PD, Azure Disk)
+
 ### User Experience
 - One-click installations
 - Pre-configured templates
@@ -241,6 +257,7 @@ Control Panel (Laravel + Octane)
 - Upgrade management
 - Bulk operations
 - Comprehensive documentation
+- **Interactive S3 storage configuration**
 
 ## Production Readiness
 
