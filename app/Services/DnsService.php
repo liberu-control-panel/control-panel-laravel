@@ -141,7 +141,7 @@ EOT;
         foreach ($defaultRecords as $record) {
             DnsSetting::create([
                 'domain_id' => $domain->id,
-                'type' => $record['type'],
+                'record_type' => $record['type'],
                 'name' => $record['name'],
                 'value' => $record['value'],
                 'priority' => $record['priority'] ?? null,
@@ -158,7 +158,7 @@ EOT;
         try {
             $dnsRecord = DnsSetting::create([
                 'domain_id' => $domain->id,
-                'type' => $recordData['type'],
+                'record_type' => $recordData['record_type'] ?? $recordData['type'],
                 'name' => $recordData['name'],
                 'value' => $recordData['value'],
                 'priority' => $recordData['priority'] ?? null,
@@ -252,13 +252,13 @@ EOT;
             $name = $record->name === '@' ? '@' : $record->name;
             $ttl = $record->ttl ?: 3600;
 
-            if ($record->type === 'MX') {
+            if ($record->record_type === 'MX') {
                 $zoneFile .= sprintf("%-20s %d IN  %-5s %d %s\n", 
-                    $name, $ttl, $record->type, $record->priority, $record->value);
+                    $name, $ttl, $record->record_type, $record->priority, $record->value);
             } else {
-                $value = $record->type === 'TXT' ? "\"{$record->value}\"" : $record->value;
+                $value = $record->record_type === 'TXT' ? "\"{$record->value}\"" : $record->value;
                 $zoneFile .= sprintf("%-20s %d IN  %-5s %s\n", 
-                    $name, $ttl, $record->type, $value);
+                    $name, $ttl, $record->record_type, $value);
             }
         }
 
