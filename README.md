@@ -152,6 +152,7 @@ Notes
 ## Documentation
 
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
+- **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
 - **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster
 - **[Kubernetes Manifests](k8s/README.md)** - Raw Kubernetes manifests and Kustomize overlays
 - **[Helm Chart](helm/control-panel/README.md)** - Helm chart for easy deployment
