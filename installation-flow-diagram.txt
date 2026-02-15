@@ -1,0 +1,100 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  Liberu Control Panel - Installation Flow                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+                              ┌──────────────┐
+                              │ User runs:   │
+                              │ sudo install.sh │
+                              └──────┬───────┘
+                                     │
+                              ┌──────▼───────┐
+                              │ Check Root   │
+                              │ Access       │
+                              └──────┬───────┘
+                                     │
+                              ┌──────▼───────┐
+                              │ Detect OS    │
+                              │ • Ubuntu     │
+                              │ • AlmaLinux  │
+                              │ • RHEL       │
+                              │ • Rocky      │
+                              └──────┬───────┘
+                                     │
+                              ┌──────▼───────┐
+                              │ Install      │
+                              │ Common       │
+                              │ Prerequisites│
+                              └──────┬───────┘
+                                     │
+                              ┌──────▼───────┐
+                              │ Display      │
+                              │ Installation │
+                              │ Menu         │
+                              └──────┬───────┘
+                                     │
+                 ┌───────────────────┼───────────────────┐
+                 │                   │                   │
+          ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+          │ Kubernetes  │    │   Docker    │    │ Standalone  │
+          │ Installation│    │   Compose   │    │ Installation│
+          └──────┬──────┘    └──────┬──────┘    └──────┬──────┘
+                 │                   │                   │
+          ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+          │ • Detect    │    │ • Install   │    │ Ubuntu:     │
+          │   Managed   │    │   Docker    │    │ • NGINX     │
+          │   K8s       │    │   Engine    │    │ • PHP 8.3   │
+          │ • Run       │    │ • Generate  │    │ • MariaDB   │
+          │   install-  │    │   Secrets   │    │ • Redis     │
+          │   k8s.sh    │    │ • Setup     │    │ • Composer  │
+          │ • Run       │    │   .env      │    │ • Node.js   │
+          │   install-  │    │ • Build &   │    │ • Certbot   │
+          │   control-  │    │   Start     │    │ • Mail      │
+          │   panel.sh  │    │   Containers│    │ • DNS       │
+          └──────┬──────┘    └──────┬──────┘    │             │
+                 │                   │           │ RHEL/Alma:  │
+                 │                   │           │ • Same +    │
+                 │                   │           │   SELinux   │
+                 │                   │           │   config    │
+                 │                   │           └──────┬──────┘
+                 │                   │                   │
+                 │                   │           ┌──────▼──────┐
+                 │                   │           │ • Deploy to │
+                 │                   │           │   /var/www/ │
+                 │                   │           │ • Setup DB  │
+                 │                   │           │ • Configure │
+                 │                   │           │   NGINX     │
+                 │                   │           │ • Run       │
+                 │                   │           │   Composer  │
+                 │                   │           │ • Build     │
+                 │                   │           │   Assets    │
+                 │                   │           └──────┬──────┘
+                 │                   │                   │
+          ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+          │ K8s Next    │    │ Docker Next │    │ Standalone  │
+          │ Steps:      │    │ Steps:      │    │ Next Steps: │
+          │ • Get       │    │ • Check     │    │ • Create    │
+          │   Ingress   │    │   Status    │    │   Admin     │
+          │   IP        │    │ • Create    │    │ • Configure │
+          │ • Point     │    │   Admin     │    │   Services  │
+          │   DNS       │    │ • View Logs │    │ • Access    │
+          │ • Access    │    │ • Access    │    │   Panel     │
+          │   Panel     │    │   Panel     │    └─────────────┘
+          └─────────────┘    └─────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         Installation Components                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ All Installation Methods Include:                                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ✓ Control Panel Application (Laravel + Filament)                        │
+│ ✓ Database (MariaDB or PostgreSQL)                                      │
+│ ✓ Cache (Redis)                                                         │
+│ ✓ Web Server (NGINX)                                                    │
+│ ✓ Mail Services (Postfix + Dovecot)                                     │
+│ ✓ DNS Server (BIND9 or PowerDNS)                                        │
+│ ✓ SSL Certificates (Let's Encrypt)                                      │
+│ ✓ PHP Multi-version Support                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
