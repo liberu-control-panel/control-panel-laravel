@@ -35,8 +35,20 @@ Key features
 
 For a **complete, production-ready installation** including Kubernetes cluster setup, control panel, and all services (mail, DNS, PHP multi-version, etc.), see the [Complete Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md).
 
+**Installation Options:**
+
+1. **Self-Managed Cluster** - Install complete Kubernetes cluster from scratch
+   - Automated installation on Ubuntu LTS & AlmaLinux/RHEL
+   - Full control over infrastructure
+   - See: [Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md)
+
+2. **Managed Kubernetes** - Deploy on cloud-managed Kubernetes (recommended for production)
+   - AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
+   - No control plane management needed
+   - Auto-scaling and high availability
+   - See: [Managed Kubernetes Setup Guide](docs/MANAGED_KUBERNETES_SETUP.md)
+
 **What's Included:**
-- Automated Kubernetes cluster installation (Ubuntu LTS & AlmaLinux/RHEL)
 - Control Panel with Laravel Octane support
 - NGINX Ingress with Let's Encrypt SSL
 - MariaDB cluster with replication
@@ -47,14 +59,31 @@ For a **complete, production-ready installation** including Kubernetes cluster s
 - Queue workers and scheduler
 - **S3-compatible storage integration** for persistent volumes
 
-**Quick Installation:**
+**Quick Installation (Self-Managed):**
 
 ```bash
-# Step 1: Install Kubernetes cluster
+# Step 1: Install Kubernetes cluster (auto-detects managed K8s)
 sudo ./install-k8s.sh
 
 # Step 2: Install control panel and all services
 # The script will prompt for S3 storage configuration
+./install-control-panel.sh
+```
+
+**Quick Installation (Managed Kubernetes):**
+
+```bash
+# Step 1: Create cluster using cloud provider tools
+# See docs/MANAGED_KUBERNETES_SETUP.md for detailed instructions
+
+# Step 2: Configure kubectl access
+aws eks update-kubeconfig --region us-west-2 --name control-panel-cluster
+# OR: az aks get-credentials --resource-group rg --name cluster
+# OR: gcloud container clusters get-credentials cluster --region region
+# OR: doctl kubernetes cluster kubeconfig save cluster
+
+# Step 3: Install add-ons and control panel (auto-detected)
+sudo ./install-k8s.sh
 ./install-control-panel.sh
 ```
 
@@ -177,6 +206,7 @@ Notes
 
 ### Infrastructure & Deployment
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
+- **[Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md)** - Deploy on AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
 - **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
 - **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster

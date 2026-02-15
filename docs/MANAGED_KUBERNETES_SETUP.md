@@ -684,6 +684,113 @@ kubectl logs -n cert-manager deployment/cert-manager
 4. Implement disaster recovery procedures
 5. Set up multi-region deployments (if needed)
 
+## Example Deployment Scenarios
+
+### Scenario 1: AWS EKS with Auto-Scaling
+
+```bash
+# Create EKS cluster with managed node groups
+eksctl create cluster \
+  --name control-panel-prod \
+  --region us-west-2 \
+  --nodegroup-name workers \
+  --node-type t3.large \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 10 \
+  --managed \
+  --asg-access \
+  --external-dns-access \
+  --full-ecr-access
+
+# Enable cluster autoscaler
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+# Configure kubectl
+aws eks update-kubeconfig --region us-west-2 --name control-panel-prod
+
+# Install control panel
+sudo ./install-k8s.sh
+./install-control-panel.sh
+```
+
+### Scenario 2: Azure AKS with Azure AD Integration
+
+```bash
+# Create AKS with Azure AD
+az aks create \
+  --resource-group control-panel-rg \
+  --name control-panel-prod \
+  --node-count 3 \
+  --enable-managed-identity \
+  --enable-cluster-autoscaler \
+  --min-count 2 \
+  --max-count 10 \
+  --enable-aad \
+  --enable-azure-rbac \
+  --enable-addons monitoring
+
+# Get credentials
+az aks get-credentials --resource-group control-panel-rg --name control-panel-prod
+
+# Install control panel
+sudo MANAGED_K8S=aks ./install-k8s.sh
+./install-control-panel.sh
+```
+
+### Scenario 3: GKE with Autopilot
+
+```bash
+# Create Autopilot cluster (fully managed)
+gcloud container clusters create-auto control-panel-prod \
+  --region us-central1 \
+  --release-channel regular
+
+# Get credentials
+gcloud container clusters get-credentials control-panel-prod --region us-central1
+
+# Install control panel
+sudo MANAGED_K8S=gke ./install-k8s.sh
+./install-control-panel.sh
+```
+
+### Scenario 4: DigitalOcean DOKS with Block Storage
+
+```bash
+# Create DOKS cluster
+doctl kubernetes cluster create control-panel-prod \
+  --region nyc1 \
+  --version 1.29.0-do.0 \
+  --node-pool "name=workers;size=s-4vcpu-8gb;count=3;auto-scale=true;min-nodes=2;max-nodes=5"
+
+# Get credentials (automatic)
+doctl kubernetes cluster kubeconfig save control-panel-prod
+
+# Install control panel
+sudo MANAGED_K8S=doks ./install-k8s.sh
+./install-control-panel.sh
+```
+
+## Node Joining for Self-Managed Clusters
+
+If you're running a self-managed cluster and need to add worker nodes, use the simplified join script:
+
+```bash
+# On the master node, get the join command
+kubeadm token create --print-join-command
+
+# On the worker node, use the join script
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+sudo ./join-node.sh
+
+# The script will:
+# 1. Install containerd and Kubernetes components
+# 2. Prompt for the join command
+# 3. Validate and join the cluster
+# 4. Verify the node is added
+```
+
 ## References
 
 - [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
