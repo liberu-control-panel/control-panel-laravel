@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-panel-postgresql
+  namespace: control-panel
+  labels:
+    app: control-panel
+    component: database
+    db-type: postgresql
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql
+  selector:
+    app: control-panel
+    component: database
+    db-type: postgresql
+  clusterIP: None
