@@ -1,4 +1,4 @@
-# Liberu — Dockerised Webhosting Control Panel
+# Liberu — Standard, Docker or Kubernetes Webhosting Control Panel
 
 [![](https://avatars.githubusercontent.com/u/158830885?s=200&v=4)](https://www.liberu.co.uk)
 
