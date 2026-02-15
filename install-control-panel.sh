@@ -372,22 +372,24 @@ Database:
 
 Application:
   APP_KEY: $APP_KEY
-
 EOF
 
     if [[ "$S3_ENABLED" == "true" ]]; then
         cat >> /tmp/control-panel-config.txt <<EOF
+
 S3 Storage:
   Endpoint: $S3_ENDPOINT
   Access Key: $S3_ACCESS_KEY
   Secret Key: $S3_SECRET_KEY
   Bucket: $S3_BUCKET
   Region: $S3_REGION
-
 EOF
     fi
 
-    echo "Installation Date: $(date)" >> /tmp/control-panel-config.txt
+    cat >> /tmp/control-panel-config.txt <<EOF
+
+Installation Date: $(date)
+EOF
     
     log_success "Configuration saved to /tmp/control-panel-config.txt"
 }

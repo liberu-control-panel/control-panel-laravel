@@ -248,13 +248,13 @@ s3:
   usePathStyle: false
 ```
 
-Install with:
+**Install with Basic Configuration:**
 
 ```bash
 helm install my-control-panel ./helm/control-panel -f values-production.yaml
 ```
 
-Or with S3 storage:
+**Install with S3 Storage:**
 
 ```bash
 helm install my-control-panel ./helm/control-panel -f values-production-s3.yaml
