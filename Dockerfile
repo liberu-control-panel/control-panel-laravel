@@ -42,6 +42,9 @@ RUN chown -R appuser:appuser /var/www/html && \
     chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Copy PHP-FPM configuration for non-root user
+COPY .docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
+
 # Copy entrypoint script
 COPY --chown=appuser:appuser .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

@@ -78,6 +78,14 @@ class Server extends Model
     }
 
     /**
+     * Get the Kubernetes nodes for this server.
+     */
+    public function kubernetesNodes()
+    {
+        return $this->hasMany(KubernetesNode::class);
+    }
+
+    /**
      * Check if server is active.
      */
     public function isActive(): bool
