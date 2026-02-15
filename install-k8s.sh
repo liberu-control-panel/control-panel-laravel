@@ -3,7 +3,7 @@
 ################################################################################
 # Kubernetes Installation Script for Control Panel
 # Supports: 
-# - Self-managed: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9
+# - Self-managed: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9/10
 # - Managed: AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS
 # 
 # This script:

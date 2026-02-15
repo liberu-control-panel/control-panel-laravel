@@ -11,8 +11,8 @@
 # Supported Operating Systems:
 # - Ubuntu LTS (20.04, 22.04, 24.04)
 # - Debian (11, 12)
-# - AlmaLinux / RHEL 8/9
-# - Rocky Linux 8/9
+# - AlmaLinux / RHEL 8/9/10
+# - Rocky Linux 8/9/10
 ################################################################################
 
 set -euo pipefail
@@ -117,8 +117,8 @@ detect_os() {
                 fi
                 ;;
             almalinux|rhel|rocky)
-                if [[ ! "$OS_VERSION" =~ ^[89] ]]; then
-                    log_warning "$OS_NAME version $OS_VERSION detected. Supported versions: 8, 9"
+                if [[ ! "$OS_VERSION" =~ ^[8-9]|^10 ]]; then
+                    log_warning "$OS_NAME version $OS_VERSION detected. Supported versions: 8, 9, 10"
                     read -p "Continue anyway? (y/N) " -n 1 -r
                     echo
                     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

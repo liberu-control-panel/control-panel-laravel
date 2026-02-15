@@ -4,7 +4,7 @@
 # Kubernetes Worker Node Join Script
 # 
 # This script simplifies joining worker nodes to an existing Kubernetes cluster
-# Supports: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9
+# Supports: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9/10
 #
 # Usage:
 #   1. Get the join command from your master node:
