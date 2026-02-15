@@ -17,6 +17,10 @@ The `install.sh` script provides an interactive installation wizard that support
 - 22.04 (Jammy Jellyfish)  
 - 24.04 (Noble Numbat)
 
+✅ **Debian**
+- 11 (Bullseye)
+- 12 (Bookworm)
+
 ✅ **Red Hat Enterprise Linux Family**
 - AlmaLinux 8, 9
 - RHEL (Red Hat Enterprise Linux) 8, 9
