@@ -23,6 +23,8 @@ class ContainerRestarter
     
     protected function restartKubernetesPods(array $services): void
     {
+        // Note: These are global services (postfix, dovecot), not domain-specific
+        // They use their service names directly as deployment names
         foreach ($services as $service) {
             $process = new Process(['kubectl', 'rollout', 'restart', 'deployment', $service]);
             $process->setWorkingDirectory(base_path());

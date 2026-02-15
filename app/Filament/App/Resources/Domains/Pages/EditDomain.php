@@ -58,7 +58,7 @@ class EditDomain extends EditRecord
             return $record;
         }
     
-        $hostingPlan = $user->currentHostingPlan();
+        $hostingPlan = $user->getCurrentHostingPlan();
     
         $record->update($data);
     

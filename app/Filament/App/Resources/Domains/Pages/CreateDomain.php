@@ -52,7 +52,7 @@ class CreateDomain extends CreateRecord
             return;
         }
 
-        $hostingPlan = $user->currentHostingPlan();
+        $hostingPlan = $user->getCurrentHostingPlan();
 
         $domain = Domain::create([
             ...$this->form->getState(),

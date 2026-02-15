@@ -499,7 +499,12 @@ class ContainerManagerService
     protected function restartKubernetesPod(Domain $domain, string $serviceName): bool
     {
         try {
-            $deploymentName = "{$domain->domain_name}-{$serviceName}";
+            // For domain services, use sanitized domain name
+            // Main deployment is just the domain name, others have suffix
+            $deploymentName = $serviceName === 'web' 
+                ? $this->sanitizeDomainName($domain->domain_name)
+                : $this->sanitizeDomainName($domain->domain_name) . '-' . $serviceName;
+            
             $process = new Process(['kubectl', 'rollout', 'restart', 'deployment', $deploymentName]);
             $process->run();
 
@@ -508,6 +513,26 @@ class ContainerManagerService
             Log::error("Failed to restart Kubernetes pod {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Sanitize domain name for Kubernetes (DNS-1123 subdomain)
+     */
+    protected function sanitizeDomainName(string $name): string
+    {
+        // Convert to lowercase and replace invalid characters
+        $sanitized = strtolower($name);
+        $sanitized = preg_replace('/[^a-z0-9-.]/', '-', $sanitized);
+        $sanitized = preg_replace('/-+/', '-', $sanitized);
+        $sanitized = trim($sanitized, '-.');
+        
+        // Kubernetes names must be <= 63 characters
+        if (strlen($sanitized) > 63) {
+            $sanitized = substr($sanitized, 0, 63);
+            $sanitized = rtrim($sanitized, '-.');
+        }
+        
+        return $sanitized;
     }
     
     /**

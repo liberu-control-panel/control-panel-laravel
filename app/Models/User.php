@@ -131,8 +131,9 @@ class User extends Authenticatable implements HasDefaultTenant, HasTenants, Fila
 
     /**
      * Get the user's current hosting plan
+     * This is an accessor method, not a relationship
      */
-    public function currentHostingPlan()
+    public function getCurrentHostingPlan()
     {
         return $this->belongsTo(HostingPlan::class, 'hosting_plan_id')->first() 
             ?? HostingPlan::getDefault();
@@ -143,7 +144,7 @@ class User extends Authenticatable implements HasDefaultTenant, HasTenants, Fila
      */
     public function hasReachedDeploymentLimit(): bool
     {
-        $plan = $this->currentHostingPlan();
+        $plan = $this->getCurrentHostingPlan();
         if (!$plan || !$plan->max_deployments) {
             return false;
         }
