@@ -176,8 +176,9 @@ return [
         App\Providers\FortifyServiceProvider::class,
 
         /*
-         * Docker-specific Service Providers...
+         * Container orchestration Service Providers...
          */
+        App\Providers\KubernetesServiceProvider::class,
         App\Providers\DockerServiceProvider::class,
     ])->toArray(),
 
