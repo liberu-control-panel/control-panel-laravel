@@ -1,4 +1,4 @@
-# Liberu — Standalone, Docker or Kubernetes Webhosting Control Panel
+# Liberu — Kubernetes, Docker or Standalone Webhosting Control Panel
 
 [![](https://avatars.githubusercontent.com/u/158830885?s=200&v=4)](https://www.liberu.co.uk)
 
@@ -14,14 +14,18 @@
 [![Install](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/install.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/install.yml) [![Tests](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/tests.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/tests.yml) [![Docker](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/main.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/main.yml) [![Codecov](https://codecov.io/gh/liberu-control-panel/control-panel-laravel/branch/main/graph/badge.svg)](https://codecov.io/gh/liberu-control-panel/control-panel-laravel)
 
 
-A modular, Docker-first Laravel control panel for managing web hosting: virtual hosts (NGINX), BIND DNS zones, Postfix/Dovecot mail, MySQL databases, and Docker Compose service orchestration. Designed for sysadmins and self-hosting teams who want a single web interface to manage hosting infrastructure.
+A modular, **Kubernetes-native** Laravel control panel for managing web hosting: virtual hosts (NGINX), BIND DNS zones, Postfix/Dovecot mail, MySQL databases, and container orchestration. Designed for sysadmins and self-hosting teams who want a single web interface to manage hosting infrastructure with production-grade **Kubernetes deployment** (recommended), as well as Docker Compose and standalone options.
+
+> **🚀 Production-Ready Kubernetes Deployment**  
+> Kubernetes is the **recommended deployment method** for production environments, offering auto-scaling, high availability, and enterprise-grade orchestration. See our [Complete Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md) and [Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md) for AWS EKS, Azure AKS, Google GKE, and DigitalOcean DOKS.
 
 Key features
 
+- **Production-ready Kubernetes deployment** with auto-scaling, high availability, and container orchestration
 - User and team management with Jetstream and role-based policies
 - **Multi-site management** with comprehensive performance monitoring and uptime tracking
-- **Multi-deployment support**: Kubernetes, Docker Compose, and Standalone deployments
-- **Auto-scaling**: Automatic horizontal and vertical scaling on AWS, Azure, GCP, DigitalOcean, OVH
+- **Multi-deployment support**: Kubernetes (recommended), Docker Compose, and Standalone deployments
+- **Auto-scaling**: Automatic horizontal and vertical scaling on AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS, OVH
 - Manage NGINX virtual hosts with automated Let's Encrypt support
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
