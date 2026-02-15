@@ -180,6 +180,7 @@ return [
          */
         App\Providers\KubernetesServiceProvider::class,
         App\Providers\DockerServiceProvider::class,
+        App\Providers\CloudProviderServiceProvider::class,
     ])->toArray(),
 
     /*
