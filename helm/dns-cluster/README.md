@@ -2,25 +2,38 @@
 
 This Helm chart deploys a PowerDNS-based DNS cluster for the Liberu Control Panel with support for both MySQL/MariaDB and PostgreSQL backends.
 
+**Default Database Backend: MariaDB** - MariaDB is the default and recommended database backend for PowerDNS. PostgreSQL is available as an alternative option for users who prefer it.
+
 ## Components
 
 - **PowerDNS**: Authoritative DNS server with configurable database backend
-- **Database**: MySQL/MariaDB or PostgreSQL (automatically deployed)
+- **Database**: MariaDB (default) or PostgreSQL (optional, automatically deployed)
 - **PowerDNS Admin**: Web interface for DNS management (optional)
 
 ## Database Backend Selection
 
-The chart supports two database backends:
+The chart supports two database backends, with **MariaDB as the default**:
 
-### MySQL/MariaDB (Default)
+### MariaDB/MySQL (Default - Recommended)
 ```yaml
-databaseBackend: mysql
+databaseBackend: mysql  # This is the default value
 ```
 
-### PostgreSQL
+MariaDB is the **recommended and default** backend for PowerDNS due to its:
+- Proven stability with PowerDNS
+- Better performance for DNS workloads
+- Simpler configuration and maintenance
+- Wide community support
+
+### PostgreSQL (Optional Alternative)
 ```yaml
 databaseBackend: postgresql
 ```
+
+PostgreSQL is available as an alternative for users who:
+- Have existing PostgreSQL infrastructure
+- Prefer PostgreSQL for organizational reasons
+- Need specific PostgreSQL features
 
 The database backend can be selected via the `databaseBackend` value. The chart will automatically:
 - Deploy the appropriate database StatefulSet
@@ -29,7 +42,9 @@ The database backend can be selected via the `databaseBackend` value. The chart 
 
 ## Installation
 
-### With MySQL/MariaDB (Default)
+### Quick Start (MariaDB - Default)
+
+The simplest installation uses the default MariaDB backend:
 
 ```bash
 helm install dns-cluster ./helm/dns-cluster \
@@ -38,7 +53,11 @@ helm install dns-cluster ./helm/dns-cluster \
   --set powerdns.api.key=<secure-api-key>
 ```
 
-### With PostgreSQL
+This will deploy PowerDNS with MariaDB as the database backend.
+
+### Alternative: PostgreSQL Backend
+
+To use PostgreSQL instead of the default MariaDB:
 
 ```bash
 helm install dns-cluster ./helm/dns-cluster \
@@ -52,9 +71,11 @@ helm install dns-cluster ./helm/dns-cluster \
 
 ### Database Backend Configuration
 
-#### MySQL/MariaDB Configuration
+**Note:** If you don't specify `databaseBackend`, MariaDB is used by default.
+
+#### MariaDB/MySQL Configuration (Default)
 ```yaml
-databaseBackend: mysql
+# databaseBackend: mysql  # This is the default, can be omitted
 powerdns:
   mysql:
     host: mariadb  # Or use the auto-deployed: dns-cluster-mysql
@@ -64,9 +85,9 @@ powerdns:
     password: <secure-password>
 ```
 
-#### PostgreSQL Configuration
+#### PostgreSQL Configuration (Optional)
 ```yaml
-databaseBackend: postgresql
+databaseBackend: postgresql  # Must be explicitly set for PostgreSQL
 powerdns:
   postgresql:
     host: postgresql  # Or use the auto-deployed: dns-cluster-postgresql
