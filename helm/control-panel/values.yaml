@@ -127,6 +127,24 @@ persistence:
   accessMode: ReadWriteOnce
   size: 10Gi
 
+# S3-compatible storage configuration (MinIO, AWS S3, DigitalOcean Spaces, etc.)
+# When enabled, persistent volumes will use S3 storage via CSI driver
+s3:
+  enabled: false
+  # S3 endpoint URL (e.g., https://s3.amazonaws.com, https://minio.example.com)
+  endpoint: ""
+  # S3 access credentials
+  accessKey: ""
+  secretKey: ""
+  # S3 bucket for persistent storage
+  bucket: ""
+  # S3 region
+  region: "us-east-1"
+  # Use path-style endpoint (required for MinIO and some S3-compatible services)
+  usePathStyle: true
+  # Storage class name for S3-backed volumes
+  storageClassName: "s3-storage"
+
 # Kubernetes configuration
 kubernetes:
   enabled: true

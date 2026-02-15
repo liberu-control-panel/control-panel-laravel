@@ -90,3 +90,14 @@ secondaryNameservers:
 # DNSSEC configuration
 dnssec:
   enabled: false
+
+# S3-compatible storage configuration for zone files backup
+s3:
+  enabled: false
+  endpoint: ""
+  accessKey: ""
+  secretKey: ""
+  bucket: ""
+  region: "us-east-1"
+  usePathStyle: true
+  storageClassName: "s3-storage"

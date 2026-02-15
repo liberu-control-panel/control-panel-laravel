@@ -377,6 +377,19 @@ display_join_command() {
     echo ""
     echo "Save this command securely. You'll need it to add worker nodes."
     echo ""
+    echo "========================================="
+    echo "NEXT STEPS"
+    echo "========================================="
+    echo ""
+    echo "1. Deploy the control panel:"
+    echo "   ./install-control-panel.sh"
+    echo ""
+    echo "2. During installation, you can configure S3-compatible storage"
+    echo "   for persistent volumes (AWS S3, MinIO, DigitalOcean Spaces, etc.)"
+    echo ""
+    echo "3. For detailed S3 storage configuration, see:"
+    echo "   docs/S3_STORAGE.md"
+    echo ""
 }
 
 # Join worker node to cluster

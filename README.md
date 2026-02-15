@@ -25,6 +25,7 @@ Key features
 - MySQL database + user lifecycle and backup/restore helpers
 - Kubernetes and Docker orchestration: deploy, monitor, and manage services
 - Secure SSH-based remote server management
+- **S3-compatible storage support** for persistent volumes (AWS S3, MinIO, DigitalOcean Spaces, etc.)
 
 ## Quick Start
 
@@ -42,6 +43,7 @@ For a **complete, production-ready installation** including Kubernetes cluster s
 - PowerDNS DNS cluster
 - PHP multi-version support (8.1-8.5)
 - Queue workers and scheduler
+- **S3-compatible storage integration** for persistent volumes
 
 **Quick Installation:**
 
@@ -50,8 +52,15 @@ For a **complete, production-ready installation** including Kubernetes cluster s
 sudo ./install-k8s.sh
 
 # Step 2: Install control panel and all services
+# The script will prompt for S3 storage configuration
 ./install-control-panel.sh
 ```
+
+**Storage Options:**
+- During installation, you'll be prompted to configure S3-compatible storage
+- Supports AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2, and more
+- **All services including MariaDB can use S3 storage** for persistent volumes
+- See [S3 Storage Guide](docs/S3_STORAGE.md) for detailed configuration
 
 ### Kubernetes Deployment (Manual)
 
@@ -79,6 +88,19 @@ helm install control-panel ./helm/control-panel \
   --set mysql.auth.password="secure-password" \
   --set mysql.auth.rootPassword="secure-root-password" \
   --set ingress.hosts[0].host="control.yourdomain.com" \
+  --namespace control-panel \
+  --create-namespace
+
+# Optional: Enable S3 storage for persistent volumes
+helm install control-panel ./helm/control-panel \
+  --set app.key="$APP_KEY" \
+  --set app.url="https://control.yourdomain.com" \
+  --set s3.enabled=true \
+  --set s3.endpoint="https://s3.amazonaws.com" \
+  --set s3.accessKey="your-access-key" \
+  --set s3.secretKey="your-secret-key" \
+  --set s3.bucket="control-panel-storage" \
+  --set s3.region="us-east-1" \
   --namespace control-panel \
   --create-namespace
 ```
@@ -152,6 +174,7 @@ Notes
 ## Documentation
 
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
+- **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
 - **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
 - **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster
 - **[Kubernetes Manifests](k8s/README.md)** - Raw Kubernetes manifests and Kustomize overlays

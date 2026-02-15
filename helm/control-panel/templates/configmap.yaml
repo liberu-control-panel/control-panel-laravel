@@ -32,7 +32,13 @@ data:
   KUBERNETES_NAMESPACE_PREFIX: {{ .Values.kubernetes.namespacePrefix | quote }}
   KUBERNETES_INGRESS_CLASS: {{ .Values.kubernetes.ingressClass | quote }}
   KUBERNETES_CERT_ISSUER: {{ .Values.kubernetes.certIssuer | quote }}
-  KUBERNETES_STORAGE_CLASS: {{ .Values.kubernetes.storageClass | quote }}
+  KUBERNETES_STORAGE_CLASS: {{ if .Values.s3.enabled }}{{ .Values.s3.storageClassName | quote }}{{ else }}{{ .Values.kubernetes.storageClass | quote }}{{ end }}
+  
+  {{- if .Values.s3.enabled }}
+  FILESYSTEM_DISK: "s3"
+  {{- else }}
+  FILESYSTEM_DISK: "local"
+  {{- end }}
   
   SSH_TIMEOUT: {{ .Values.ssh.timeout | quote }}
   SSH_RETRY_ATTEMPTS: {{ .Values.ssh.retryAttempts | quote }}
