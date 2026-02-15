@@ -203,6 +203,8 @@ DELETE /api/dns/{id}
 ```
 POST /api/dns/bulk
 ```
+**Note**: Maximum 50 records per request.
+
 Body:
 ```json
 {
@@ -222,6 +224,18 @@ Body:
       "ttl": 3600
     }
   ]
+}
+```
+
+Response (207 - Partial Success):
+```json
+{
+  "success": true,
+  "message": "2 DNS record(s) created successfully",
+  "data": [...],
+  "errors": {
+    "records.2.value": "The value must be a valid IPv4 address"
+  }
 }
 ```
 

@@ -248,9 +248,9 @@ class DnsSettingResource extends Resource {
                     ->label('Priority')
                     ->numeric()
                     ->sortable()
-                    ->visible(fn ($record) => $record && $record->record_type === 'MX')
                     ->badge()
-                    ->color('warning'),
+                    ->color('warning')
+                    ->toggleable(),
                 
                 TextColumn::make('ttl')
                     ->label('TTL')
