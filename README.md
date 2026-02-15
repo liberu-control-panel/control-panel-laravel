@@ -36,7 +36,41 @@ Key features
 
 ## Quick Start
 
-### Complete Kubernetes Installation (Recommended)
+### 🚀 Unified Installation (Recommended)
+
+The easiest way to install the control panel is using our **unified installation script** that supports:
+- **Kubernetes** (recommended for production)
+- **Docker Compose** (for development/small-scale)
+- **Standalone** (traditional server setup)
+
+**Supported Operating Systems:**
+- Ubuntu LTS (20.04, 22.04, 24.04)
+- AlmaLinux / RHEL 8/9
+- Rocky Linux 8/9
+
+**One-Line Installation:**
+
+```bash
+# Clone the repository
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+
+# Run the unified installer
+sudo ./install.sh
+```
+
+The script will:
+1. Detect your operating system
+2. Present a menu to choose installation method
+3. Install all required dependencies
+4. Configure and deploy the control panel
+5. Provide next steps and access information
+
+**See the complete [Installation Guide](docs/INSTALLATION_GUIDE.md) for detailed instructions.**
+
+---
+
+### Complete Kubernetes Installation (Advanced)
 
 For a **complete, production-ready installation** including Kubernetes cluster setup, control panel, and all services (mail, DNS, PHP multi-version, etc.), see the [Complete Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md).
 
