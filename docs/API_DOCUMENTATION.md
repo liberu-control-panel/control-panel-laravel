@@ -143,6 +143,165 @@ DELETE /api/virtual-hosts/{id}
 
 ---
 
+### Website Management
+
+#### List Websites
+```
+GET /api/websites?per_page=15
+```
+
+Returns a paginated list of all websites for the authenticated user.
+
+**Response:**
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 1,
+      "name": "My Website",
+      "domain": "example.com",
+      "platform": "wordpress",
+      "status": "active",
+      "uptime_percentage": 99.95,
+      "average_response_time": 245,
+      "monthly_visitors": 15000,
+      "ssl_enabled": true
+    }
+  ],
+  "total": 10,
+  "per_page": 15
+}
+```
+
+#### Get Website
+```
+GET /api/websites/{id}
+```
+
+Returns detailed information about a specific website including recent performance metrics.
+
+#### Create Website
+```
+POST /api/websites
+```
+
+**Request Body:**
+```json
+{
+  "name": "My New Website",
+  "domain": "newsite.com",
+  "description": "Description of my website",
+  "platform": "laravel",
+  "php_version": "8.3",
+  "database_type": "mysql",
+  "document_root": "/var/www/html",
+  "server_id": 1,
+  "ssl_enabled": true,
+  "auto_ssl": true
+}
+```
+
+**Platforms:** `wordpress`, `laravel`, `static`, `nodejs`, `custom`
+**PHP Versions:** `8.1`, `8.2`, `8.3`, `8.4`
+**Database Types:** `mysql`, `mariadb`, `postgresql`, `sqlite`, `none`
+
+**Response:**
+```json
+{
+  "message": "Website created successfully",
+  "website": {
+    "id": 2,
+    "name": "My New Website",
+    "domain": "newsite.com",
+    "status": "pending",
+    ...
+  }
+}
+```
+
+#### Update Website
+```
+PUT /api/websites/{id}
+```
+
+**Request Body:**
+```json
+{
+  "name": "Updated Website Name",
+  "status": "active",
+  "php_version": "8.4"
+}
+```
+
+**Statuses:** `active`, `inactive`, `pending`, `maintenance`, `error`
+
+#### Delete Website
+```
+DELETE /api/websites/{id}
+```
+
+#### Get Performance Metrics
+```
+GET /api/websites/{id}/performance?hours=24
+```
+
+Returns performance metrics for a website over the specified time period.
+
+**Response:**
+```json
+{
+  "website": {
+    "id": 1,
+    "name": "My Website",
+    "domain": "example.com"
+  },
+  "metrics": [
+    {
+      "response_time_ms": 245,
+      "status_code": 200,
+      "uptime_status": true,
+      "checked_at": "2026-02-15T19:00:00.000000Z"
+    }
+  ],
+  "summary": {
+    "uptime_percentage": 99.95,
+    "average_response_time": 245,
+    "total_checks": 48,
+    "successful_checks": 48,
+    "failed_checks": 0
+  }
+}
+```
+
+#### Get Website Statistics
+```
+GET /api/websites-statistics
+```
+
+Returns aggregate statistics across all websites.
+
+**Response:**
+```json
+{
+  "total_websites": 10,
+  "active_websites": 8,
+  "total_visitors": 150000,
+  "total_bandwidth": 10737418240,
+  "average_uptime": 99.87,
+  "websites_by_platform": [
+    {"platform": "wordpress", "count": 5},
+    {"platform": "laravel", "count": 3}
+  ],
+  "websites_by_status": [
+    {"status": "active", "count": 8},
+    {"status": "pending", "count": 1}
+  ]
+}
+```
+
+---
+
 ### Database Management
 
 #### List Databases
