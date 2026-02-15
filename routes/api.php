@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DnsController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualHostController;
+use App\Http\Controllers\Api\WebsiteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
@@ -36,6 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Virtual Host management
     Route::apiResource('virtual-hosts', VirtualHostController::class);
+
+    // Website management
+    Route::apiResource('websites', WebsiteController::class);
+    Route::get('/websites/{website}/performance', [WebsiteController::class, 'performance']);
+    Route::get('/websites-statistics', [WebsiteController::class, 'statistics']);
 
     // Database management
     Route::apiResource('databases', DatabaseController::class)->except(['update']);

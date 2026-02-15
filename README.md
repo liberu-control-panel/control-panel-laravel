@@ -19,6 +19,7 @@ A modular, Docker-first Laravel control panel for managing web hosting: virtual 
 Key features
 
 - User and team management with Jetstream and role-based policies
+- **Multi-site management** with comprehensive performance monitoring and uptime tracking
 - Manage NGINX virtual hosts with automated Let's Encrypt support
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
@@ -28,6 +29,7 @@ Key features
 - **S3-compatible storage support** for persistent volumes (AWS S3, MinIO, DigitalOcean Spaces, etc.)
 - **WordPress auto-deployment** with one-click installation and automatic updates
 - **Git repository deployment** from GitHub, GitLab, Bitbucket with webhook support
+- **Performance metrics tracking** including uptime, response times, bandwidth, and visitor analytics
 
 ## Quick Start
 
