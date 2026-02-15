@@ -3,7 +3,7 @@
 ################################################################################
 # Kubernetes Installation Script for Control Panel
 # Supports: 
-# - Self-managed: Ubuntu LTS (20.04, 22.04, 24.04) and AlmaLinux/RHEL 8/9
+# - Self-managed: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9
 # - Managed: AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS
 # 
 # This script:
@@ -342,22 +342,33 @@ EOF
     log_success "Sysctl parameters configured"
 }
 
-# Install containerd for Ubuntu
+# Install containerd for Ubuntu/Debian
 install_containerd_ubuntu() {
-    log_info "Installing containerd for Ubuntu..."
+    log_info "Installing containerd for Ubuntu/Debian..."
     
     apt-get update
     apt-get install -y ca-certificates curl gnupg lsb-release
     
     # Add Docker's official GPG key
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
     
-    # Set up the repository
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    if [[ "$OS" == "ubuntu" ]]; then
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up the repository
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    elif [[ "$OS" == "debian" ]]; then
+        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up the repository
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+          $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    fi
     
     apt-get update
     apt-get install -y containerd.io
@@ -394,9 +405,9 @@ configure_containerd() {
     log_success "Containerd configured"
 }
 
-# Install Kubernetes components for Ubuntu
+# Install Kubernetes components for Ubuntu/Debian
 install_kubernetes_ubuntu() {
-    log_info "Installing Kubernetes components for Ubuntu..."
+    log_info "Installing Kubernetes components for Ubuntu/Debian..."
     
     apt-get update
     apt-get install -y apt-transport-https ca-certificates curl gpg
@@ -640,7 +651,7 @@ main() {
     
     # Install container runtime
     case $OS in
-        ubuntu)
+        ubuntu|debian)
             install_containerd_ubuntu
             install_kubernetes_ubuntu
             ;;

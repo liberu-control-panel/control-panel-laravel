@@ -79,7 +79,7 @@ Managed by your cloud provider - see [docs/MANAGED_KUBERNETES_SETUP.md](MANAGED_
 
 ### Software Requirements
 
-- **Operating System**: Ubuntu LTS (20.04/22.04/24.04) or AlmaLinux/RHEL 8/9 (self-managed only)
+- **Operating System**: Ubuntu LTS (20.04/22.04/24.04), Debian (11/12), or AlmaLinux/RHEL 8/9 (self-managed only)
 - **Root access** or sudo privileges
 - **Network**: Internet connectivity for downloading packages
 - **Ports**: Required ports open (see [Port Requirements](#port-requirements))

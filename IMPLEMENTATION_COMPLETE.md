@@ -15,6 +15,7 @@ A comprehensive **unified installation script** (`install.sh`) that provides an 
 ## Supported Operating Systems
 
 ✅ **Ubuntu LTS**: 20.04, 22.04, 24.04
+✅ **Debian**: 11 (Bullseye), 12 (Bookworm)
 ✅ **AlmaLinux**: 8, 9
 ✅ **Red Hat Enterprise Linux (RHEL)**: 8, 9
 ✅ **Rocky Linux**: 8, 9
@@ -268,6 +269,7 @@ The install.sh script is ready for use.
 The implementation successfully addresses all requirements in the problem statement:
 - ✅ Provides Kubernetes, Docker, and Standalone options
 - ✅ Supports Ubuntu LTS (20.04, 22.04, 24.04)
+- ✅ Supports Debian (11, 12)
 - ✅ Supports AlmaLinux/RHEL (8, 9)
 - ✅ Installs full list of services
 - ✅ Professional user experience

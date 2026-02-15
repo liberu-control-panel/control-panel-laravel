@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the implementation of a unified installation script for the Liberu Control Panel that provides users with clear options to choose between Kubernetes, Docker Compose, or Standalone installation methods on Ubuntu LTS or AlmaLinux/RHEL systems.
+This document summarizes the implementation of a unified installation script for the Liberu Control Panel that provides users with clear options to choose between Kubernetes, Docker Compose, or Standalone installation methods on Ubuntu LTS, Debian, or AlmaLinux/RHEL systems.
 
 ## Problem Statement
 
@@ -63,6 +63,10 @@ A comprehensive unified installation script (`install.sh`) that:
 - 20.04 (Focal Fossa)
 - 22.04 (Jammy Jellyfish)
 - 24.04 (Noble Numbat)
+
+✅ **Debian**
+- 11 (Bullseye)
+- 12 (Bookworm)
 
 ✅ **Red Hat Enterprise Linux Family**
 - AlmaLinux 8, 9
@@ -270,6 +274,7 @@ The unified installer seamlessly integrates with existing infrastructure:
 | Docker installation option | ✅ Complete | Full Docker Compose setup |
 | Standalone installation option | ✅ Complete | Native server installation |
 | Ubuntu LTS support | ✅ Complete | 20.04, 22.04, 24.04 |
+| Debian support | ✅ Complete | 11, 12 versions |
 | AlmaLinux/RHEL support | ✅ Complete | 8, 9 versions |
 | Full service installation | ✅ Complete | All services for each method |
 | Interactive menu | ✅ Complete | Clear, user-friendly interface |
@@ -356,7 +361,7 @@ Potential improvements for future iterations:
 
 ## Conclusion
 
-The unified installation script successfully addresses the problem statement by providing users with clear options to choose between Kubernetes, Docker, or Standalone installation methods on Ubuntu LTS and AlmaLinux/RHEL systems.
+The unified installation script successfully addresses the problem statement by providing users with clear options to choose between Kubernetes, Docker, or Standalone installation methods on Ubuntu LTS, Debian, and AlmaLinux/RHEL systems.
 
 The implementation includes:
 - ✅ Comprehensive installation script (925 lines)

@@ -4,7 +4,7 @@
 # Kubernetes Worker Node Join Script
 # 
 # This script simplifies joining worker nodes to an existing Kubernetes cluster
-# Supports: Ubuntu LTS (20.04, 22.04, 24.04) and AlmaLinux/RHEL 8/9
+# Supports: Ubuntu LTS (20.04, 22.04, 24.04), Debian (11, 12), and AlmaLinux/RHEL 8/9
 #
 # Usage:
 #   1. Get the join command from your master node:
@@ -133,20 +133,31 @@ EOF
 
 # Install containerd for Ubuntu
 install_containerd_ubuntu() {
-    log_info "Installing containerd for Ubuntu..."
+    log_info "Installing containerd for Ubuntu/Debian..."
     
     apt-get update
     apt-get install -y ca-certificates curl gnupg lsb-release
     
     # Add Docker's official GPG key
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
     
-    # Set up the repository
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    if [[ "$OS" == "ubuntu" ]]; then
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up the repository
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    elif [[ "$OS" == "debian" ]]; then
+        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up the repository
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+          $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    fi
     
     apt-get update
     apt-get install -y containerd.io
@@ -183,9 +194,9 @@ configure_containerd() {
     log_success "Containerd configured"
 }
 
-# Install Kubernetes components for Ubuntu
+# Install Kubernetes components for Ubuntu/Debian
 install_kubernetes_ubuntu() {
-    log_info "Installing Kubernetes components for Ubuntu..."
+    log_info "Installing Kubernetes components for Ubuntu/Debian..."
     
     apt-get update
     apt-get install -y apt-transport-https ca-certificates curl gpg
@@ -324,7 +335,7 @@ main() {
     
     # Install container runtime and Kubernetes based on OS
     case $OS in
-        ubuntu)
+        ubuntu|debian)
             install_containerd_ubuntu
             install_kubernetes_ubuntu
             ;;

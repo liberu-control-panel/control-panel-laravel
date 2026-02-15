@@ -10,6 +10,7 @@
 # 
 # Supported Operating Systems:
 # - Ubuntu LTS (20.04, 22.04, 24.04)
+# - Debian (11, 12)
 # - AlmaLinux / RHEL 8/9
 # - Rocky Linux 8/9
 ################################################################################
@@ -105,6 +106,16 @@ detect_os() {
                     fi
                 fi
                 ;;
+            debian)
+                if [[ ! "$OS_VERSION" =~ ^(11|12) ]]; then
+                    log_warning "Debian version $OS_VERSION detected. Supported versions: 11 (Bullseye), 12 (Bookworm)"
+                    read -p "Continue anyway? (y/N) " -n 1 -r
+                    echo
+                    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                        exit 1
+                    fi
+                fi
+                ;;
             almalinux|rhel|rocky)
                 if [[ ! "$OS_VERSION" =~ ^[89] ]]; then
                     log_warning "$OS_NAME version $OS_VERSION detected. Supported versions: 8, 9"
@@ -117,7 +128,7 @@ detect_os() {
                 ;;
             *)
                 log_error "Unsupported operating system: $OS_NAME"
-                log_info "Supported systems: Ubuntu LTS, AlmaLinux, RHEL, Rocky Linux"
+                log_info "Supported systems: Ubuntu LTS, Debian, AlmaLinux, RHEL, Rocky Linux"
                 exit 1
                 ;;
         esac
@@ -336,6 +347,21 @@ install_docker_engine() {
             apt-get update
             apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
             ;;
+        debian)
+            # Add Docker's official GPG key
+            install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            chmod a+r /etc/apt/keyrings/docker.gpg
+            
+            # Set up the repository
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+              $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+            
+            # Install Docker Engine
+            apt-get update
+            apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            ;;
         almalinux|rhel|rocky)
             # Add Docker repository
             dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -445,7 +471,7 @@ install_standalone() {
     
     # Install services based on OS
     case $OS in
-        ubuntu)
+        ubuntu|debian)
             install_standalone_ubuntu
             ;;
         almalinux|rhel|rocky)
@@ -462,10 +488,17 @@ install_standalone() {
 
 # Install standalone services on Ubuntu
 install_standalone_ubuntu() {
-    log_info "Installing services on Ubuntu..."
+    log_info "Installing services on Ubuntu/Debian..."
     
     # Add PHP repository
-    add-apt-repository -y ppa:ondrej/php
+    if [[ "$OS" == "ubuntu" ]]; then
+        add-apt-repository -y ppa:ondrej/php
+    elif [[ "$OS" == "debian" ]]; then
+        # Add Sury PHP repository for Debian
+        apt-get install -y lsb-release apt-transport-https ca-certificates wget
+        wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+        echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
+    fi
     apt-get update
     
     # Install NGINX
