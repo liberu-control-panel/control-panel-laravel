@@ -1,0 +1,200 @@
+{{- if eq .Values.databaseBackend "postgresql" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-postgresql
+  labels:
+    app: postgresql
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "dns-cluster.fullname" . }}-postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+      {{- include "dns-cluster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: postgresql
+        {{- include "dns-cluster.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.powerdns.postgresql.database | quote }}
+        - name: POSTGRES_USER
+          value: {{ .Values.powerdns.postgresql.username | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: database-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.powerdns.postgresql.username }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - {{ .Values.powerdns.postgresql.username }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: {{ include "dns-cluster.fullname" . }}-postgresql-init
+  volumeClaimTemplates:
+  - metadata:
+      name: postgresql-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      {{- if .Values.powerdns.persistence.storageClassName }}
+      storageClassName: {{ .Values.powerdns.persistence.storageClassName }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-postgresql
+  labels:
+    app: postgresql
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql
+  selector:
+    app: postgresql
+    {{- include "dns-cluster.selectorLabels" . | nindent 4 }}
+  clusterIP: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-postgresql-init
+  labels:
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+data:
+  01-powerdns-schema.sql: |
+    -- PowerDNS PostgreSQL Schema
+    CREATE TABLE IF NOT EXISTS domains (
+      id                    SERIAL PRIMARY KEY,
+      name                  VARCHAR(255) NOT NULL,
+      master                VARCHAR(128) DEFAULT NULL,
+      last_check            INT DEFAULT NULL,
+      type                  VARCHAR(6) NOT NULL,
+      notified_serial       BIGINT DEFAULT NULL,
+      account               VARCHAR(40) DEFAULT NULL,
+      CONSTRAINT c_lowercase_name CHECK (((name)::TEXT = LOWER((name)::TEXT)))
+    );
+
+    CREATE UNIQUE INDEX name_index ON domains(name);
+
+    CREATE TABLE IF NOT EXISTS records (
+      id                    BIGSERIAL PRIMARY KEY,
+      domain_id             INT DEFAULT NULL,
+      name                  VARCHAR(255) DEFAULT NULL,
+      type                  VARCHAR(10) DEFAULT NULL,
+      content               VARCHAR(65535) DEFAULT NULL,
+      ttl                   INT DEFAULT NULL,
+      prio                  INT DEFAULT NULL,
+      disabled              BOOL DEFAULT 'f',
+      ordername             VARCHAR(255),
+      auth                  BOOL DEFAULT 't',
+      CONSTRAINT domain_exists FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE,
+      CONSTRAINT c_lowercase_name CHECK (((name)::TEXT = LOWER((name)::TEXT)))
+    );
+
+    CREATE INDEX rec_name_index ON records(name);
+    CREATE INDEX nametype_index ON records(name,type);
+    CREATE INDEX domain_id ON records(domain_id);
+    CREATE INDEX recordorder ON records (domain_id, ordername text_pattern_ops);
+
+    CREATE TABLE IF NOT EXISTS supermasters (
+      ip                    INET NOT NULL,
+      nameserver            VARCHAR(255) NOT NULL,
+      account               VARCHAR(40) NOT NULL,
+      PRIMARY KEY(ip, nameserver)
+    );
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id                    SERIAL PRIMARY KEY,
+      domain_id             INT NOT NULL,
+      name                  VARCHAR(255) NOT NULL,
+      type                  VARCHAR(10) NOT NULL,
+      modified_at           INT NOT NULL,
+      account               VARCHAR(40) DEFAULT NULL,
+      comment               TEXT NOT NULL,
+      CONSTRAINT domain_exists FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE,
+      CONSTRAINT c_lowercase_name CHECK (((name)::TEXT = LOWER((name)::TEXT)))
+    );
+
+    CREATE INDEX comments_domain_id_idx ON comments (domain_id);
+    CREATE INDEX comments_name_type_idx ON comments (name, type);
+    CREATE INDEX comments_order_idx ON comments (domain_id, modified_at);
+
+    CREATE TABLE IF NOT EXISTS domainmetadata (
+      id                    SERIAL PRIMARY KEY,
+      domain_id             INT REFERENCES domains(id) ON DELETE CASCADE,
+      kind                  VARCHAR(32),
+      content               TEXT
+    );
+
+    CREATE INDEX domainidmetaindex ON domainmetadata(domain_id);
+
+    CREATE TABLE IF NOT EXISTS cryptokeys (
+      id                    SERIAL PRIMARY KEY,
+      domain_id             INT REFERENCES domains(id) ON DELETE CASCADE,
+      flags                 INT NOT NULL,
+      active                BOOL,
+      published             BOOL DEFAULT TRUE,
+      content               TEXT
+    );
+
+    CREATE INDEX domainidindex ON cryptokeys(domain_id);
+
+    CREATE TABLE IF NOT EXISTS tsigkeys (
+      id                    SERIAL PRIMARY KEY,
+      name                  VARCHAR(255),
+      algorithm             VARCHAR(50),
+      secret                VARCHAR(255),
+      CONSTRAINT c_lowercase_name CHECK (((name)::TEXT = LOWER((name)::TEXT)))
+    );
+
+    CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
+{{- end }}

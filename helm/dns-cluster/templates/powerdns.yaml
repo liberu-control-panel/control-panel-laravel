@@ -19,11 +19,34 @@ spec:
     spec:
       containers:
       - name: powerdns
+        {{- if .Values.powerdns.image.repository }}
         image: "{{ .Values.powerdns.image.repository }}:{{ .Values.powerdns.image.tag }}"
+        {{- else if eq .Values.databaseBackend "postgresql" }}
+        image: "pschiffe/pdns-pgsql:{{ .Values.powerdns.image.tag }}"
+        {{- else }}
+        image: "pschiffe/pdns-mysql:{{ .Values.powerdns.image.tag }}"
+        {{- end }}
         imagePullPolicy: {{ .Values.powerdns.image.pullPolicy }}
         env:
+        {{- if eq .Values.databaseBackend "postgresql" }}
+        - name: PDNS_gpgsql_host
+          value: {{ .Values.powerdns.postgresql.host | quote }}
+        - name: PDNS_gpgsql_port
+          value: {{ .Values.powerdns.postgresql.port | quote }}
+        - name: PDNS_gpgsql_dbname
+          value: {{ .Values.powerdns.postgresql.database | quote }}
+        - name: PDNS_gpgsql_user
+          value: {{ .Values.powerdns.postgresql.username | quote }}
+        - name: PDNS_gpgsql_password
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: database-password
+        {{- else }}
         - name: PDNS_gmysql_host
           value: {{ .Values.powerdns.mysql.host | quote }}
+        - name: PDNS_gmysql_port
+          value: {{ .Values.powerdns.mysql.port | quote }}
         - name: PDNS_gmysql_dbname
           value: {{ .Values.powerdns.mysql.database | quote }}
         - name: PDNS_gmysql_user
@@ -32,7 +55,8 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ include "dns-cluster.fullname" . }}-powerdns
-              key: mysql-password
+              key: database-password
+        {{- end }}
         {{- if .Values.powerdns.api.enabled }}
         - name: PDNS_api
           value: "yes"
@@ -54,6 +78,16 @@ spec:
           value: {{ .Values.powerdns.config.slaveServer | quote }}
         - name: PDNS_allow_axfr_ips
           value: {{ .Values.powerdns.config.allowAxfrIps | quote }}
+        {{- if .Values.powerdns.config.maxConnections }}
+        - name: PDNS_max_tcp_connections
+          value: {{ .Values.powerdns.config.maxConnections | quote }}
+        {{- end }}
+        {{- if .Values.powerdns.config.queryCacheEnabled }}
+        - name: PDNS_query_cache_ttl
+          value: {{ .Values.powerdns.config.queryCacheTtl | quote }}
+        - name: PDNS_cache_ttl
+          value: {{ .Values.powerdns.config.queryCacheTtl | quote }}
+        {{- end }}
         ports:
         - name: dns-udp
           containerPort: 53
@@ -119,7 +153,11 @@ metadata:
     {{- include "dns-cluster.labels" . | nindent 4 }}
 type: Opaque
 stringData:
-  mysql-password: {{ .Values.powerdns.mysql.password | quote }}
+  {{- if eq .Values.databaseBackend "postgresql" }}
+  database-password: {{ .Values.powerdns.postgresql.password | quote }}
+  {{- else }}
+  database-password: {{ .Values.powerdns.mysql.password | quote }}
+  {{- end }}
   {{- if .Values.powerdns.api.enabled }}
   api-key: {{ .Values.powerdns.api.key | quote }}
   {{- end }}

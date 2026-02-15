@@ -1,9 +1,15 @@
 # Default values for dns-cluster
 
+# Database backend selection: mysql or postgresql
+databaseBackend: mysql
+
 powerdns:
   enabled: true
   image:
-    repository: pschiffe/pdns-mysql
+    # Image will be automatically set based on databaseBackend
+    # mysql: pschiffe/pdns-mysql
+    # postgresql: pschiffe/pdns-pgsql
+    repository: ""  # Auto-configured
     tag: 4.8
     pullPolicy: IfNotPresent
   
@@ -17,9 +23,22 @@ powerdns:
     allowAxfrIps: "0.0.0.0/0"
     masterServer: "yes"
     slaveServer: "yes"
+    # Connection pooling for better performance
+    maxConnections: 100
+    # Query cache settings
+    queryCacheEnabled: true
+    queryCacheTtl: 20
     
   mysql:
     host: mariadb
+    port: 3306
+    database: powerdns
+    username: powerdns
+    password: ""
+  
+  postgresql:
+    host: postgresql
+    port: 5432
     database: powerdns
     username: powerdns
     password: ""

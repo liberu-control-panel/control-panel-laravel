@@ -1,0 +1,110 @@
+{{- if eq .Values.databaseBackend "mysql" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-mysql
+  labels:
+    app: mysql
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "dns-cluster.fullname" . }}-mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      {{- include "dns-cluster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: mysql
+        {{- include "dns-cluster.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: mysql
+        image: mariadb:11.2
+        ports:
+        - containerPort: 3306
+          name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: database-password
+        - name: MYSQL_DATABASE
+          value: {{ .Values.powerdns.mysql.database | quote }}
+        - name: MYSQL_USER
+          value: {{ .Values.powerdns.mysql.username | quote }}
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: database-password
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+            - -u
+            - root
+            - -p$MYSQL_ROOT_PASSWORD
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+            - -u
+            - root
+            - -p$MYSQL_ROOT_PASSWORD
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      {{- if .Values.powerdns.persistence.storageClassName }}
+      storageClassName: {{ .Values.powerdns.persistence.storageClassName }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-mysql
+  labels:
+    app: mysql
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+    name: mysql
+  selector:
+    app: mysql
+    {{- include "dns-cluster.selectorLabels" . | nindent 4 }}
+  clusterIP: None
+{{- end }}
