@@ -1,0 +1,86 @@
+# Default values for php-versions
+
+# PHP versions to deploy
+phpVersions:
+  - version: "8.1"
+    enabled: true
+    replicaCount: 2
+  - version: "8.2"
+    enabled: true
+    replicaCount: 2
+  - version: "8.3"
+    enabled: true
+    replicaCount: 2
+  - version: "8.4"
+    enabled: true
+    replicaCount: 2
+  - version: "8.5"
+    enabled: true
+    replicaCount: 2
+
+# Image configuration
+image:
+  repository: php
+  pullPolicy: IfNotPresent
+  # Tag is set per version
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9000
+
+# Resources per PHP-FPM pod
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# PHP-FPM configuration
+phpFpm:
+  # Maximum children processes
+  pmMaxChildren: 50
+  pmStartServers: 10
+  pmMinSpareServers: 5
+  pmMaxSpareServers: 20
+  pmMaxRequests: 500
+  
+  # Memory limits
+  memoryLimit: 512M
+  maxExecutionTime: 300
+  maxInputTime: 300
+  uploadMaxFilesize: 100M
+  postMaxSize: 100M
+
+# PHP extensions to enable
+phpExtensions:
+  - bcmath
+  - gd
+  - intl
+  - mbstring
+  - mysqli
+  - opcache
+  - pdo
+  - pdo_mysql
+  - redis
+  - xml
+  - zip
+  - imagick
+
+# Opcache configuration
+opcache:
+  enabled: true
+  memoryConsumption: 128
+  maxAcceleratedFiles: 10000
+  revalidateFreq: 2
+
+# NodeSelector for scheduling
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity: {}

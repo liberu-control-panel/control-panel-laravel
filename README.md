@@ -28,9 +28,34 @@ Key features
 
 ## Quick Start
 
-### Kubernetes Deployment (Recommended)
+### Complete Kubernetes Installation (Recommended)
 
-Deploy the control panel on Kubernetes for production use. See the detailed [Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md) for complete instructions.
+For a **complete, production-ready installation** including Kubernetes cluster setup, control panel, and all services (mail, DNS, PHP multi-version, etc.), see the [Complete Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md).
+
+**What's Included:**
+- Automated Kubernetes cluster installation (Ubuntu LTS & AlmaLinux/RHEL)
+- Control Panel with Laravel Octane support
+- NGINX Ingress with Let's Encrypt SSL
+- MariaDB cluster with replication
+- Redis for caching
+- Postfix + Dovecot mail services
+- PowerDNS DNS cluster
+- PHP multi-version support (8.1-8.5)
+- Queue workers and scheduler
+
+**Quick Installation:**
+
+```bash
+# Step 1: Install Kubernetes cluster
+sudo ./install-k8s.sh
+
+# Step 2: Install control panel and all services
+./install-control-panel.sh
+```
+
+### Kubernetes Deployment (Manual)
+
+Deploy the control panel on an existing Kubernetes cluster. See the detailed [Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md) for complete instructions.
 
 **Prerequisites:**
 - Kubernetes cluster (v1.20+)
@@ -126,9 +151,13 @@ Notes
 
 ## Documentation
 
-- **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on Kubernetes and manage clusters
+- **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
+- **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster
 - **[Kubernetes Manifests](k8s/README.md)** - Raw Kubernetes manifests and Kustomize overlays
 - **[Helm Chart](helm/control-panel/README.md)** - Helm chart for easy deployment
+- **[Mail Services](helm/mail-services/README.md)** - Postfix and Dovecot mail services
+- **[DNS Cluster](helm/dns-cluster/README.md)** - PowerDNS DNS cluster setup
+- **[PHP Multi-Version](helm/php-versions/README.md)** - PHP 8.1-8.5 multi-version support
 - **[SSH Configuration Guide](docs/SSH_CONFIGURATION.md)** - Configure secure SSH connections
 - **[Security Best Practices](docs/SECURITY.md)** - Essential security guidelines
 - **[Makefile Reference](#makefile-commands)** - Common deployment commands

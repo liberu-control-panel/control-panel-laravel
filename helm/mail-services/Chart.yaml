@@ -1,0 +1,16 @@
+apiVersion: v2
+name: mail-services
+description: Mail services (Postfix + Dovecot) for Control Panel
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - mail
+  - postfix
+  - dovecot
+  - smtp
+  - imap
+home: https://github.com/liberu-control-panel/control-panel-laravel
+maintainers:
+  - name: Liberu Team
+    url: https://liberu.co.uk

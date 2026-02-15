@@ -1,0 +1,160 @@
+{{- range .Values.phpVersions }}
+{{- if .enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}
+  labels:
+    app: php-fpm
+    version: {{ .version | quote }}
+    {{- include "php-versions.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app: php-fpm
+      version: {{ .version | quote }}
+      {{- include "php-versions.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: php-fpm
+        version: {{ .version | quote }}
+        {{- include "php-versions.selectorLabels" $ | nindent 8 }}
+    spec:
+      containers:
+      - name: php-fpm
+        image: "{{ $.Values.image.repository }}:{{ .version }}-fpm-alpine"
+        imagePullPolicy: {{ $.Values.image.pullPolicy }}
+        ports:
+        - name: php-fpm
+          containerPort: 9000
+          protocol: TCP
+        env:
+        - name: PHP_FPM_PM_MAX_CHILDREN
+          value: {{ $.Values.phpFpm.pmMaxChildren | quote }}
+        - name: PHP_FPM_PM_START_SERVERS
+          value: {{ $.Values.phpFpm.pmStartServers | quote }}
+        - name: PHP_FPM_PM_MIN_SPARE_SERVERS
+          value: {{ $.Values.phpFpm.pmMinSpareServers | quote }}
+        - name: PHP_FPM_PM_MAX_SPARE_SERVERS
+          value: {{ $.Values.phpFpm.pmMaxSpareServers | quote }}
+        - name: PHP_FPM_PM_MAX_REQUESTS
+          value: {{ $.Values.phpFpm.pmMaxRequests | quote }}
+        - name: PHP_MEMORY_LIMIT
+          value: {{ $.Values.phpFpm.memoryLimit | quote }}
+        - name: PHP_MAX_EXECUTION_TIME
+          value: {{ $.Values.phpFpm.maxExecutionTime | quote }}
+        - name: PHP_UPLOAD_MAX_FILESIZE
+          value: {{ $.Values.phpFpm.uploadMaxFilesize | quote }}
+        - name: PHP_POST_MAX_SIZE
+          value: {{ $.Values.phpFpm.postMaxSize | quote }}
+        volumeMounts:
+        - name: php-config
+          mountPath: /usr/local/etc/php/conf.d/custom.ini
+          subPath: custom.ini
+        - name: php-fpm-config
+          mountPath: /usr/local/etc/php-fpm.d/zz-custom.conf
+          subPath: zz-custom.conf
+        resources:
+          {{- toYaml $.Values.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: php-config
+        configMap:
+          name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}
+      - name: php-fpm-config
+        configMap:
+          name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}-fpm
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}
+  labels:
+    app: php-fpm
+    version: {{ .version | quote }}
+    {{- include "php-versions.labels" $ | nindent 4 }}
+spec:
+  type: {{ $.Values.service.type }}
+  ports:
+  - port: {{ $.Values.service.port }}
+    targetPort: 9000
+    protocol: TCP
+    name: php-fpm
+  selector:
+    app: php-fpm
+    version: {{ .version | quote }}
+    {{- include "php-versions.selectorLabels" $ | nindent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}
+  labels:
+    {{- include "php-versions.labels" $ | nindent 4 }}
+data:
+  custom.ini: |
+    memory_limit = {{ $.Values.phpFpm.memoryLimit }}
+    max_execution_time = {{ $.Values.phpFpm.maxExecutionTime }}
+    max_input_time = {{ $.Values.phpFpm.maxInputTime }}
+    upload_max_filesize = {{ $.Values.phpFpm.uploadMaxFilesize }}
+    post_max_size = {{ $.Values.phpFpm.postMaxSize }}
+    
+    {{- if $.Values.opcache.enabled }}
+    opcache.enable=1
+    opcache.memory_consumption={{ $.Values.opcache.memoryConsumption }}
+    opcache.max_accelerated_files={{ $.Values.opcache.maxAcceleratedFiles }}
+    opcache.revalidate_freq={{ $.Values.opcache.revalidateFreq }}
+    opcache.fast_shutdown=1
+    {{- end }}
+    
+    date.timezone = UTC
+    expose_php = Off
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "php-versions.fullname" $ }}-{{ .version | replace "." "-" }}-fpm
+  labels:
+    {{- include "php-versions.labels" $ | nindent 4 }}
+data:
+  zz-custom.conf: |
+    [www]
+    pm = dynamic
+    pm.max_children = {{ $.Values.phpFpm.pmMaxChildren }}
+    pm.start_servers = {{ $.Values.phpFpm.pmStartServers }}
+    pm.min_spare_servers = {{ $.Values.phpFpm.pmMinSpareServers }}
+    pm.max_spare_servers = {{ $.Values.phpFpm.pmMaxSpareServers }}
+    pm.max_requests = {{ $.Values.phpFpm.pmMaxRequests }}
+    
+    ; Logging
+    php_admin_value[error_log] = /var/log/fpm-php.www.log
+    php_admin_flag[log_errors] = on
+    
+    ; Security
+    php_admin_value[disable_functions] = exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source
+{{- end }}
+{{- end }}

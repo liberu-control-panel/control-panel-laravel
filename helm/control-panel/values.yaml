@@ -141,3 +141,54 @@ ssh:
   timeout: 30
   retryAttempts: 3
   retryDelay: 5
+
+# Laravel Octane configuration
+octane:
+  enabled: false
+  server: roadrunner  # roadrunner or swoole
+  replicaCount: 3
+  port: 8000
+  workers: 4
+  taskWorkers: 6
+  maxRequests: 500
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Queue workers configuration
+queue:
+  enabled: true
+  replicaCount: 3
+  queues:
+    - default
+    - emails
+    - deployments
+  tries: 3
+  timeout: 300
+  maxJobs: 1000
+  maxTime: 3600
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+# Scheduler configuration
+scheduler:
+  enabled: true
+  schedule: "* * * * *"  # Every minute
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
