@@ -20,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Register the module service provider
         $this->app->register(ModuleServiceProvider::class);
+
+        // Register deployment-aware service
+        $this->app->singleton(\App\Services\DeploymentAwareService::class);
     }
 
     /**
