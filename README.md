@@ -20,6 +20,8 @@ Key features
 
 - User and team management with Jetstream and role-based policies
 - **Multi-site management** with comprehensive performance monitoring and uptime tracking
+- **Multi-deployment support**: Kubernetes, Docker Compose, and Standalone deployments
+- **Auto-scaling**: Automatic horizontal and vertical scaling on AWS, Azure, GCP, DigitalOcean, OVH
 - Manage NGINX virtual hosts with automated Let's Encrypt support
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
@@ -30,6 +32,7 @@ Key features
 - **WordPress auto-deployment** with one-click installation and automatic updates
 - **Git repository deployment** from GitHub, GitLab, Bitbucket with webhook support
 - **Performance metrics tracking** including uptime, response times, bandwidth, and visitor analytics
+- **cPanel/Plesk/DirectAdmin alternative** with modern cloud-native architecture
 
 ## Quick Start
 
@@ -230,6 +233,7 @@ Notes
 ## Documentation
 
 ### Infrastructure & Deployment
+- **[Multi-Deployment & Auto-Scaling Guide](docs/MULTI_DEPLOYMENT_AUTOSCALING.md)** - ⭐ **NEW**: Support for Kubernetes, Docker, and Standalone deployments with cloud auto-scaling
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
 - **[Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md)** - Deploy on AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
