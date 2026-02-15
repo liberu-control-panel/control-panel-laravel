@@ -266,8 +266,12 @@ Notes
 
 ## Documentation
 
+### Installation & Getting Started
+- **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - ⭐ **START HERE**: Unified installation guide for all deployment methods
+- **[Quick Start Guide](QUICK_START.md)** - Quick start guide for new features
+
 ### Infrastructure & Deployment
-- **[Multi-Deployment & Auto-Scaling Guide](docs/MULTI_DEPLOYMENT_AUTOSCALING.md)** - ⭐ **NEW**: Support for Kubernetes, Docker, and Standalone deployments with cloud auto-scaling
+- **[Multi-Deployment & Auto-Scaling Guide](docs/MULTI_DEPLOYMENT_AUTOSCALING.md)** - Support for Kubernetes, Docker, and Standalone deployments with cloud auto-scaling
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
 - **[Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md)** - Deploy on AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
