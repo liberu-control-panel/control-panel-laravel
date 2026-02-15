@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\App\Resources;
+namespace App\Filament\Admin\Resources;
 
-use App\Filament\App\Resources\HelmReleaseResource\Pages;
+use App\Filament\Admin\Resources\HelmReleaseResource\Pages;
 use App\Models\HelmRelease;
 use App\Models\Server;
 use App\Services\HelmChartService;

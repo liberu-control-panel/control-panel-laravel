@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources\HelmReleaseResource\Widgets;
+namespace App\Filament\Admin\Resources\HelmReleaseResource\Widgets;
 
 use App\Models\HelmRelease;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;

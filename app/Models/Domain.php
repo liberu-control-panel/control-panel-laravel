@@ -187,5 +187,21 @@ class Domain extends Model
             'container_count' => $containers->count()
         ];
     }
+
+    /**
+     * Get WordPress applications for the domain
+     */
+    public function wordpressApplications()
+    {
+        return $this->hasMany(WordPressApplication::class);
+    }
+
+    /**
+     * Get git deployments for the domain
+     */
+    public function gitDeployments()
+    {
+        return $this->hasMany(GitDeployment::class);
+    }
 }
 
