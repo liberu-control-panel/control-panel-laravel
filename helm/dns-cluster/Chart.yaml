@@ -1,0 +1,15 @@
+apiVersion: v2
+name: dns-cluster
+description: DNS cluster with CoreDNS and PowerDNS for Control Panel
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - dns
+  - coredns
+  - powerdns
+  - nameserver
+home: https://github.com/liberu-control-panel/control-panel-laravel
+maintainers:
+  - name: Liberu Team
+    url: https://liberu.co.uk

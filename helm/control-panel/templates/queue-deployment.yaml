@@ -1,0 +1,83 @@
+{{- if .Values.queue.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "control-panel.fullname" . }}-queue
+  labels:
+    {{- include "control-panel.labels" . | nindent 4 }}
+    component: queue
+spec:
+  replicas: {{ .Values.queue.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "control-panel.selectorLabels" . | nindent 6 }}
+      component: queue
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "control-panel.selectorLabels" . | nindent 8 }}
+        component: queue
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "control-panel.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: queue-worker
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - php
+        - artisan
+        - queue:work
+        {{- range .Values.queue.queues }}
+        - --queue={{ . }}
+        {{- end }}
+        - --tries={{ .Values.queue.tries }}
+        - --timeout={{ .Values.queue.timeout }}
+        - --max-jobs={{ .Values.queue.maxJobs }}
+        - --max-time={{ .Values.queue.maxTime }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "control-panel.fullname" . }}-config
+        - secretRef:
+            name: {{ include "control-panel.fullname" . }}-secrets
+        volumeMounts:
+        - name: storage
+          mountPath: /var/www/html/storage
+        resources:
+          {{- toYaml .Values.queue.resources | nindent 12 }}
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - ps aux | grep -v grep | grep -q 'artisan queue:work'
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 3
+      volumes:
+      - name: storage
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "control-panel.fullname" . }}-storage
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
