@@ -651,7 +651,7 @@ main() {
     
     # Install container runtime
     case $OS in
-        ubuntu)
+        ubuntu|debian)
             install_containerd_ubuntu
             install_kubernetes_ubuntu
             ;;
