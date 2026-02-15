@@ -69,7 +69,7 @@ services:
       - proxy-network
 
   mysql:
-    image: mysql:8.0
+    image: mariadb:11.2
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
@@ -90,6 +90,33 @@ services:
       retries: 5
     networks:
       - proxy-network
+
+  # PostgreSQL (optional) - Use with: docker-compose --profile postgresql up
+  # To use PostgreSQL instead of MariaDB:
+  # 1. Start with: docker-compose --profile postgresql up
+  # 2. Set DB_CONNECTION=pgsql and DB_HOST=postgresql in .env
+  postgresql:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: myapp
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    secrets:
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - proxy-network
+    profiles:
+      - postgresql
 
   control-panel:
     build:
@@ -133,6 +160,7 @@ services:
 
 volumes:
   mysql-data:
+  postgresql-data:
   postfix_data:
   postfix_config:
   dovecot_data:
