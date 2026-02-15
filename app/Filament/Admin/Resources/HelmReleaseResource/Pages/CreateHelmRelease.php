@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\App\Resources\HelmReleaseResource\Pages;
+namespace App\Filament\Admin\Resources\HelmReleaseResource\Pages;
 
-use App\Filament\App\Resources\HelmReleaseResource;
+use App\Filament\Admin\Resources\HelmReleaseResource;
 use App\Services\HelmChartService;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;

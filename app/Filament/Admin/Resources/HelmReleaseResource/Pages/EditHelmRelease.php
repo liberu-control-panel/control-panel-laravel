@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\App\Resources\HelmReleaseResource\Pages;
+namespace App\Filament\Admin\Resources\HelmReleaseResource\Pages;
 
-use App\Filament\App\Resources\HelmReleaseResource;
+use App\Filament\Admin\Resources\HelmReleaseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
