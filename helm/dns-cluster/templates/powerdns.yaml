@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-powerdns
+  labels:
+    app: powerdns
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.powerdns.replicaCount }}
+  selector:
+    matchLabels:
+      app: powerdns
+      {{- include "dns-cluster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: powerdns
+        {{- include "dns-cluster.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: powerdns
+        image: "{{ .Values.powerdns.image.repository }}:{{ .Values.powerdns.image.tag }}"
+        imagePullPolicy: {{ .Values.powerdns.image.pullPolicy }}
+        env:
+        - name: PDNS_gmysql_host
+          value: {{ .Values.powerdns.mysql.host | quote }}
+        - name: PDNS_gmysql_dbname
+          value: {{ .Values.powerdns.mysql.database | quote }}
+        - name: PDNS_gmysql_user
+          value: {{ .Values.powerdns.mysql.username | quote }}
+        - name: PDNS_gmysql_password
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: mysql-password
+        {{- if .Values.powerdns.api.enabled }}
+        - name: PDNS_api
+          value: "yes"
+        - name: PDNS_api_key
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "dns-cluster.fullname" . }}-powerdns
+              key: api-key
+        - name: PDNS_webserver
+          value: "yes"
+        - name: PDNS_webserver_address
+          value: "0.0.0.0"
+        - name: PDNS_webserver_allow_from
+          value: "0.0.0.0/0"
+        {{- end }}
+        - name: PDNS_master
+          value: {{ .Values.powerdns.config.masterServer | quote }}
+        - name: PDNS_slave
+          value: {{ .Values.powerdns.config.slaveServer | quote }}
+        - name: PDNS_allow_axfr_ips
+          value: {{ .Values.powerdns.config.allowAxfrIps | quote }}
+        ports:
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+        {{- if .Values.powerdns.api.enabled }}
+        - name: api
+          containerPort: 8081
+          protocol: TCP
+        {{- end }}
+        resources:
+          {{- toYaml .Values.powerdns.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: 53
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 53
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-powerdns
+  labels:
+    app: powerdns
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+  {{- with .Values.powerdns.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.powerdns.service.type }}
+  ports:
+  - port: {{ .Values.powerdns.service.dns.port }}
+    targetPort: 53
+    protocol: UDP
+    name: dns-udp
+  - port: {{ .Values.powerdns.service.dns.port }}
+    targetPort: 53
+    protocol: TCP
+    name: dns-tcp
+  {{- if .Values.powerdns.api.enabled }}
+  - port: {{ .Values.powerdns.service.api.port }}
+    targetPort: 8081
+    protocol: TCP
+    name: api
+  {{- end }}
+  selector:
+    app: powerdns
+    {{- include "dns-cluster.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-powerdns
+  labels:
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  mysql-password: {{ .Values.powerdns.mysql.password | quote }}
+  {{- if .Values.powerdns.api.enabled }}
+  api-key: {{ .Values.powerdns.api.key | quote }}
+  {{- end }}

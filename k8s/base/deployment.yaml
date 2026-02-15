@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-panel
+  namespace: control-panel
+  labels:
+    app: control-panel
+    component: application
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: control-panel
+      component: application
+  template:
+    metadata:
+      labels:
+        app: control-panel
+        component: application
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z control-panel-mysql 3306; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+      - name: migrations
+        image: ghcr.io/liberu-control-panel/control-panel-laravel:latest
+        command:
+        - sh
+        - -c
+        - |
+          php artisan migrate --force
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+        envFrom:
+        - configMapRef:
+            name: control-panel-config
+        - secretRef:
+            name: control-panel-secrets
+      containers:
+      - name: php-fpm
+        image: ghcr.io/liberu-control-panel/control-panel-laravel:latest
+        ports:
+        - containerPort: 9000
+          name: php-fpm
+        envFrom:
+        - configMapRef:
+            name: control-panel-config
+        - secretRef:
+            name: control-panel-secrets
+        volumeMounts:
+        - name: storage
+          mountPath: /var/www/html/storage
+        - name: cache
+          mountPath: /var/www/html/bootstrap/cache
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - name: nginx
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: storage
+          mountPath: /var/www/html/storage
+          readOnly: true
+        - name: public
+          mountPath: /var/www/html/public
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_BIND_SERVICE
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: control-panel-storage
+      - name: cache
+        emptyDir: {}
+      - name: public
+        emptyDir: {}
+      - name: nginx-config
+        configMap:
+          name: control-panel-nginx-config
+      securityContext:
+        fsGroup: 1000

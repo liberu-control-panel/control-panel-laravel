@@ -99,7 +99,7 @@ class EmailResource extends Resource
         // Create mailbox directory
         Storage::disk('dovecot_data')->makeDirectory($email->email);
 
-        // Update Dovecot and Postfix Docker instances
+        // Update Dovecot and Postfix services
         $this->updateEmailServers();
 
         return $email;
@@ -117,7 +117,7 @@ class EmailResource extends Resource
         $postfixConfig = $this->generatePostfixConfig($email->email, $email->password, $email->forwarding_rules);
         Storage::disk('postfix_config')->put($email->email . '.cf', $postfixConfig);
 
-        // Update Dovecot and Postfix Docker instances
+        // Update Dovecot and Postfix services
         $this->updateEmailServers();
 
         return $email;
@@ -134,7 +134,7 @@ class EmailResource extends Resource
         // Remove mailbox directory
         Storage::disk('dovecot_data')->deleteDirectory($email->email);
 
-        // Update Dovecot and Postfix Docker instances
+        // Update Dovecot and Postfix services
         $this->updateEmailServers();
 
         $email->delete();

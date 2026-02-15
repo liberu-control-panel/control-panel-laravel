@@ -1,0 +1,14 @@
+apiVersion: v2
+name: php-versions
+description: PHP multi-version support (8.1-8.5) with FPM for Control Panel
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - php
+  - php-fpm
+  - multi-version
+home: https://github.com/liberu-control-panel/control-panel-laravel
+maintainers:
+  - name: Liberu Team
+    url: https://liberu.co.uk

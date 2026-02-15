@@ -1,0 +1,103 @@
+# Default values for dns-cluster
+
+powerdns:
+  enabled: true
+  image:
+    repository: pschiffe/pdns-mysql
+    tag: 4.8
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 3
+  
+  api:
+    enabled: true
+    key: "change-this-api-key"
+  
+  config:
+    allowAxfrIps: "0.0.0.0/0"
+    masterServer: "yes"
+    slaveServer: "yes"
+    
+  mysql:
+    host: mariadb
+    database: powerdns
+    username: powerdns
+    password: ""
+    
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    dns:
+      port: 53
+    api:
+      port: 8081
+      
+  persistence:
+    enabled: false
+    
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# PowerDNS Admin web interface
+powerdnsAdmin:
+  enabled: true
+  image:
+    repository: ngoduykhanh/powerdns-admin
+    tag: 0.4.1
+    pullPolicy: IfNotPresent
+    
+  replicaCount: 2
+  
+  service:
+    type: ClusterIP
+    port: 80
+    
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: dns-admin.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: dns-admin-tls
+        hosts:
+          - dns-admin.example.com
+          
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Secondary nameservers configuration
+secondaryNameservers:
+  - ns1.example.com
+  - ns2.example.com
+  - ns3.example.com
+
+# DNSSEC configuration
+dnssec:
+  enabled: false
+
+# S3-compatible storage configuration for zone files backup
+s3:
+  enabled: false
+  endpoint: ""
+  accessKey: ""
+  secretKey: ""
+  bucket: ""
+  region: "us-east-1"
+  usePathStyle: true
+  storageClassName: "s3-storage"

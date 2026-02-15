@@ -1,0 +1,62 @@
+{{- if .Values.scheduler.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "control-panel.fullname" . }}-scheduler
+  labels:
+    {{- include "control-panel.labels" . | nindent 4 }}
+    component: scheduler
+spec:
+  schedule: {{ .Values.scheduler.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.scheduler.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.scheduler.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+            checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+          labels:
+            {{- include "control-panel.selectorLabels" . | nindent 12 }}
+            component: scheduler
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "control-panel.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+          - name: scheduler
+            securityContext:
+              {{- toYaml .Values.securityContext | nindent 14 }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command:
+            - php
+            - artisan
+            - schedule:run
+            - -v
+            envFrom:
+            - configMapRef:
+                name: {{ include "control-panel.fullname" . }}-config
+            - secretRef:
+                name: {{ include "control-panel.fullname" . }}-secrets
+            volumeMounts:
+            - name: storage
+              mountPath: /var/www/html/storage
+            resources:
+              {{- toYaml .Values.scheduler.resources | nindent 14 }}
+          volumes:
+          - name: storage
+            {{- if .Values.persistence.enabled }}
+            persistentVolumeClaim:
+              claimName: {{ include "control-panel.fullname" . }}-storage
+            {{- else }}
+            emptyDir: {}
+            {{- end }}
+{{- end }}

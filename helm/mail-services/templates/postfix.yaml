@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mail-services.fullname" . }}-postfix
+  labels:
+    app: postfix
+    {{- include "mail-services.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.postfix.replicaCount }}
+  selector:
+    matchLabels:
+      app: postfix
+      {{- include "mail-services.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: postfix
+        {{- include "mail-services.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: postfix
+        image: "{{ .Values.postfix.image.repository }}:{{ .Values.postfix.image.tag }}"
+        imagePullPolicy: {{ .Values.postfix.image.pullPolicy }}
+        env:
+        - name: HOSTNAME
+          value: {{ .Values.postfix.config.hostname | quote }}
+        - name: ALLOWED_SENDER_DOMAINS
+          value: {{ .Values.postfix.config.domain | quote }}
+        - name: MESSAGE_SIZE_LIMIT
+          value: {{ .Values.postfix.config.messageSizeLimit | quote }}
+        {{- if .Values.postfix.config.relayHost }}
+        - name: RELAYHOST
+          value: {{ .Values.postfix.config.relayHost | quote }}
+        - name: RELAYHOST_USERNAME
+          value: {{ .Values.postfix.config.relayUser | quote }}
+        - name: RELAYHOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mail-services.fullname" . }}-postfix
+              key: relay-password
+        {{- end }}
+        ports:
+        - name: smtp
+          containerPort: 587
+          protocol: TCP
+        resources:
+          {{- toYaml .Values.postfix.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: 587
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 587
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mail-services.fullname" . }}-postfix
+  labels:
+    app: postfix
+    {{- include "mail-services.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.postfix.service.type }}
+  ports:
+  - port: {{ .Values.postfix.service.port }}
+    targetPort: 587
+    protocol: TCP
+    name: smtp
+  selector:
+    app: postfix
+    {{- include "mail-services.selectorLabels" . | nindent 4 }}

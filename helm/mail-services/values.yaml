@@ -1,0 +1,92 @@
+# Default values for mail-services
+
+postfix:
+  enabled: true
+  image:
+    repository: boky/postfix
+    tag: v4.0.0
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 2
+  
+  config:
+    hostname: mail.example.com
+    domain: example.com
+    relayHost: ""
+    relayPort: 587
+    relayUser: ""
+    relayPassword: ""
+    messageSizeLimit: 52428800  # 50MB
+    
+  service:
+    type: ClusterIP
+    port: 587
+    
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+dovecot:
+  enabled: true
+  image:
+    repository: dovecot/dovecot
+    tag: 2.3.21
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 2
+  
+  config:
+    hostname: mail.example.com
+    protocols: imap pop3 lmtp
+    sslCert: /etc/ssl/certs/dovecot.pem
+    sslKey: /etc/ssl/private/dovecot.key
+    
+  service:
+    imap:
+      port: 143
+      tlsPort: 993
+    pop3:
+      port: 110
+      tlsPort: 995
+    lmtp:
+      port: 24
+      
+  persistence:
+    enabled: true
+    storageClass: standard
+    size: 20Gi
+    
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Shared storage for mail data
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 50Gi
+  accessMode: ReadWriteMany
+
+# S3-compatible storage configuration for mail data
+s3:
+  enabled: false
+  endpoint: ""
+  accessKey: ""
+  secretKey: ""
+  bucket: ""
+  region: "us-east-1"
+  usePathStyle: true
+  storageClassName: "s3-storage"
+
+# TLS configuration
+tls:
+  enabled: true
+  issuer: letsencrypt-prod

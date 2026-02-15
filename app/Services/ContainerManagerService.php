@@ -5,6 +5,7 @@ namespace App\Services;
 use Exception;
 use App\Models\Domain;
 use App\Models\Container;
+use App\Models\Server;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Log;
@@ -12,16 +13,61 @@ use Illuminate\Support\Facades\Log;
 class ContainerManagerService
 {
     protected $dockerComposeService;
+    protected $kubernetesService;
 
-    public function __construct(DockerComposeService $dockerComposeService)
-    {
+    public function __construct(
+        DockerComposeService $dockerComposeService,
+        KubernetesService $kubernetesService
+    ) {
         $this->dockerComposeService = $dockerComposeService;
+        $this->kubernetesService = $kubernetesService;
     }
 
     /**
      * Create a complete hosting environment for a domain
      */
     public function createHostingEnvironment(Domain $domain, array $options = []): bool
+    {
+        try {
+            // Determine server and deployment method
+            $server = $domain->server ?? Server::getDefault();
+            
+            if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+                // Use Kubernetes for deployment
+                return $this->createKubernetesEnvironment($domain, $options);
+            } else {
+                // Fallback to Docker Compose
+                return $this->createDockerEnvironment($domain, $options);
+            }
+        } catch (Exception $e) {
+            Log::error("Failed to create hosting environment for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Create Kubernetes-based hosting environment
+     */
+    protected function createKubernetesEnvironment(Domain $domain, array $options = []): bool
+    {
+        try {
+            // Deploy to Kubernetes
+            $this->kubernetesService->deployDomain($domain, $options);
+
+            // Create container records for tracking
+            $this->createContainerRecordsForKubernetes($domain, $options);
+
+            return true;
+        } catch (Exception $e) {
+            Log::error("Failed to create Kubernetes environment for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Create Docker-based hosting environment (legacy)
+     */
+    protected function createDockerEnvironment(Domain $domain, array $options = []): bool
     {
         try {
             $services = $this->generateServicesConfig($domain, $options);
@@ -42,7 +88,7 @@ class ContainerManagerService
 
             return true;
         } catch (Exception $e) {
-            Log::error("Failed to create hosting environment for {$domain->domain_name}: " . $e->getMessage());
+            Log::error("Failed to create Docker environment for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
     }
@@ -282,25 +328,82 @@ class ContainerManagerService
     }
 
     /**
+     * Create container records for Kubernetes pods
+     */
+    protected function createContainerRecordsForKubernetes(Domain $domain, array $options): void
+    {
+        // Web server pod
+        Container::create([
+            'domain_id' => $domain->id,
+            'name' => 'web',
+            'type' => Container::TYPE_WEB,
+            'image' => config('kubernetes.images.nginx'),
+            'container_name' => $this->sanitizeName($domain->domain_name) . '-web',
+            'status' => 'running'
+        ]);
+
+        // Database pod if requested
+        if ($options['database_type'] ?? false) {
+            $dbImage = $options['database_type'] === 'mysql' 
+                ? config('kubernetes.images.mysql') 
+                : config('kubernetes.images.postgresql');
+            
+            Container::create([
+                'domain_id' => $domain->id,
+                'name' => 'database',
+                'type' => Container::TYPE_DATABASE,
+                'image' => $dbImage,
+                'container_name' => $this->sanitizeName($domain->domain_name) . '-db',
+                'status' => 'running'
+            ]);
+        }
+    }
+
+    /**
+     * Sanitize name for Kubernetes
+     */
+    protected function sanitizeName(string $name): string
+    {
+        $sanitized = strtolower($name);
+        $sanitized = preg_replace('/[^a-z0-9-.]/', '-', $sanitized);
+        $sanitized = preg_replace('/-+/', '-', $sanitized);
+        $sanitized = trim($sanitized, '-.');
+        
+        if (strlen($sanitized) > 63) {
+            $sanitized = substr($sanitized, 0, 63);
+        }
+        
+        return $sanitized;
+    }
+
+    /**
      * Stop and remove all containers for a domain
      */
     public function destroyHostingEnvironment(Domain $domain): bool
     {
         try {
-            $composeFile = storage_path("app/docker-compose-{$domain->domain_name}.yml");
+            $server = $domain->server ?? Server::getDefault();
+            
+            if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+                // Delete from Kubernetes
+                $this->kubernetesService->deleteDomain($domain);
+            } else {
+                // Delete from Docker
+                $composeFile = storage_path("app/docker-compose-{$domain->domain_name}.yml");
 
-            if (file_exists($composeFile)) {
-                $process = new Process(['docker-compose', '-f', $composeFile, 'down', '-v']);
+                if (file_exists($composeFile)) {
+                    $process = new Process(['docker-compose', '-f', $composeFile, 'down', '-v']);
+                    $process->run();
+                }
+
+                // Remove network
+                $networkName = "hosting_{$domain->domain_name}";
+                $process = new Process(['docker', 'network', 'rm', $networkName]);
                 $process->run();
             }
 
             // Remove container records
             Container::where('domain_id', $domain->id)->delete();
-
-            // Remove network
-            $networkName = "hosting_{$domain->domain_name}";
-            $process = new Process(['docker', 'network', 'rm', $networkName]);
-            $process->run();
 
             return true;
         } catch (Exception $e) {
@@ -313,6 +416,44 @@ class ContainerManagerService
      * Get container status for a domain
      */
     public function getContainerStatus(Domain $domain): array
+    {
+        $server = $domain->server ?? Server::getDefault();
+        
+        if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+            // Get pod status from Kubernetes
+            return $this->getKubernetesPodStatus($domain);
+        } else {
+            // Get container status from Docker
+            return $this->getDockerContainerStatus($domain);
+        }
+    }
+
+    /**
+     * Get Kubernetes pod status
+     */
+    protected function getKubernetesPodStatus(Domain $domain): array
+    {
+        $pods = $this->kubernetesService->getPodStatus($domain);
+        $status = [];
+
+        foreach ($pods as $pod) {
+            $name = $pod['metadata']['name'] ?? 'unknown';
+            $phase = $pod['status']['phase'] ?? 'unknown';
+            
+            $status[$name] = [
+                'status' => strtolower($phase),
+                'type' => 'pod',
+                'image' => $pod['spec']['containers'][0]['image'] ?? 'unknown'
+            ];
+        }
+
+        return $status;
+    }
+
+    /**
+     * Get Docker container status
+     */
+    protected function getDockerContainerStatus(Domain $domain): array
     {
         $containers = Container::where('domain_id', $domain->id)->get();
         $status = [];
@@ -337,13 +478,76 @@ class ContainerManagerService
     public function restartService(Domain $domain, string $serviceName): bool
     {
         try {
+            $server = $domain->server ?? Server::getDefault();
+            
+            if ($server && $server->isKubernetes() && config('kubernetes.enabled', true)) {
+                // Restart Kubernetes pod
+                return $this->restartKubernetesPod($domain, $serviceName);
+            } else {
+                // Restart Docker container
+                return $this->restartDockerContainer($domain, $serviceName);
+            }
+        } catch (Exception $e) {
+            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Restart Kubernetes pod for a service
+     */
+    protected function restartKubernetesPod(Domain $domain, string $serviceName): bool
+    {
+        try {
+            // For domain services, use sanitized domain name
+            // Main deployment is just the domain name, others have suffix
+            $deploymentName = $serviceName === 'web' 
+                ? $this->sanitizeDomainName($domain->domain_name)
+                : $this->sanitizeDomainName($domain->domain_name) . '-' . $serviceName;
+            
+            $process = new Process(['kubectl', 'rollout', 'restart', 'deployment', $deploymentName]);
+            $process->run();
+
+            return $process->isSuccessful();
+        } catch (Exception $e) {
+            Log::error("Failed to restart Kubernetes pod {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Sanitize domain name for Kubernetes (DNS-1123 subdomain)
+     */
+    protected function sanitizeDomainName(string $name): string
+    {
+        // Convert to lowercase and replace invalid characters
+        $sanitized = strtolower($name);
+        $sanitized = preg_replace('/[^a-z0-9-.]/', '-', $sanitized);
+        $sanitized = preg_replace('/-+/', '-', $sanitized);
+        $sanitized = trim($sanitized, '-.');
+        
+        // Kubernetes names must be <= 63 characters
+        if (strlen($sanitized) > 63) {
+            $sanitized = substr($sanitized, 0, 63);
+            $sanitized = rtrim($sanitized, '-.');
+        }
+        
+        return $sanitized;
+    }
+    
+    /**
+     * Restart Docker container for a service
+     */
+    protected function restartDockerContainer(Domain $domain, string $serviceName): bool
+    {
+        try {
             $composeFile = storage_path("app/docker-compose-{$domain->domain_name}.yml");
             $process = new Process(['docker-compose', '-f', $composeFile, 'restart', $serviceName]);
             $process->run();
 
             return $process->isSuccessful();
         } catch (Exception $e) {
-            Log::error("Failed to restart service {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
+            Log::error("Failed to restart Docker container {$serviceName} for {$domain->domain_name}: " . $e->getMessage());
             return false;
         }
     }

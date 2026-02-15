@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "mail-services.fullname" . }}-dovecot
+  labels:
+    app: dovecot
+    {{- include "mail-services.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "mail-services.fullname" . }}-dovecot
+  replicas: {{ .Values.dovecot.replicaCount }}
+  selector:
+    matchLabels:
+      app: dovecot
+      {{- include "mail-services.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: dovecot
+        {{- include "mail-services.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: dovecot
+        image: "{{ .Values.dovecot.image.repository }}:{{ .Values.dovecot.image.tag }}"
+        imagePullPolicy: {{ .Values.dovecot.image.pullPolicy }}
+        env:
+        - name: DOVECOT_HOSTNAME
+          value: {{ .Values.dovecot.config.hostname | quote }}
+        - name: DOVECOT_PROTOCOLS
+          value: {{ .Values.dovecot.config.protocols | quote }}
+        ports:
+        - name: imap
+          containerPort: 143
+          protocol: TCP
+        - name: imaps
+          containerPort: 993
+          protocol: TCP
+        - name: pop3
+          containerPort: 110
+          protocol: TCP
+        - name: pop3s
+          containerPort: 995
+          protocol: TCP
+        - name: lmtp
+          containerPort: 24
+          protocol: TCP
+        volumeMounts:
+        - name: mail-data
+          mountPath: /var/mail
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          mountPath: /etc/ssl/dovecot
+          readOnly: true
+        {{- end }}
+        resources:
+          {{- toYaml .Values.dovecot.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: 143
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 143
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      {{- if .Values.tls.enabled }}
+      - name: tls
+        secret:
+          secretName: {{ include "mail-services.fullname" . }}-tls
+      {{- end }}
+  {{- if .Values.dovecot.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: mail-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.dovecot.persistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.dovecot.persistence.size }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mail-services.fullname" . }}-dovecot
+  labels:
+    app: dovecot
+    {{- include "mail-services.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.dovecot.service.imap.port }}
+    targetPort: 143
+    protocol: TCP
+    name: imap
+  - port: {{ .Values.dovecot.service.imap.tlsPort }}
+    targetPort: 993
+    protocol: TCP
+    name: imaps
+  - port: {{ .Values.dovecot.service.pop3.port }}
+    targetPort: 110
+    protocol: TCP
+    name: pop3
+  - port: {{ .Values.dovecot.service.pop3.tlsPort }}
+    targetPort: 995
+    protocol: TCP
+    name: pop3s
+  - port: {{ .Values.dovecot.service.lmtp.port }}
+    targetPort: 24
+    protocol: TCP
+    name: lmtp
+  selector:
+    app: dovecot
+    {{- include "mail-services.selectorLabels" . | nindent 4 }}
+  clusterIP: None
