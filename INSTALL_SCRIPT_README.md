@@ -25,6 +25,7 @@ The `install.sh` script provides an interactive installation wizard that support
 - AlmaLinux 8, 9, 10
 - RHEL (Red Hat Enterprise Linux) 8, 9, 10
 - Rocky Linux 8, 9, 10
+- CloudLinux 8, 9, 10 (Standalone only)
 
 ## Quick Start
 

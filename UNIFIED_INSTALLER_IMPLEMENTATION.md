@@ -72,6 +72,7 @@ A comprehensive unified installation script (`install.sh`) that:
 - AlmaLinux 8, 9, 10
 - RHEL 8, 9, 10
 - Rocky Linux 8, 9, 10
+- CloudLinux 8, 9, 10 (Standalone only)
 
 ### 2. Installation Methods
 

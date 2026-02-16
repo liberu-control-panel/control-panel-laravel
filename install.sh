@@ -13,6 +13,7 @@
 # - Debian (11, 12)
 # - AlmaLinux / RHEL 8/9/10
 # - Rocky Linux 8/9/10
+# - CloudLinux 8/9/10 (Standalone only)
 ################################################################################
 
 set -euo pipefail
@@ -116,7 +117,7 @@ detect_os() {
                     fi
                 fi
                 ;;
-            almalinux|rhel|rocky)
+            almalinux|rhel|rocky|cloudlinux)
                 if [[ ! "$OS_VERSION" =~ ^[8-9]|^10 ]]; then
                     log_warning "$OS_NAME version $OS_VERSION detected. Supported versions: 8, 9, 10"
                     read -p "Continue anyway? (y/N) " -n 1 -r
@@ -128,7 +129,7 @@ detect_os() {
                 ;;
             *)
                 log_error "Unsupported operating system: $OS_NAME"
-                log_info "Supported systems: Ubuntu LTS, Debian, AlmaLinux, RHEL, Rocky Linux"
+                log_info "Supported systems: Ubuntu LTS, Debian, AlmaLinux, RHEL, Rocky Linux, CloudLinux"
                 exit 1
                 ;;
         esac
@@ -185,7 +186,7 @@ install_common_prerequisites() {
                 software-properties-common \
                 apt-transport-https
             ;;
-        almalinux|rhel|rocky)
+        almalinux|rhel|rocky|cloudlinux)
             dnf install -y \
                 curl \
                 wget \
@@ -474,7 +475,7 @@ install_standalone() {
         ubuntu|debian)
             install_standalone_ubuntu
             ;;
-        almalinux|rhel|rocky)
+        almalinux|rhel|rocky|cloudlinux)
             install_standalone_rhel
             ;;
     esac
@@ -567,9 +568,9 @@ install_standalone_ubuntu() {
     log_success "All services installed and started"
 }
 
-# Install standalone services on RHEL/AlmaLinux
+# Install standalone services on RHEL/AlmaLinux/Rocky/CloudLinux
 install_standalone_rhel() {
-    log_info "Installing services on RHEL/AlmaLinux..."
+    log_info "Installing services on RHEL/AlmaLinux/Rocky/CloudLinux..."
     
     # Enable EPEL repository
     dnf install -y epel-release

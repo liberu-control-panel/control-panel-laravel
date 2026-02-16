@@ -19,6 +19,7 @@ The installation script supports the following operating systems:
 - **AlmaLinux**: 8, 9, 10
 - **RHEL (Red Hat Enterprise Linux)**: 8, 9, 10
 - **Rocky Linux**: 8, 9, 10
+- **CloudLinux**: 8, 9, 10 (Standalone only)
 
 ## Quick Start
 

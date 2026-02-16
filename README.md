@@ -48,6 +48,7 @@ The easiest way to install the control panel is using our **unified installation
 - Debian (11, 12)
 - AlmaLinux / RHEL 8/9/10
 - Rocky Linux 8/9/10
+- CloudLinux 8/9/10 (Standalone only)
 
 **One-Line Installation:**
 
