@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\DatabaseController;
 use App\Http\Controllers\Api\DnsController;
 use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\ServiceStatusController;
 use App\Http\Controllers\Api\SshController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualHostController;
@@ -63,6 +64,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ssh/servers/{server}/deploy-key', [SshController::class, 'deployKeyToServer']);
     Route::post('/ssh/servers/{server}/test-connection', [SshController::class, 'testConnection']);
     Route::post('/ssh/credentials', [SshController::class, 'createCredential']);
+
+    // Service Status (Standalone mode)
+    Route::get('/services/status', [ServiceStatusController::class, 'checkAll']);
+    Route::get('/services/missing', [ServiceStatusController::class, 'missing']);
+    Route::get('/services/stopped', [ServiceStatusController::class, 'stopped']);
+    Route::get('/services/install-commands', [ServiceStatusController::class, 'installCommands']);
+    Route::get('/services/{service}/status', [ServiceStatusController::class, 'checkService']);
 });
 
 // Webhook routes for Git deployments (no auth required, validated via signature)
