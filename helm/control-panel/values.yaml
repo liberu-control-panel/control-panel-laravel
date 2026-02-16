@@ -95,6 +95,11 @@ mysql:
     persistence:
       enabled: true
       size: 20Gi
+      # For managed Kubernetes, use platform-specific storage classes:
+      # - AWS EKS: "gp3" (recommended), "gp2", "io2" (high IOPS)
+      # - Azure AKS: "managed-csi-premium" (recommended for databases)
+      # - Google GKE: "pd-ssd" or "pd-balanced" (recommended)
+      # - DigitalOcean DOKS: "do-block-storage"
       storageClass: "standard"
     resources:
       limits:
@@ -123,11 +128,25 @@ redis:
 # Persistent storage
 persistence:
   enabled: true
+  # Storage class for persistent volumes
+  # For managed Kubernetes, use platform-specific storage classes:
+  # - AWS EKS: "gp3" (General Purpose SSD), "gp2", "io2" (Provisioned IOPS)
+  # - Azure AKS: "managed-csi" (Azure Disk), "managed-csi-premium"
+  # - Google GKE: "pd-standard" (Standard PD), "pd-ssd" (SSD PD), "pd-balanced"
+  # - DigitalOcean DOKS: "do-block-storage"
+  # - Self-hosted: "standard", "local-path", or custom storage class
   storageClass: "standard"
   accessMode: ReadWriteOnce
   size: 10Gi
+  
+  # Alternative: Use managed Kubernetes storage class presets
+  # Uncomment one of the following to use platform-optimized storage:
+  # managedKubernetes:
+  #   platform: "eks"      # Options: eks, aks, gke, doks
+  #   performanceTier: "standard"  # Options: standard, premium, high-performance
 
 # S3-compatible storage configuration (MinIO, AWS S3, DigitalOcean Spaces, etc.)
+# Alternative to block storage - useful for shared storage across multiple pods
 # When enabled, persistent volumes will use S3 storage via CSI driver
 s3:
   enabled: false
@@ -142,7 +161,7 @@ s3:
   region: "us-east-1"
   # Use path-style endpoint (required for MinIO and some S3-compatible services)
   usePathStyle: true
-  # Storage class name for S3-backed volumes
+  # Storage class name for S3-backed volumes (if using S3 CSI driver)
   storageClassName: "s3-storage"
 
 # Kubernetes configuration
@@ -152,6 +171,12 @@ kubernetes:
   namespacePrefix: hosting-
   ingressClass: nginx
   certIssuer: letsencrypt-prod
+  # Default storage class for Kubernetes resources
+  # For managed Kubernetes, recommended values:
+  # - AWS EKS: "gp3"
+  # - Azure AKS: "managed-csi"
+  # - Google GKE: "pd-balanced"
+  # - DigitalOcean DOKS: "do-block-storage"
   storageClass: standard
 
 # SSH configuration
