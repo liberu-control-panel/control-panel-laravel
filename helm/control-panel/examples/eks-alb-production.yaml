@@ -42,7 +42,9 @@ ingress:
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/xxxxx
     
     # Security
-    alb.ingress.kubernetes.io/security-groups: "sg-xxxxxxxxx"  # Replace with your security group
+    # IMPORTANT: Replace with your actual security group ID before deployment
+    # Example: alb.ingress.kubernetes.io/security-groups: "sg-0123456789abcdef0"
+    # alb.ingress.kubernetes.io/security-groups: "sg-xxxxxxxxx"
     # alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:region:account:regional/webacl/name/id
 
 service:
