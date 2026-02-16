@@ -186,6 +186,10 @@ $success = $bulkRestoreService->restoreExternalBackup('/path/to/cpanel-backup.ta
     'continue_on_error' => true,
 ]);
 
+// Note: If passwords are not included in the backup, random passwords will be generated.
+// Users will need to reset their database and email passwords after restoration.
+// Check logs for details on which accounts need password resets.
+
 // Restore Virtualmin backup
 $success = $bulkRestoreService->restoreExternalBackup('/path/to/virtualmin-backup.tar.gz', [
     'domain_name' => 'example.com',

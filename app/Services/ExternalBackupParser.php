@@ -286,8 +286,7 @@ class ExternalBackupParser
     protected function cleanupDirectory(string $directory): void
     {
         if (is_dir($directory)) {
-            $process = new Process(['rm', '-rf', $directory]);
-            $process->run();
+            File::deleteDirectory($directory);
         }
     }
 

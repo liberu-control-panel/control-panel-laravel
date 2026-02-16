@@ -177,9 +177,14 @@ class BulkRestoreService
                         'domain_id' => $domain->id,
                         'name' => $dbName,
                         'username' => $dbData['username'] ?? $dbName,
+                        // Note: Password will need to be reset if not provided in backup
                         'password' => $dbData['password'] ?? str()->random(16),
                         'status' => 'active',
                     ]);
+                    
+                    if (!isset($dbData['password'])) {
+                        Log::warning("Database password not found in backup for {$dbName}, generated random password");
+                    }
                 }
 
                 // Restore database from SQL file
@@ -358,9 +363,14 @@ class BulkRestoreService
                     $emailAccount = EmailAccount::create([
                         'domain_id' => $domain->id,
                         'email' => $email,
+                        // Note: Password will need to be reset if not provided in backup
                         'password' => $accountData['password'] ?? str()->random(16),
                         'quota' => $accountData['quota'] ?? 1000,
                     ]);
+                    
+                    if (!isset($accountData['password'])) {
+                        Log::warning("Email account password not found in backup for {$email}, generated random password. User will need to reset password.");
+                    }
                 }
 
                 // Restore mail data if path provided

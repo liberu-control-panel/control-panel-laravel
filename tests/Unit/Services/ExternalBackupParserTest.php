@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\TestCase;
 use App\Services\ExternalBackupParser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 
 class ExternalBackupParserTest extends TestCase
 {
@@ -39,7 +40,7 @@ class ExternalBackupParserTest extends TestCase
 
         // Cleanup
         unlink($archivePath);
-        exec("rm -rf {$tempDir}");
+        File::deleteDirectory($tempDir);
     }
 
     public function test_parse_liberu_backup()
@@ -65,7 +66,7 @@ class ExternalBackupParserTest extends TestCase
 
         // Cleanup
         unlink($archivePath);
-        exec("rm -rf {$tempDir}");
+        File::deleteDirectory($tempDir);
     }
 
     public function test_detect_unknown_backup_throws_exception()
@@ -85,6 +86,6 @@ class ExternalBackupParserTest extends TestCase
 
         // Cleanup
         unlink($archivePath);
-        exec("rm -rf {$tempDir}");
+        File::deleteDirectory($tempDir);
     }
 }
