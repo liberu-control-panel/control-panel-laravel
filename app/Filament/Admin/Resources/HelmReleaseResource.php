@@ -32,7 +32,7 @@ class HelmReleaseResource extends Resource
         $charts = $helmService->getAvailableCharts();
 
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Release Information')
                     ->schema([
                         Forms\Components\Select::make('server_id')

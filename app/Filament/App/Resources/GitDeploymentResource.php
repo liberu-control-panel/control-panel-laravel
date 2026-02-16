@@ -28,7 +28,7 @@ class GitDeploymentResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Domain Configuration')
                     ->schema([
                         Forms\Components\Select::make('domain_id')

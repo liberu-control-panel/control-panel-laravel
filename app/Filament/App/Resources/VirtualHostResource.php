@@ -26,7 +26,7 @@ class VirtualHostResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('hostname')

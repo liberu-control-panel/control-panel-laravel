@@ -27,7 +27,7 @@ class KubernetesNodeResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Node Information')
                     ->schema([
                         Forms\Components\Select::make('server_id')

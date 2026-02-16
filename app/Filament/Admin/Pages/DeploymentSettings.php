@@ -48,7 +48,7 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
         $detectionService = app(DeploymentDetectionService::class);
         
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Deployment Information')
                     ->description('Current deployment environment and configuration')
                     ->schema([

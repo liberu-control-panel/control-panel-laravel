@@ -28,7 +28,7 @@ class MonitoringResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
+            ->components([
                 TextInput::make('user_id')
                     ->required()
                     ->numeric(),

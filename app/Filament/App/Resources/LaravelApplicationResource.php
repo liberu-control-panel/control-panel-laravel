@@ -38,7 +38,7 @@ class LaravelApplicationResource extends Resource
         }
 
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Application Type')
                     ->schema([
                         Forms\Components\Select::make('repository_slug')

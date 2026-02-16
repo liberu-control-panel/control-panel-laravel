@@ -30,7 +30,7 @@ class WordPressApplicationResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
+            ->components([
                 Forms\Components\Section::make('Domain & Database')
                     ->schema([
                         Forms\Components\Select::make('domain_id')
