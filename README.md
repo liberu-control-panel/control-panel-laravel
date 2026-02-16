@@ -24,7 +24,7 @@ Key features
 - **Production-ready Kubernetes deployment** with auto-scaling, high availability, and container orchestration
 - User and team management with Jetstream and role-based policies
 - **Multi-site management** with comprehensive performance monitoring and uptime tracking
-- **Multi-deployment support**: Kubernetes (recommended), Docker Compose, and Standalone deployments
+- **Multi-deployment support**: Kubernetes (recommended), Docker Compose, Standalone, and Standalone DNS Only deployments
 - **Auto-scaling**: Automatic horizontal and vertical scaling on AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS, OVH
 - **Production-optimized nginx** with gzip compression, security headers, and static caching
 - Manage NGINX virtual hosts with automated Let's Encrypt support
@@ -49,6 +49,7 @@ The easiest way to install the control panel is using our **unified installation
 - **Kubernetes** (recommended for production)
 - **Docker Compose** (for development/small-scale)
 - **Standalone** (traditional server setup)
+- **Standalone DNS Only** (DNS cluster node)
 
 **Supported Operating Systems:**
 - Ubuntu LTS (20.04, 22.04, 24.04)
@@ -267,6 +268,39 @@ DB_PORT=5432
 ```
 
 The default configuration uses MariaDB 11.2. To switch to PostgreSQL, use the `--profile postgresql` flag and update your `.env` file accordingly.
+
+### Standalone DNS Only Deployment
+
+For lightweight DNS cluster nodes, use the **Standalone DNS Only** installation option:
+
+```bash
+# Clone the repository
+git clone https://github.com/liberu-control-panel/control-panel-laravel.git
+cd control-panel-laravel
+
+# Run the unified installer
+sudo ./install.sh
+# Select option 4: Standalone DNS Only
+```
+
+**Features:**
+- Choice between **BIND9** (default, stable) or **PowerDNS** (modern, API-enabled)
+- DNS cluster configuration (Master/Slave/Both)
+- Nameserver hostname setup
+- Zone transfer (AXFR) configuration
+- Minimal resource footprint
+
+**Perfect for:**
+- DNS cluster nodes (primary, secondary, tertiary nameservers)
+- Distributed nameserver infrastructure
+- Geographic DNS redundancy
+- Lightweight DNS-only servers
+
+**Post-Installation:**
+- Configure DNS zones via BIND9 zone files or PowerDNS API
+- Set up zone transfers between cluster nodes
+- Update domain registrar with nameserver details
+- Configure firewall to allow DNS traffic (port 53 UDP/TCP)
 
 Notes
 

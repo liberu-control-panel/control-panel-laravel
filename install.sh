@@ -165,7 +165,13 @@ display_menu() {
     echo "   - Standard Linux services"
     echo "   - No container overhead"
     echo ""
-    echo -e "${GREEN}4)${NC} ${BOLD}Exit${NC}"
+    echo -e "${GREEN}4)${NC} ${BOLD}Standalone DNS Only${NC} (DNS Cluster Node)"
+    echo "   - DNS server only installation"
+    echo "   - BIND9 or PowerDNS"
+    echo "   - Ready for DNS cluster"
+    echo "   - Lightweight nameserver setup"
+    echo ""
+    echo -e "${GREEN}5)${NC} ${BOLD}Exit${NC}"
     echo ""
 }
 
@@ -803,6 +809,583 @@ EOF
     fi
 }
 
+# Standalone DNS Only installation
+install_dns_only() {
+    log_header "Standalone DNS Only Installation"
+    
+    echo "This will install DNS server only for DNS cluster:"
+    echo "  - BIND9 DNS server (default)"
+    echo "  - Or PowerDNS (alternative)"
+    echo "  - DNS cluster configuration (master/slave)"
+    echo "  - Nameserver hostname setup"
+    echo "  - Minimal system resources"
+    echo ""
+    echo "This installation is perfect for:"
+    echo "  - DNS cluster nodes"
+    echo "  - Distributed nameserver infrastructure"
+    echo "  - Secondary/tertiary DNS servers"
+    echo ""
+    
+    read -p "Continue with standalone DNS only installation? (Y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        return
+    fi
+    
+    # Ask for DNS server type
+    echo ""
+    echo "Select DNS server software:"
+    echo "1) BIND9 (recommended, stable, widely used)"
+    echo "2) PowerDNS (modern, API-enabled, high performance)"
+    echo ""
+    read -p "Enter your choice [1-2] (default: 1): " DNS_SERVER_CHOICE
+    DNS_SERVER_CHOICE=${DNS_SERVER_CHOICE:-1}
+    
+    # Ask for nameserver hostname
+    echo ""
+    read -p "Enter nameserver hostname (e.g., ns1.example.com): " NAMESERVER_HOSTNAME
+    while [[ -z "$NAMESERVER_HOSTNAME" ]]; do
+        log_error "Nameserver hostname is required!"
+        read -p "Enter nameserver hostname (e.g., ns1.example.com): " NAMESERVER_HOSTNAME
+    done
+    
+    # Ask for DNS cluster role
+    echo ""
+    echo "Select DNS cluster role:"
+    echo "1) Master (primary DNS server)"
+    echo "2) Slave (secondary DNS server)"
+    echo "3) Both (master and slave)"
+    echo ""
+    read -p "Enter your choice [1-3] (default: 3): " DNS_ROLE_CHOICE
+    DNS_ROLE_CHOICE=${DNS_ROLE_CHOICE:-3}
+    
+    case $DNS_ROLE_CHOICE in
+        1)
+            DNS_MASTER="yes"
+            DNS_SLAVE="no"
+            ;;
+        2)
+            DNS_MASTER="no"
+            DNS_SLAVE="yes"
+            ;;
+        *)
+            DNS_MASTER="yes"
+            DNS_SLAVE="yes"
+            ;;
+    esac
+    
+    # Ask for allowed AXFR IPs for zone transfers
+    echo ""
+    echo "Configure zone transfer (AXFR) access:"
+    echo "For security, restrict zone transfers to specific IPs"
+    echo "Examples: 192.168.1.10, 10.0.0.0/24, 203.0.113.5;203.0.113.6"
+    echo ""
+    read -p "Enter allowed IPs for zone transfers (leave empty for localhost only): " AXFR_IPS
+    if [[ -z "$AXFR_IPS" ]]; then
+        AXFR_IPS="127.0.0.1;::1"
+        log_info "Using secure default: localhost only (127.0.0.1;::1)"
+    fi
+    
+    # Install DNS server based on OS
+    case $OS in
+        ubuntu|debian)
+            install_dns_only_ubuntu "$DNS_SERVER_CHOICE"
+            ;;
+        almalinux|rhel|rocky|cloudlinux)
+            install_dns_only_rhel "$DNS_SERVER_CHOICE"
+            ;;
+    esac
+    
+    # Configure DNS server
+    configure_dns_server "$DNS_SERVER_CHOICE"
+    
+    log_success "Standalone DNS only installation completed!"
+    display_dns_only_next_steps
+}
+
+# Install DNS only on Ubuntu/Debian
+install_dns_only_ubuntu() {
+    local dns_choice=$1
+    log_info "Installing DNS server on Ubuntu/Debian..."
+    
+    apt-get update
+    
+    if [[ "$dns_choice" == "2" ]]; then
+        # Install PowerDNS
+        log_info "Installing PowerDNS..."
+        apt-get install -y pdns-server pdns-backend-mysql mariadb-server
+        
+        # Secure MariaDB installation
+        systemctl start mariadb
+        systemctl enable mariadb
+        
+        # Create PowerDNS database
+        PDNS_DB_PASSWORD=$(openssl rand -base64 24)
+        
+        log_info "Configuring PowerDNS database..."
+        mysql -e "CREATE DATABASE IF NOT EXISTS powerdns;"
+        mysql -e "CREATE USER IF NOT EXISTS 'powerdns'@'localhost' IDENTIFIED BY '$PDNS_DB_PASSWORD';"
+        mysql -e "GRANT ALL PRIVILEGES ON powerdns.* TO 'powerdns'@'localhost';"
+        mysql -e "FLUSH PRIVILEGES;"
+        
+        # Import PowerDNS schema
+        local schema_file="/usr/share/doc/pdns-backend-mysql/schema.mysql.sql"
+        if [[ -f "$schema_file" ]]; then
+            mysql powerdns < "$schema_file"
+            log_success "PowerDNS schema imported successfully"
+        else
+            log_warning "PowerDNS schema file not found at $schema_file - you may need to import it manually"
+        fi
+        
+        log_success "PowerDNS installed with MySQL backend"
+    else
+        # Install BIND9 (default)
+        log_info "Installing BIND9..."
+        apt-get install -y bind9 bind9utils bind9-doc dnsutils
+        
+        log_success "BIND9 installed"
+    fi
+}
+
+# Install DNS only on RHEL/AlmaLinux/Rocky/CloudLinux
+install_dns_only_rhel() {
+    local dns_choice=$1
+    log_info "Installing DNS server on RHEL/AlmaLinux/Rocky/CloudLinux..."
+    
+    # Enable EPEL repository
+    dnf install -y epel-release
+    
+    if [[ "$dns_choice" == "2" ]]; then
+        # Install PowerDNS
+        log_info "Installing PowerDNS..."
+        dnf install -y pdns pdns-backend-mysql mariadb-server
+        
+        # Secure MariaDB installation
+        systemctl start mariadb
+        systemctl enable mariadb
+        
+        # Create PowerDNS database
+        PDNS_DB_PASSWORD=$(openssl rand -base64 24)
+        
+        log_info "Configuring PowerDNS database..."
+        mysql -e "CREATE DATABASE IF NOT EXISTS powerdns;"
+        mysql -e "CREATE USER IF NOT EXISTS 'powerdns'@'localhost' IDENTIFIED BY '$PDNS_DB_PASSWORD';"
+        mysql -e "GRANT ALL PRIVILEGES ON powerdns.* TO 'powerdns'@'localhost';"
+        mysql -e "FLUSH PRIVILEGES;"
+        
+        # Import PowerDNS schema
+        local schema_file="/usr/share/doc/pdns/schema.mysql.sql"
+        if [[ -f "$schema_file" ]]; then
+            mysql powerdns < "$schema_file"
+            log_success "PowerDNS schema imported successfully"
+        else
+            log_warning "PowerDNS schema file not found at $schema_file - you may need to import it manually"
+        fi
+        
+        log_success "PowerDNS installed with MySQL backend"
+    else
+        # Install BIND (default)
+        log_info "Installing BIND..."
+        dnf install -y bind bind-utils
+        
+        # Configure SELinux for BIND
+        setsebool -P named_write_master_zones 1
+        
+        log_success "BIND installed"
+    fi
+}
+
+# Configure DNS server
+configure_dns_server() {
+    local dns_choice=$1
+    log_info "Configuring DNS server..."
+    
+    if [[ "$dns_choice" == "2" ]]; then
+        # Configure PowerDNS
+        configure_powerdns
+    else
+        # Configure BIND9
+        configure_bind9
+    fi
+}
+
+# Configure PowerDNS
+configure_powerdns() {
+    log_info "Configuring PowerDNS..."
+    
+    # Backup original config
+    if [[ -f /etc/pdns/pdns.conf ]]; then
+        cp /etc/pdns/pdns.conf /etc/pdns/pdns.conf.backup
+    elif [[ -f /etc/powerdns/pdns.conf ]]; then
+        cp /etc/powerdns/pdns.conf /etc/powerdns/pdns.conf.backup
+    fi
+    
+    # Determine config file location
+    PDNS_CONF="/etc/pdns/pdns.conf"
+    if [[ ! -f "$PDNS_CONF" ]] && [[ -f "/etc/powerdns/pdns.conf" ]]; then
+        PDNS_CONF="/etc/powerdns/pdns.conf"
+    fi
+    
+    # Generate API key
+    PDNS_API_KEY=$(openssl rand -hex 32)
+    
+    # Get server IP for restricted API access
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+    
+    # Determine PowerDNS user/group based on OS
+    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+        PDNS_USER="pdns"
+        PDNS_GROUP="pdns"
+    else
+        # RHEL-based systems
+        PDNS_USER="pdns"
+        PDNS_GROUP="pdns"
+    fi
+    
+    # Create PowerDNS configuration
+    cat > "$PDNS_CONF" << EOF
+# PowerDNS Configuration for DNS Cluster
+# Nameserver: $NAMESERVER_HOSTNAME
+
+# Database backend
+launch=gmysql
+gmysql-host=localhost
+gmysql-port=3306
+gmysql-dbname=powerdns
+gmysql-user=powerdns
+gmysql-password=$PDNS_DB_PASSWORD
+
+# API configuration (for management)
+api=yes
+api-key=$PDNS_API_KEY
+webserver=yes
+webserver-address=127.0.0.1
+webserver-port=8081
+webserver-allow-from=127.0.0.1,$SERVER_IP
+
+# Cluster configuration
+master=$DNS_MASTER
+slave=$DNS_SLAVE
+allow-axfr-ips=$AXFR_IPS
+
+# Performance tuning
+max-tcp-connections=100
+query-cache-ttl=20
+cache-ttl=20
+
+# Security
+setuid=$PDNS_USER
+setgid=$PDNS_GROUP
+EOF
+    
+    # Save credentials securely
+    echo "$PDNS_DB_PASSWORD" > /root/pdns-db-password.txt
+    echo "$PDNS_API_KEY" > /root/pdns-api-key.txt
+    chmod 600 /root/pdns-db-password.txt /root/pdns-api-key.txt
+    
+    # Secure the PowerDNS config file
+    chmod 640 "$PDNS_CONF"
+    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+        chown root:pdns "$PDNS_CONF" 2>/dev/null || true
+    else
+        chown root:pdns "$PDNS_CONF" 2>/dev/null || chown root:root "$PDNS_CONF"
+    fi
+    
+    # Start and enable PowerDNS
+    PDNS_SERVICE=""
+    if systemctl list-units --type=service | grep -q "pdns.service"; then
+        PDNS_SERVICE="pdns"
+        systemctl start pdns
+        systemctl enable pdns
+    elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+        PDNS_SERVICE="pdns-server"
+        systemctl start pdns-server
+        systemctl enable pdns-server
+    fi
+    
+    log_success "PowerDNS configured for DNS cluster"
+    log_info "PowerDNS API available at: http://127.0.0.1:8081 (localhost only)"
+    log_info "API credentials saved to /root/pdns-api-key.txt and /root/pdns-db-password.txt"
+}
+
+# Configure BIND9
+configure_bind9() {
+    log_info "Configuring BIND9..."
+    
+    # Determine BIND config directory and paths based on OS
+    if [[ -d /etc/bind ]]; then
+        # Debian/Ubuntu
+        BIND_DIR="/etc/bind"
+        NAMED_CONF="$BIND_DIR/named.conf"
+        ZONES_DIR="$BIND_DIR/zones"
+        ROOT_HINTS="/usr/share/dns/root.hints"
+        DB_LOCAL="$BIND_DIR/db.local"
+        DB_127="$BIND_DIR/db.127"
+        DB_0="$BIND_DIR/db.0"
+        DB_255="$BIND_DIR/db.255"
+        BIND_USER="bind"
+        BIND_GROUP="bind"
+    else
+        # RHEL/AlmaLinux/Rocky/CloudLinux
+        BIND_DIR="/etc"
+        NAMED_CONF="$BIND_DIR/named.conf"
+        ZONES_DIR="/var/named"
+        ROOT_HINTS="/var/named/named.ca"
+        DB_LOCAL="/var/named/named.localhost"
+        DB_127="/var/named/named.loopback"
+        DB_0="/var/named/named.empty"
+        DB_255="/var/named/named.empty"
+        BIND_USER="named"
+        BIND_GROUP="named"
+    fi
+    
+    # Backup original config
+    if [[ -f "$NAMED_CONF" ]]; then
+        cp "$NAMED_CONF" "$NAMED_CONF.backup"
+    fi
+    
+    # Get server IP
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+    
+    # Create zones directory
+    mkdir -p "$ZONES_DIR"
+    
+    # Create named.conf.options
+    cat > "$BIND_DIR/named.conf.options" << EOF
+// BIND9 Configuration for DNS Cluster
+// Nameserver: $NAMESERVER_HOSTNAME
+
+options {
+    directory "$ZONES_DIR";
+    
+    // Listen on all interfaces
+    listen-on { any; };
+    listen-on-v6 { any; };
+    
+    // Allow queries from any source
+    allow-query { any; };
+    
+    // AXFR configuration for cluster
+    allow-transfer { $AXFR_IPS; };
+    
+    // Recursion disabled for authoritative server
+    recursion no;
+    
+    // DNSSEC validation
+    dnssec-validation auto;
+    
+    // Performance tuning
+    tcp-clients 100;
+    max-cache-size 256M;
+};
+EOF
+    
+    # Create main named.conf
+    cat > "$NAMED_CONF" << EOF
+// BIND9 Main Configuration
+// Nameserver: $NAMESERVER_HOSTNAME
+// Role: Master=$DNS_MASTER, Slave=$DNS_SLAVE
+
+include "$BIND_DIR/named.conf.options";
+include "$BIND_DIR/named.conf.local";
+
+// Default zones
+include "$BIND_DIR/named.conf.default-zones";
+EOF
+    
+    # Create named.conf.local for zone definitions
+    cat > "$BIND_DIR/named.conf.local" << EOF
+// Local zone definitions
+// Add your zone configurations here
+// Example:
+// zone "example.com" {
+//     type master;
+//     file "$ZONES_DIR/db.example.com";
+//     allow-transfer { $AXFR_IPS; };
+// };
+EOF
+    
+    # Create default zones if not exists
+    if [[ ! -f "$BIND_DIR/named.conf.default-zones" ]]; then
+        cat > "$BIND_DIR/named.conf.default-zones" << EOF
+// Default zones
+zone "." {
+    type hint;
+    file "$ROOT_HINTS";
+};
+
+zone "localhost" {
+    type master;
+    file "$DB_LOCAL";
+};
+
+zone "127.in-addr.arpa" {
+    type master;
+    file "$DB_127";
+};
+
+zone "0.in-addr.arpa" {
+    type master;
+    file "$DB_0";
+};
+
+zone "255.in-addr.arpa" {
+    type master;
+    file "$DB_255";
+};
+EOF
+    fi
+    
+    # Set proper permissions
+    chown -R $BIND_USER:$BIND_GROUP "$ZONES_DIR"
+    chmod 755 "$ZONES_DIR"
+    
+    # Test configuration
+    if command -v named-checkconf &> /dev/null; then
+        if named-checkconf "$NAMED_CONF"; then
+            log_success "BIND9 configuration is valid"
+        else
+            log_error "BIND9 configuration has errors"
+            return 1
+        fi
+    fi
+    
+    # Start and enable BIND9
+    if systemctl list-units --type=service | grep -q "bind9.service"; then
+        systemctl start bind9
+        systemctl enable bind9
+    elif systemctl list-units --type=service | grep -q "named.service"; then
+        systemctl start named
+        systemctl enable named
+    fi
+    
+    log_success "BIND9 configured for DNS cluster"
+}
+
+# Display next steps for DNS Only
+display_dns_only_next_steps() {
+    echo ""
+    log_header "DNS Server Installation Complete!"
+    
+    # Get server IP
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+    
+    echo -e "${GREEN}✓${NC} DNS server is installed and running"
+    echo -e "${GREEN}✓${NC} Nameserver hostname: $NAMESERVER_HOSTNAME"
+    echo -e "${GREEN}✓${NC} Cluster role - Master: $DNS_MASTER, Slave: $DNS_SLAVE"
+    echo ""
+    echo -e "${BOLD}Server Information:${NC}"
+    echo "  IP Address: $SERVER_IP"
+    echo "  Hostname: $(hostname)"
+    echo "  Nameserver: $NAMESERVER_HOSTNAME"
+    echo ""
+    echo -e "${BOLD}Next Steps:${NC}"
+    echo ""
+    
+    if [[ "$DNS_SERVER_CHOICE" == "2" ]]; then
+        echo "1. PowerDNS API is available at:"
+        echo "   http://127.0.0.1:8081 (localhost only for security)"
+        echo ""
+        echo "2. API and database credentials saved to:"
+        echo "   - API Key: /root/pdns-api-key.txt"
+        echo "   - DB Password: /root/pdns-db-password.txt"
+        echo ""
+        echo "3. To access API remotely, use SSH tunnel:"
+        echo "   ssh -L 8081:localhost:8081 user@$SERVER_IP"
+        echo ""
+        echo "4. Add DNS zones via PowerDNS API or database"
+        echo ""
+        echo "5. Configure your domain registrar to use:"
+        echo "   Nameserver: $NAMESERVER_HOSTNAME"
+        echo "   IP: $(hostname -I | awk '{print $1}')"
+        echo ""
+        echo "6. For cluster setup, configure zone transfers:"
+        echo "   - Primary server: Add AXFR allowed IPs in config"
+        echo "   - Secondary server: Configure as slave"
+        echo ""
+        echo "7. Check PowerDNS status:"
+        if systemctl list-units --type=service | grep -q "pdns.service"; then
+            echo "   systemctl status pdns"
+        elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+            echo "   systemctl status pdns-server"
+        else
+            echo "   systemctl status pdns"
+        fi
+        echo ""
+        echo "8. View PowerDNS logs:"
+        if systemctl list-units --type=service | grep -q "pdns.service"; then
+            echo "   journalctl -u pdns -f"
+        elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+            echo "   journalctl -u pdns-server -f"
+        else
+            echo "   journalctl -u pdns -f"
+        fi
+    else
+        # Get proper zones directory for current OS
+        if [[ -d /etc/bind ]]; then
+            ZONES_DIR="/etc/bind/zones"
+            CONFIG_DIR="/etc/bind"
+        else
+            ZONES_DIR="/var/named"
+            CONFIG_DIR="/etc"
+        fi
+        
+        echo "1. Configure DNS zones in:"
+        echo "   $CONFIG_DIR/named.conf.local"
+        echo "   $ZONES_DIR/"
+        echo ""
+        echo "2. Add a zone example:"
+        echo "   zone \"example.com\" {"
+        echo "       type master;"
+        echo "       file \"$ZONES_DIR/db.example.com\";"
+        echo "       allow-transfer { $AXFR_IPS; };"
+        echo "   };"
+        echo ""
+        echo "3. Configure your domain registrar to use:"
+        echo "   Nameserver: $NAMESERVER_HOSTNAME"
+        echo "   IP: $SERVER_IP"
+        echo ""
+        echo "4. For cluster setup:"
+        echo "   - Primary server: Create zones as master"
+        echo "   - Secondary server: Create zones as slave"
+        echo ""
+        echo "5. Reload BIND9 after changes:"
+        if systemctl list-units --type=service | grep -q "bind9.service"; then
+            echo "   systemctl reload bind9"
+        else
+            echo "   systemctl reload named"
+        fi
+        echo ""
+        echo "6. Check BIND9 status:"
+        if systemctl list-units --type=service | grep -q "bind9.service"; then
+            echo "   systemctl status bind9"
+        else
+            echo "   systemctl status named"
+        fi
+        echo ""
+        echo "7. Test DNS resolution:"
+        echo "   dig @localhost example.com"
+        echo "   nslookup example.com localhost"
+    fi
+    echo ""
+    echo -e "${YELLOW}Firewall Configuration:${NC}"
+    echo "  Make sure port 53 (UDP/TCP) is open:"
+    echo "  - UFW: sudo ufw allow 53"
+    echo "  - Firewalld: sudo firewall-cmd --add-service=dns --permanent"
+    echo ""
+    if [[ "$DNS_SERVER_CHOICE" == "2" ]]; then
+        echo -e "${YELLOW}Note:${NC} PowerDNS API is bound to localhost (127.0.0.1) for security."
+        echo "  To access remotely, use SSH tunneling (see step 3 above)."
+        echo "  DO NOT open port 8081 to the internet unless you have specific security measures in place."
+        echo ""
+    fi
+    echo -e "${YELLOW}Documentation:${NC}"
+    echo "  - BIND9: https://www.isc.org/bind/"
+    echo "  - PowerDNS: https://doc.powerdns.com/"
+    echo "  - DNS Cluster Setup: See repository documentation"
+    echo ""
+}
+
 # Display next steps for Kubernetes
 display_kubernetes_next_steps() {
     echo ""
@@ -920,7 +1503,7 @@ main() {
     while true; do
         display_menu
         
-        read -p "Enter your choice [1-4]: " choice
+        read -p "Enter your choice [1-5]: " choice
         echo ""
         
         case $choice in
@@ -937,11 +1520,15 @@ main() {
                 break
                 ;;
             4)
+                install_dns_only
+                break
+                ;;
+            5)
                 log_info "Installation cancelled"
                 exit 0
                 ;;
             *)
-                log_error "Invalid choice. Please select 1-4."
+                log_error "Invalid choice. Please select 1-5."
                 echo ""
                 ;;
         esac
