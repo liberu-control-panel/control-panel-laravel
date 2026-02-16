@@ -14,10 +14,17 @@ use Illuminate\Support\Facades\Storage;
 class EmailService
 {
     protected $containerManager;
+    protected $standaloneEmailService;
+    protected $detectionService;
 
-    public function __construct(ContainerManagerService $containerManager)
-    {
+    public function __construct(
+        ContainerManagerService $containerManager,
+        StandaloneEmailService $standaloneEmailService,
+        DeploymentDetectionService $detectionService
+    ) {
         $this->containerManager = $containerManager;
+        $this->standaloneEmailService = $standaloneEmailService;
+        $this->detectionService = $detectionService;
     }
 
     /**
@@ -25,6 +32,16 @@ class EmailService
      */
     public function createEmailAccount(Domain $domain, array $data): EmailAccount
     {
+        // Use standalone service if in standalone mode
+        if ($this->detectionService->isStandalone()) {
+            $result = $this->standaloneEmailService->createEmailAccount($domain, $data);
+            if (!$result['success']) {
+                throw new Exception($result['message']);
+            }
+            return $result['email_account'];
+        }
+
+        // Use container-based service
         $emailAccount = EmailAccount::create([
             'user_id' => $domain->user_id,
             'domain_id' => $domain->id,

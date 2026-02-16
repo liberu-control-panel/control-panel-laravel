@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\DatabaseController;
 use App\Http\Controllers\Api\DnsController;
 use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\SshController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualHostController;
 use App\Http\Controllers\Api\WebsiteController;
@@ -55,6 +56,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/dns/validate', [DnsController::class, 'validate']);
     Route::get('/domains/{domain}/dns/test', [DnsController::class, 'testResolution']);
     Route::get('/domains/{domain}/dns/propagation', [DnsController::class, 'checkPropagation']);
+
+    // SSH Key management
+    Route::post('/ssh/generate-keypair', [SshController::class, 'generateKeyPair']);
+    Route::post('/ssh/domains/{domain}/deploy-key', [SshController::class, 'deployKeyToDomain']);
+    Route::post('/ssh/servers/{server}/deploy-key', [SshController::class, 'deployKeyToServer']);
+    Route::post('/ssh/servers/{server}/test-connection', [SshController::class, 'testConnection']);
+    Route::post('/ssh/credentials', [SshController::class, 'createCredential']);
 });
 
 // Webhook routes for Git deployments (no auth required, validated via signature)
