@@ -16,13 +16,7 @@ File: `eks-alb-production.yaml`
 
 Production-ready configuration for AWS EKS using Application Load Balancer with health checks and sticky sessions.
 
-### 3. Multi-Region Setup
-
-File: `multi-region-values.yaml`
-
-Configuration for multi-region deployments with region-specific settings.
-
-### 4. WebSocket Support
+### 3. WebSocket Support
 
 File: `websocket-values.yaml`
 
@@ -45,9 +39,9 @@ helm install control-panel ./helm/control-panel \
   --namespace control-panel \
   --create-namespace
 
-# Example 3: Multi-region
+# Example 3: WebSocket support
 helm install control-panel ./helm/control-panel \
-  -f examples/multi-region-values.yaml \
+  -f examples/websocket-values.yaml \
   --namespace control-panel \
   --create-namespace
 ```
