@@ -28,6 +28,9 @@ Homestead.json
 rr
 .rr.yaml
 
+# Build artifacts
+/public/build/
+
 # Kubernetes temporary files
 k8s/overlays/*/ingress-patch.yaml
 *.tgz
