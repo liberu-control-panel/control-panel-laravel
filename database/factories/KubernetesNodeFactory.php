@@ -44,6 +44,7 @@ class KubernetesNodeFactory extends Factory
                 KubernetesNode::STATUS_READY,
                 KubernetesNode::STATUS_NOT_READY,
                 KubernetesNode::STATUS_UNKNOWN,
+                // Note: STATUS_SCHEDULING_DISABLED is set via cordoned() state method
             ]),
             'schedulable' => fake()->boolean(80), // 80% chance of being schedulable
             'labels' => [
