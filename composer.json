@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "aws/aws-sdk-php": "^3.300",
         "bezhansalleh/filament-shield": "4.0.0-beta2",
         "filament/filament": "^4.0",
         "filament/spatie-laravel-settings-plugin": "^4.0",
@@ -19,6 +20,9 @@
         "laravel/octane": "^2.3",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "league/flysystem-ftp": "^3.0",
+        "league/flysystem-sftp-v3": "^3.0",
         "livewire/livewire": "^3.0",
         "phpseclib/phpseclib": "~3.0",
         "spatie/laravel-menu": "^4.2",
