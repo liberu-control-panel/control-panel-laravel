@@ -280,6 +280,7 @@ Notes
 - **[Multi-Deployment & Auto-Scaling Guide](docs/MULTI_DEPLOYMENT_AUTOSCALING.md)** - Support for Kubernetes, Docker, and Standalone deployments with cloud auto-scaling
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
 - **[Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md)** - Deploy on AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
+- **[Load Balancing Guide](docs/LOAD_BALANCING_GUIDE.md)** - Advanced load balancing configurations for NGINX Ingress and AWS EKS
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
 - **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
 - **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster

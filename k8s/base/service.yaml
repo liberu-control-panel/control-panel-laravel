@@ -8,6 +8,11 @@ metadata:
     component: application
 spec:
   type: ClusterIP
+  # Session affinity for consistent load balancing
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
   ports:
   - port: 80
     targetPort: 80

@@ -136,14 +136,25 @@ EOF
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
 
-# Install with Helm
+# Option 1: Install with AWS ALB (Application Load Balancer) - Recommended for HTTP/HTTPS
 helm install control-panel ./helm/control-panel \
   --set ingress.className=alb \
   --set ingress.annotations."alb\.ingress\.kubernetes\.io/scheme"=internet-facing \
   --set ingress.annotations."alb\.ingress\.kubernetes\.io/target-type"=ip \
+  --set ingress.annotations."alb\.ingress\.kubernetes\.io/healthcheck-path"=/health \
+  --set ingress.annotations."alb\.ingress\.kubernetes\.io/healthcheck-interval-seconds"=15 \
+  --set ingress.annotations."alb\.ingress\.kubernetes\.io/target-group-attributes"='stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=10800' \
+  --namespace control-panel \
+  --create-namespace
+
+# Option 2: Install with NGINX Ingress behind NLB - Better performance
+helm install control-panel ./helm/control-panel \
+  --set ingress.className=nginx \
   --namespace control-panel \
   --create-namespace
 ```
+
+For advanced load balancing configurations, see the [Load Balancing Guide](LOAD_BALANCING_GUIDE.md).
 
 ## Azure AKS Setup
 
@@ -588,6 +599,100 @@ kubectl get pods --all-namespaces -o json | \
 5. **Image scanning** - Scan container images for vulnerabilities
 6. **Audit logging** - Enable Kubernetes audit logs
 7. **Regular updates** - Keep clusters and node pools updated
+
+## Load Balancing Best Practices
+
+### Choosing the Right Load Balancer
+
+**NGINX Ingress (Recommended for most cases):**
+- Works on all Kubernetes platforms
+- Rich feature set (rate limiting, session affinity, SSL termination)
+- Free and open source
+- Good for HTTP/HTTPS workloads
+- Built-in caching and compression
+
+**AWS ALB (Best for EKS HTTP workloads):**
+- Native AWS integration
+- Path and host-based routing
+- WAF integration available
+- Automatic SSL certificate management via ACM
+- Pay per use
+
+**AWS NLB (Best for EKS TCP/UDP or high performance):**
+- Layer 4 load balancing (lower latency)
+- Static IP addresses
+- PrivateLink support
+- Better for non-HTTP workloads
+
+### Session Affinity Configuration
+
+The control panel comes pre-configured with session affinity for optimal user experience:
+
+**Kubernetes Service Level:**
+```yaml
+service:
+  sessionAffinity: ClientIP
+  sessionAffinityTimeout: 10800  # 3 hours
+```
+
+**NGINX Ingress Level:**
+```yaml
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "INGRESSCOOKIE"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "10800"
+```
+
+**AWS ALB Level:**
+```yaml
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/target-group-attributes: |
+      stickiness.enabled=true,
+      stickiness.lb_cookie.duration_seconds=10800
+```
+
+### Health Check Configuration
+
+Proper health checks ensure traffic is only sent to healthy pods:
+
+**NGINX Ingress:**
+- Uses Kubernetes readiness/liveness probes automatically
+- No additional configuration needed
+
+**AWS ALB:**
+```yaml
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+```
+
+### Performance Optimization
+
+**Connection Pooling:**
+```yaml
+nginx.ingress.kubernetes.io/upstream-keepalive-connections: "64"
+nginx.ingress.kubernetes.io/upstream-keepalive-timeout: "60"
+```
+
+**Compression:**
+```yaml
+nginx.ingress.kubernetes.io/enable-gzip: "true"
+nginx.ingress.kubernetes.io/gzip-level: "5"
+```
+
+**Rate Limiting:**
+```yaml
+nginx.ingress.kubernetes.io/limit-rps: "100"
+nginx.ingress.kubernetes.io/limit-connections: "100"
+```
+
+For comprehensive load balancing documentation, see the [Load Balancing Guide](LOAD_BALANCING_GUIDE.md).
 
 ## Backup and Disaster Recovery
 

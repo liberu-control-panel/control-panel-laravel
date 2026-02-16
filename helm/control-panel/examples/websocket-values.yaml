@@ -1,0 +1,53 @@
+# WebSocket Support Configuration
+# Optimized for applications using WebSockets
+
+replicaCount: 3
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Extended timeouts for WebSocket connections
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    
+    # WebSocket specific settings
+    nginx.ingress.kubernetes.io/websocket-services: "control-panel"
+    nginx.ingress.kubernetes.io/connection-proxy-header: "upgrade"
+    
+    # Session affinity for WebSocket connections
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "WEBSOCKET"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-secure: "true"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+    
+    # Buffering (disable for WebSocket)
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    
+    # Body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+
+service:
+  type: ClusterIP
+  port: 80
+  sessionAffinity: ClientIP
+  sessionAffinityTimeout: 3600
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
