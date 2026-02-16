@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip
+    unzip \
+    netcat-openbsd
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -19,22 +20,41 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Create application user (non-root)
+RUN groupadd -g 1000 appuser && \
+    useradd -u 1000 -g appuser -m -s /bin/bash appuser
+
 # Set working directory
 WORKDIR /var/www/html
 
 # Copy existing application directory contents
-COPY . /var/www/html
+COPY --chown=appuser:appuser . /var/www/html
 
-# Install application dependencies
-RUN composer install
+# Install application dependencies as root (composer cache needs permission)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Generate application key
-RUN php artisan key:generate
+# Create directories for secrets (Docker Swarm/K8s secrets mount point)
+RUN mkdir -p /run/secrets && \
+    chown -R appuser:appuser /run/secrets
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
+# Set proper permissions for Laravel directories
+RUN chown -R appuser:appuser /var/www/html && \
+    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache && \
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Copy PHP-FPM configuration for non-root user
+COPY .docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copy entrypoint script
+COPY --chown=appuser:appuser .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Switch to non-root user
+USER appuser
 
 # Expose port 9000 and start php-fpm server
 EXPOSE 9000
+
+# Use entrypoint to handle secrets and configuration
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
