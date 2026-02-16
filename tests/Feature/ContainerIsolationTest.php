@@ -200,9 +200,10 @@ class ContainerIsolationTest extends TestCase
         $service = new ContainerIsolationService($kubernetesService);
         $result = $service->setupCompleteIsolation($deployment);
 
-        // Would be true if server is properly configured for K8s
-        // In this test it depends on the mock setup
-        $this->assertTrue(true); // Test structure is correct
+        // Verify Kubernetes pod was created
+        $deployment->refresh();
+        $this->assertNotNull($deployment->kubernetes_pod_name);
+        $this->assertNotNull($deployment->kubernetes_namespace);
     }
 
     public function test_container_isolation_updates_deployment_fields()

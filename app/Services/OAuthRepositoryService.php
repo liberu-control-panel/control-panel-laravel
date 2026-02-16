@@ -221,7 +221,11 @@ class OAuthRepositoryService
         // Convert SSH URL to HTTPS if needed
         if (str_starts_with($repoUrl, 'git@github.com:')) {
             $repoUrl = str_replace('git@github.com:', 'https://github.com/', $repoUrl);
-            $repoUrl = str_replace('.git', '', $repoUrl) . '.git';
+        }
+        
+        // Ensure URL ends with .git
+        if (!str_ends_with($repoUrl, '.git')) {
+            $repoUrl .= '.git';
         }
 
         // Add OAuth token to URL
@@ -238,7 +242,11 @@ class OAuthRepositoryService
         // Convert SSH URL to HTTPS if needed
         if (str_starts_with($repoUrl, "git@{$gitlabDomain}:")) {
             $repoUrl = str_replace("git@{$gitlabDomain}:", "https://{$gitlabDomain}/", $repoUrl);
-            $repoUrl = str_replace('.git', '', $repoUrl) . '.git';
+        }
+        
+        // Ensure URL ends with .git
+        if (!str_ends_with($repoUrl, '.git')) {
+            $repoUrl .= '.git';
         }
 
         // Add OAuth token to URL (GitLab uses oauth2 as username)
@@ -251,7 +259,7 @@ class OAuthRepositoryService
     public function refreshTokenIfNeeded(ConnectedAccount $account): bool
     {
         // Check if token is expired or about to expire (within 5 minutes)
-        if ($account->expires_at && $account->expires_at->subMinutes(5)->isPast()) {
+        if ($account->expires_at && $account->expires_at->lessThan(now()->addMinutes(5))) {
             return $this->refreshOAuthToken($account);
         }
 

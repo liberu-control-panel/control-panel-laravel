@@ -149,7 +149,7 @@ class GitDeploymentService
 
         // Determine clone URL and authentication method
         $cloneUrl = $deployment->repository_url;
-        $gitSshCommand = null;
+        $gitSshCommand = '';
 
         if ($deployment->usesOAuth()) {
             // Use OAuth token for authentication
@@ -160,13 +160,13 @@ class GitDeploymentService
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
             $keyPath = $this->getDeployKeyPath($deployment);
-            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no'";
+            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' ";
         }
 
         // Clone command
         $cloneCommand = sprintf(
-            "%s git clone --branch %s %s %s",
-            $gitSshCommand ?: '',
+            "%sgit clone --branch %s %s %s",
+            $gitSshCommand,
             escapeshellarg($deployment->branch),
             escapeshellarg($cloneUrl),
             escapeshellarg($deployPath)
@@ -181,7 +181,7 @@ class GitDeploymentService
     protected function pullRepository($connection, GitDeployment $deployment, string $deployPath): void
     {
         // Determine authentication method
-        $gitSshCommand = null;
+        $gitSshCommand = '';
 
         if ($deployment->usesOAuth()) {
             // Refresh OAuth token if needed
@@ -201,16 +201,16 @@ class GitDeploymentService
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
             $keyPath = $this->getDeployKeyPath($deployment);
-            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no'";
+            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' ";
         }
 
         // Pull command
         $pullCommand = sprintf(
-            "cd %s && %s git checkout %s && %s git pull origin %s",
+            "cd %s && %sgit checkout %s && %sgit pull origin %s",
             escapeshellarg($deployPath),
-            $gitSshCommand ?: '',
+            $gitSshCommand,
             escapeshellarg($deployment->branch),
-            $gitSshCommand ?: '',
+            $gitSshCommand,
             escapeshellarg($deployment->branch)
         );
 
