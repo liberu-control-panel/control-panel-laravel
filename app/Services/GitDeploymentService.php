@@ -11,10 +11,12 @@ use Exception;
 class GitDeploymentService
 {
     protected SshConnectionService $sshService;
+    protected OAuthRepositoryService $oauthService;
 
-    public function __construct(SshConnectionService $sshService)
+    public function __construct(SshConnectionService $sshService, OAuthRepositoryService $oauthService)
     {
         $this->sshService = $sshService;
+        $this->oauthService = $oauthService;
     }
 
     /**
@@ -145,24 +147,30 @@ class GitDeploymentService
         // Create deployment directory
         $this->sshService->executeCommand($connection, "mkdir -p " . dirname($deployPath));
 
-        // Setup SSH key if private repository
-        if ($deployment->isPrivate()) {
+        // Determine clone URL and authentication method
+        $cloneUrl = $deployment->repository_url;
+        $gitSshCommand = '';
+
+        if ($deployment->usesOAuth()) {
+            // Use OAuth token for authentication
+            $account = $deployment->connectedAccount;
+            $this->oauthService->refreshTokenIfNeeded($account);
+            $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+        } elseif ($deployment->isPrivate()) {
+            // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
+            $keyPath = $this->getDeployKeyPath($deployment);
+            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' ";
         }
 
         // Clone command
         $cloneCommand = sprintf(
-            "git clone --branch %s %s %s",
+            "%sgit clone --branch %s %s %s",
+            $gitSshCommand,
             escapeshellarg($deployment->branch),
-            escapeshellarg($deployment->repository_url),
+            escapeshellarg($cloneUrl),
             escapeshellarg($deployPath)
         );
-
-        // Use SSH key if private
-        if ($deployment->isPrivate()) {
-            $keyPath = $this->getDeployKeyPath($deployment);
-            $cloneCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' " . $cloneCommand;
-        }
 
         $this->sshService->executeCommand($connection, $cloneCommand);
     }
@@ -172,24 +180,39 @@ class GitDeploymentService
      */
     protected function pullRepository($connection, GitDeployment $deployment, string $deployPath): void
     {
-        // Setup SSH key if private repository
-        if ($deployment->isPrivate()) {
+        // Determine authentication method
+        $gitSshCommand = '';
+
+        if ($deployment->usesOAuth()) {
+            // Refresh OAuth token if needed
+            $account = $deployment->connectedAccount;
+            $this->oauthService->refreshTokenIfNeeded($account);
+            
+            // Update remote URL to use OAuth token
+            $oauthUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            $this->sshService->executeCommand(
+                $connection,
+                sprintf("cd %s && git remote set-url origin %s", 
+                    escapeshellarg($deployPath),
+                    escapeshellarg($oauthUrl)
+                )
+            );
+        } elseif ($deployment->isPrivate()) {
+            // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
+            $keyPath = $this->getDeployKeyPath($deployment);
+            $gitSshCommand = "GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' ";
         }
 
         // Pull command
         $pullCommand = sprintf(
-            "cd %s && git checkout %s && git pull origin %s",
+            "cd %s && %sgit checkout %s && %sgit pull origin %s",
             escapeshellarg($deployPath),
+            $gitSshCommand,
             escapeshellarg($deployment->branch),
+            $gitSshCommand,
             escapeshellarg($deployment->branch)
         );
-
-        // Use SSH key if private
-        if ($deployment->isPrivate()) {
-            $keyPath = $this->getDeployKeyPath($deployment);
-            $pullCommand = "cd {$deployPath} && GIT_SSH_COMMAND='ssh -i {$keyPath} -o StrictHostKeyChecking=no' git pull origin {$deployment->branch}";
-        }
 
         $this->sshService->executeCommand($connection, $pullCommand);
     }
