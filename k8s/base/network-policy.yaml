@@ -1,0 +1,83 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: control-panel-network-policy
+  namespace: control-panel
+  labels:
+    app: control-panel
+spec:
+  podSelector:
+    matchLabels:
+      app: control-panel
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from NGINX Ingress Controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+  # Allow health checks from within the same namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: control-panel
+    ports:
+    - protocol: TCP
+      port: 80
+  # Allow PHP-FPM communication from NGINX sidecar
+  - from:
+    - podSelector:
+        matchLabels:
+          app: control-panel
+    ports:
+    - protocol: TCP
+      port: 9000
+  egress:
+  # Allow DNS queries
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow communication with MySQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: control-panel
+          component: mysql
+    ports:
+    - protocol: TCP
+      port: 3306
+  # Allow communication with Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: control-panel
+          component: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow HTTPS egress for external APIs, package downloads, etc.
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow communication within the same namespace
+  - to:
+    - podSelector:
+        matchLabels:
+          app: control-panel

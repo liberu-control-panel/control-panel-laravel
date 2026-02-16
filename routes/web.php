@@ -15,6 +15,9 @@ use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 |
 */
 
+// Load health check routes (no authentication required)
+require __DIR__.'/health.php';
+
 Route::get('/', fn () => view('welcome'));
 
 Route::redirect('/login', '/app/login')->name('login');

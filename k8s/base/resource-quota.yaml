@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: control-panel-quota
+  namespace: control-panel
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "10"
+    requests.memory: 20Gi
+    limits.cpu: "20"
+    limits.memory: 40Gi
+    
+    # Storage resources
+    persistentvolumeclaims: "10"
+    requests.storage: 100Gi
+    
+    # Object counts
+    pods: "50"
+    services: "20"
+    configmaps: "20"
+    secrets: "20"
+    
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: control-panel-limits
+  namespace: control-panel
+spec:
+  limits:
+  # Container limits
+  - max:
+      cpu: "4"
+      memory: 8Gi
+    min:
+      cpu: "100m"
+      memory: 64Mi
+    default:
+      cpu: "500m"
+      memory: 512Mi
+    defaultRequest:
+      cpu: "200m"
+      memory: 256Mi
+    type: Container
+  
+  # Pod limits
+  - max:
+      cpu: "8"
+      memory: 16Gi
+    min:
+      cpu: "200m"
+      memory: 128Mi
+    type: Pod
+  
+  # PVC limits
+  - max:
+      storage: 50Gi
+    min:
+      storage: 1Gi
+    type: PersistentVolumeClaim

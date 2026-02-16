@@ -1,0 +1,87 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.circleci
+
+# Documentation
+*.md
+docs/
+COMPLETION_REPORT.md
+IMPLEMENTATION_*.md
+INSTALL_SCRIPT_README.md
+KUBERNETES_IMPLEMENTATION_SUMMARY.md
+MULTI_*.md
+OAUTH_*.md
+QUICK_START.md
+SECURITY_*.md
+UNIFIED_INSTALLER_IMPLEMENTATION.md
+VALIDATION_CHECKLIST.md
+installation-flow-diagram.txt
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies (will be installed in container)
+/vendor
+/node_modules
+
+# Build artifacts
+/public/hot
+/public/storage
+/public/build
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Storage
+/storage/*.key
+/storage/logs
+/storage/framework
+
+# Testing
+/tests
+phpunit.xml
+.phpunit.result.cache
+.env.testing
+
+# Docker
+docker-compose*.yml
+!docker-compose.yml
+Dockerfile.dev
+.docker/octane
+
+# Kubernetes
+k8s/
+helm/
+
+# Installation scripts
+install*.sh
+join-node.sh
+setup.sh
+test-install-script.sh
+
+# Temporary files
+/tmp
+*.log
+error_log
+
+# Package files
+package-lock.json
+composer.lock
+
+# Misc
+/rr

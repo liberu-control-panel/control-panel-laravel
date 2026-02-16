@@ -1,0 +1,88 @@
+version: '3.8'
+
+# Additional services: Mail, DNS, etc.
+services:
+  postfix:
+    image: boky/postfix:latest
+    restart: always
+    volumes:
+      - postfix-data:/var/spool/postfix
+      - postfix-config:/etc/postfix
+    environment:
+      - HOSTNAME=${MAIL_HOSTNAME:-mail.example.com}
+      - ALLOWED_SENDER_DOMAINS=${ALLOWED_SENDER_DOMAINS:-example.com}
+      - RELAYHOST=${RELAYHOST:-}
+    ports:
+      - "25:25"
+      - "587:587"
+    networks:
+      - proxy-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  dovecot:
+    image: dovecot/dovecot:latest
+    restart: always
+    volumes:
+      - dovecot-data:/var/mail
+      - dovecot-config:/etc/dovecot
+    ports:
+      - "110:110"
+      - "143:143"
+      - "993:993"
+      - "995:995"
+    networks:
+      - proxy-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "143"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  bind9:
+    image: internetsystemsconsortium/bind9:9.18
+    restart: always
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "953:953/tcp"  # rndc control port
+    volumes:
+      - bind-config:/etc/bind
+      - bind-cache:/var/cache/bind
+      - bind-records:/var/lib/bind
+    environment:
+      - BIND9_USER=bind
+      - TZ=${TZ:-UTC}
+    networks:
+      - proxy-network
+    healthcheck:
+      test: ["CMD", "host", "-t", "A", "localhost", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postfix-data:
+    driver: local
+  postfix-config:
+    driver: local
+  dovecot-data:
+    driver: local
+  dovecot-config:
+    driver: local
+  bind-config:
+    driver: local
+  bind-cache:
+    driver: local
+  bind-records:
+    driver: local
+
+networks:
+  proxy-network:
+    external: true

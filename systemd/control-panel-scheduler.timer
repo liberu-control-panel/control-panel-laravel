@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Liberu Control Panel Scheduler every minute
+Requires=control-panel-scheduler.service
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
