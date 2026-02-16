@@ -1,0 +1,67 @@
+version: '3.8'
+
+# Development overrides
+# Usage: docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml up
+services:
+  control-panel:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+    volumes:
+      # Mount source code for development
+      - ./:/var/www/html
+      # Exclude vendor and node_modules for performance
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+    command: php artisan octane:start --host=0.0.0.0 --port=9000 --watch
+
+  queue-worker:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+    volumes:
+      - ./:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+
+  scheduler:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+    volumes:
+      - ./:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+
+  # Add mailhog for development email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - proxy-network
+
+  # Add phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD_FILE=/run/secrets/db_root_password
+    ports:
+      - "8080:80"
+    secrets:
+      - db_root_password
+    networks:
+      - proxy-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  proxy-network:
+    external: false
