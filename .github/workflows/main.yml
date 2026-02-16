@@ -47,4 +47,4 @@ jobs:
           cache-from: type=registry,ref=liberu/control-panel:buildcache
           cache-to: type=registry,ref=liberu/control-panel:buildcache,mode=max
           secrets: |
-            github_token=${{ secrets.GITHUB_TOKEN }} 
+            github_token=${{ secrets.GITHUB_TOKEN }}
