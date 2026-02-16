@@ -16,10 +16,17 @@ use Illuminate\Support\Facades\Log;
 class DatabaseService
 {
     protected $containerManager;
+    protected $standaloneHelper;
+    protected $detectionService;
 
-    public function __construct(ContainerManagerService $containerManager)
-    {
+    public function __construct(
+        ContainerManagerService $containerManager,
+        StandaloneServiceHelper $standaloneHelper,
+        DeploymentDetectionService $detectionService
+    ) {
         $this->containerManager = $containerManager;
+        $this->standaloneHelper = $standaloneHelper;
+        $this->detectionService = $detectionService;
     }
 
     /**
@@ -48,11 +55,26 @@ class DatabaseService
     }
 
     /**
-     * Create database in Docker container
+     * Create database in Docker container or standalone system
      */
     protected function createDatabaseInContainer(Domain $domain, Database $database): bool
     {
         try {
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone()) {
+                if ($database->engine === Database::ENGINE_MYSQL) {
+                    return $this->standaloneHelper->createMysqlDatabase(
+                        $database->name,
+                        $database->charset,
+                        $database->collation
+                    );
+                } elseif ($database->engine === Database::ENGINE_POSTGRESQL) {
+                    return $this->standaloneHelper->createPostgresDatabase($database->name);
+                }
+                return false;
+            }
+
+            // Docker mode
             $containerName = "{$domain->domain_name}_database";
 
             if ($database->engine === Database::ENGINE_MYSQL) {
@@ -135,11 +157,22 @@ class DatabaseService
     }
 
     /**
-     * Create database user in container
+     * Create database user in container or standalone system
      */
     protected function createUserInContainer(Database $database, DatabaseUser $databaseUser, string $password): bool
     {
         try {
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone()) {
+                if ($database->engine === Database::ENGINE_MYSQL) {
+                    return $this->createMysqlUserStandalone($database, $databaseUser, $password);
+                } elseif ($database->engine === Database::ENGINE_POSTGRESQL) {
+                    return $this->createPostgresUserStandalone($database, $databaseUser, $password);
+                }
+                return false;
+            }
+
+            // Docker mode
             $domain = $database->domain;
             $containerName = "{$domain->domain_name}_database";
 
@@ -507,5 +540,51 @@ class DatabaseService
                 'connection_count' => 0
             ];
         }
+    }
+
+    /**
+     * Create MySQL user in standalone mode
+     */
+    protected function createMysqlUserStandalone(Database $database, DatabaseUser $databaseUser, string $password): bool
+    {
+        $privileges = $this->formatMysqlPrivileges($databaseUser->privileges);
+
+        $commands = [
+            "CREATE USER IF NOT EXISTS '{$databaseUser->username}'@'{$databaseUser->host}' IDENTIFIED BY '{$password}';",
+            "GRANT {$privileges} ON `{$database->name}`.* TO '{$databaseUser->username}'@'{$databaseUser->host}';",
+            "FLUSH PRIVILEGES;"
+        ];
+
+        foreach ($commands as $command) {
+            $result = $this->standaloneHelper->executeMysqlCommand($command);
+            if (!$result['success']) {
+                Log::error("MySQL user creation failed in standalone mode: " . $result['error']);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Create PostgreSQL user in standalone mode
+     */
+    protected function createPostgresUserStandalone(Database $database, DatabaseUser $databaseUser, string $password): bool
+    {
+        // Create user
+        $createUserCmd = "CREATE USER {$databaseUser->username} WITH PASSWORD '{$password}';";
+        $result = $this->standaloneHelper->executePostgresCommand($createUserCmd);
+        
+        if (!$result['success']) {
+            Log::error("PostgreSQL user creation failed in standalone mode: " . $result['error']);
+            return false;
+        }
+
+        // Grant privileges
+        $privileges = $this->formatPostgresPrivileges($databaseUser->privileges);
+        $grantCmd = "GRANT {$privileges} ON DATABASE {$database->name} TO {$databaseUser->username};";
+        $result = $this->standaloneHelper->executePostgresCommand($grantCmd);
+
+        return $result['success'];
     }
 }

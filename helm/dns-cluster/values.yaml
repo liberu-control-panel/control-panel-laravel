@@ -56,6 +56,16 @@ powerdns:
       
   persistence:
     enabled: false
+    # Storage size for database persistent volumes
+    size: 10Gi
+    # Storage class for database persistent volumes
+    # For managed Kubernetes, use platform-specific storage classes:
+    # - AWS EKS: "gp3" (recommended), "gp2", "io2" (high IOPS)
+    # - Azure AKS: "managed-csi" or "managed-csi-premium" (for better performance)
+    # - Google GKE: "pd-ssd" or "pd-balanced" (recommended)
+    # - DigitalOcean DOKS: "do-block-storage"
+    # - Self-hosted: "standard", "local-path", or custom
+    storageClassName: ""  # Uses cluster default if empty
     
   resources:
     limits:

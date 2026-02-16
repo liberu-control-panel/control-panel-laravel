@@ -13,10 +13,17 @@ use Illuminate\Support\Facades\Log;
 class WebServerService
 {
     protected $containerManager;
+    protected $standaloneHelper;
+    protected $detectionService;
 
-    public function __construct(ContainerManagerService $containerManager)
-    {
+    public function __construct(
+        ContainerManagerService $containerManager,
+        StandaloneServiceHelper $standaloneHelper,
+        DeploymentDetectionService $detectionService
+    ) {
         $this->containerManager = $containerManager;
+        $this->standaloneHelper = $standaloneHelper;
+        $this->detectionService = $detectionService;
     }
 
     /**
@@ -30,9 +37,15 @@ class WebServerService
 
         $config = $this->generateNginxServerBlock($domain, $phpVersion, $documentRoot, $enableSSL);
 
-        // Save configuration file
-        $configPath = "nginx/sites/{$domain->domain_name}.conf";
-        Storage::disk('local')->put($configPath, $config);
+        // Deploy configuration based on deployment mode
+        if ($this->detectionService->isStandalone()) {
+            // Deploy to system Nginx directory
+            $this->standaloneHelper->deployNginxConfig($domain->domain_name, $config);
+        } else {
+            // Save configuration file for Docker/Kubernetes
+            $configPath = "nginx/sites/{$domain->domain_name}.conf";
+            Storage::disk('local')->put($configPath, $config);
+        }
 
         return $config;
     }
@@ -43,15 +56,29 @@ class WebServerService
     protected function generateNginxServerBlock(Domain $domain, string $phpVersion, string $documentRoot, bool $enableSSL): string
     {
         $domainName = $domain->domain_name;
-        $containerName = "{$domainName}_php";
+        
+        // Determine PHP-FPM socket/port based on deployment mode
+        $isStandalone = $this->detectionService->isStandalone();
+        $phpFpmTarget = $isStandalone 
+            ? "unix:/var/run/php/php{$phpVersion}-fpm.sock" 
+            : "{$domainName}_php:9000";
 
         $config = "server {\n";
 
         if ($enableSSL) {
             $config .= "    listen 443 ssl http2;\n";
             $config .= "    listen [::]:443 ssl http2;\n";
-            $config .= "    ssl_certificate /etc/nginx/certs/{$domainName}.crt;\n";
-            $config .= "    ssl_certificate_key /etc/nginx/certs/{$domainName}.key;\n";
+            
+            if ($isStandalone) {
+                // Use Let's Encrypt path for standalone
+                $config .= "    ssl_certificate /etc/letsencrypt/live/{$domainName}/fullchain.pem;\n";
+                $config .= "    ssl_certificate_key /etc/letsencrypt/live/{$domainName}/privkey.pem;\n";
+            } else {
+                // Use custom path for Docker/Kubernetes
+                $config .= "    ssl_certificate /etc/nginx/certs/{$domainName}.crt;\n";
+                $config .= "    ssl_certificate_key /etc/nginx/certs/{$domainName}.key;\n";
+            }
+            
             $config .= "    ssl_protocols TLSv1.2 TLSv1.3;\n";
             $config .= "    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;\n";
             $config .= "    ssl_prefer_server_ciphers off;\n";
@@ -87,7 +114,7 @@ class WebServerService
         $config .= "    location ~ \\.php$ {\n";
         $config .= "        try_files \$uri =404;\n";
         $config .= "        fastcgi_split_path_info ^(.+\\.php)(/.+)$;\n";
-        $config .= "        fastcgi_pass {$containerName}:9000;\n";
+        $config .= "        fastcgi_pass {$phpFpmTarget};\n";
         $config .= "        fastcgi_index index.php;\n";
         $config .= "        include fastcgi_params;\n";
         $config .= "        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;\n";
@@ -229,6 +256,12 @@ class WebServerService
     public function reloadNginx(Domain $domain): bool
     {
         try {
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone()) {
+                return $this->standaloneHelper->reloadSystemdService('nginx');
+            }
+
+            // Docker mode
             $containerName = "{$domain->domain_name}_web";
             $process = new Process(['docker', 'exec', $containerName, 'nginx', '-s', 'reload']);
             $process->run();
@@ -246,6 +279,17 @@ class WebServerService
     public function testNginxConfig(Domain $domain): array
     {
         try {
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone()) {
+                $result = $this->standaloneHelper->testNginxConfig();
+                return [
+                    'success' => $result['success'],
+                    'output' => $result['output'],
+                    'error' => $result['error']
+                ];
+            }
+
+            // Docker mode
             $containerName = "{$domain->domain_name}_web";
             $process = new Process(['docker', 'exec', $containerName, 'nginx', '-t']);
             $process->run();

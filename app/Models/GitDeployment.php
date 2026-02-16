@@ -12,6 +12,11 @@ class GitDeployment extends Model
 
     protected $fillable = [
         'domain_id',
+        'connected_account_id',
+        'use_oauth',
+        'container_id',
+        'kubernetes_pod_name',
+        'kubernetes_namespace',
         'repository_url',
         'repository_type',
         'branch',
@@ -29,6 +34,7 @@ class GitDeployment extends Model
 
     protected $casts = [
         'auto_deploy' => 'boolean',
+        'use_oauth' => 'boolean',
         'last_deployed_at' => 'datetime',
     ];
 
@@ -43,6 +49,22 @@ class GitDeployment extends Model
     public function domain(): BelongsTo
     {
         return $this->belongsTo(Domain::class);
+    }
+
+    /**
+     * Get the connected OAuth account for this deployment
+     */
+    public function connectedAccount(): BelongsTo
+    {
+        return $this->belongsTo(ConnectedAccount::class);
+    }
+
+    /**
+     * Get the container for this deployment
+     */
+    public function container(): BelongsTo
+    {
+        return $this->belongsTo(Container::class);
     }
 
     /**
@@ -74,7 +96,23 @@ class GitDeployment extends Model
      */
     public function isPrivate(): bool
     {
-        return !empty($this->deploy_key);
+        return !empty($this->deploy_key) || $this->use_oauth;
+    }
+
+    /**
+     * Check if deployment uses OAuth authentication
+     */
+    public function usesOAuth(): bool
+    {
+        return $this->use_oauth && $this->connectedAccount !== null;
+    }
+
+    /**
+     * Check if deployment has container isolation
+     */
+    public function hasContainerIsolation(): bool
+    {
+        return $this->container_id !== null || $this->kubernetes_pod_name !== null;
     }
 
     /**

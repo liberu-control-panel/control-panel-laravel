@@ -15,11 +15,19 @@ class SslService
 {
     protected $containerManager;
     protected $webServerService;
+    protected $standaloneHelper;
+    protected $detectionService;
 
-    public function __construct(ContainerManagerService $containerManager, WebServerService $webServerService)
-    {
+    public function __construct(
+        ContainerManagerService $containerManager,
+        WebServerService $webServerService,
+        StandaloneServiceHelper $standaloneHelper,
+        DeploymentDetectionService $detectionService
+    ) {
         $this->containerManager = $containerManager;
         $this->webServerService = $webServerService;
+        $this->standaloneHelper = $standaloneHelper;
+        $this->detectionService = $detectionService;
     }
 
     /**
@@ -45,37 +53,57 @@ class SslService
                 }
             }
 
-            $domainList = implode(',', $domains);
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone() && $this->standaloneHelper->isCertbotInstalled()) {
+                $success = $this->standaloneHelper->executeCertbot(
+                    $domains,
+                    $email,
+                    $options['webroot'] ?? '/var/www/html'
+                );
 
-            // Generate certificate using Certbot
-            $certbotProcess = new Process([
-                'docker', 'run', '--rm',
-                '-v', storage_path('app/ssl') . ':/etc/letsencrypt',
-                '-v', storage_path('app/ssl/www') . ':/var/www/certbot',
-                'certbot/certbot',
-                'certonly',
-                '--webroot',
-                '--webroot-path=/var/www/certbot',
-                '--email', $email,
-                '--agree-tos',
-                '--no-eff-email',
-                '--force-renewal',
-                '-d', $domainList
-            ]);
+                if (!$success) {
+                    Log::error("Let's Encrypt certificate generation failed for {$domainName} in standalone mode");
+                    return null;
+                }
 
-            $certbotProcess->setTimeout(300); // 5 minutes timeout
-            $certbotProcess->run();
+                // Read certificate files from Let's Encrypt directory
+                $paths = $this->standaloneHelper->getCertificatePath($domainName);
+                $certificate = file_get_contents($paths['fullchain']);
+                $privateKey = file_get_contents($paths['privkey']);
+                $chain = file_get_contents($paths['chain']);
+            } else {
+                // Docker mode - use containerized Certbot
+                $domainList = implode(',', $domains);
 
-            if (!$certbotProcess->isSuccessful()) {
-                Log::error("Let's Encrypt certificate generation failed for {$domainName}: " . $certbotProcess->getErrorOutput());
-                return null;
+                $certbotProcess = new Process([
+                    'docker', 'run', '--rm',
+                    '-v', storage_path('app/ssl') . ':/etc/letsencrypt',
+                    '-v', storage_path('app/ssl/www') . ':/var/www/certbot',
+                    'certbot/certbot',
+                    'certonly',
+                    '--webroot',
+                    '--webroot-path=/var/www/certbot',
+                    '--email', $email,
+                    '--agree-tos',
+                    '--no-eff-email',
+                    '--force-renewal',
+                    '-d', $domainList
+                ]);
+
+                $certbotProcess->setTimeout(300);
+                $certbotProcess->run();
+
+                if (!$certbotProcess->isSuccessful()) {
+                    Log::error("Let's Encrypt certificate generation failed for {$domainName}: " . $certbotProcess->getErrorOutput());
+                    return null;
+                }
+
+                // Read certificate files
+                $certPath = storage_path("app/ssl/live/{$domainName}");
+                $certificate = file_get_contents("{$certPath}/fullchain.pem");
+                $privateKey = file_get_contents("{$certPath}/privkey.pem");
+                $chain = file_get_contents("{$certPath}/chain.pem");
             }
-
-            // Read certificate files
-            $certPath = storage_path("app/ssl/live/{$domainName}");
-            $certificate = file_get_contents("{$certPath}/fullchain.pem");
-            $privateKey = file_get_contents("{$certPath}/privkey.pem");
-            $chain = file_get_contents("{$certPath}/chain.pem");
 
             // Parse certificate info
             $certInfo = $this->parseCertificate($certificate);
@@ -253,30 +281,46 @@ class SslService
             $domain = $sslCertificate->domain;
             $domainName = $domain->domain_name;
 
-            // Renew certificate using Certbot
-            $renewProcess = new Process([
-                'docker', 'run', '--rm',
-                '-v', storage_path('app/ssl') . ':/etc/letsencrypt',
-                '-v', storage_path('app/ssl/www') . ':/var/www/certbot',
-                'certbot/certbot',
-                'renew',
-                '--cert-name', $domainName,
-                '--force-renewal'
-            ]);
+            // Use standalone mode if not in Docker/Kubernetes
+            if ($this->detectionService->isStandalone() && $this->standaloneHelper->isCertbotInstalled()) {
+                $success = $this->standaloneHelper->renewCertbotCertificate($domainName);
 
-            $renewProcess->setTimeout(300);
-            $renewProcess->run();
+                if (!$success) {
+                    Log::error("Certificate renewal failed for {$domainName} in standalone mode");
+                    return false;
+                }
 
-            if (!$renewProcess->isSuccessful()) {
-                Log::error("Certificate renewal failed for {$domainName}: " . $renewProcess->getErrorOutput());
-                return false;
+                // Read updated certificate files
+                $paths = $this->standaloneHelper->getCertificatePath($domainName);
+                $certificate = file_get_contents($paths['fullchain']);
+                $privateKey = file_get_contents($paths['privkey']);
+                $chain = file_get_contents($paths['chain']);
+            } else {
+                // Docker mode - use containerized Certbot
+                $renewProcess = new Process([
+                    'docker', 'run', '--rm',
+                    '-v', storage_path('app/ssl') . ':/etc/letsencrypt',
+                    '-v', storage_path('app/ssl/www') . ':/var/www/certbot',
+                    'certbot/certbot',
+                    'renew',
+                    '--cert-name', $domainName,
+                    '--force-renewal'
+                ]);
+
+                $renewProcess->setTimeout(300);
+                $renewProcess->run();
+
+                if (!$renewProcess->isSuccessful()) {
+                    Log::error("Certificate renewal failed for {$domainName}: " . $renewProcess->getErrorOutput());
+                    return false;
+                }
+
+                // Read updated certificate files
+                $certPath = storage_path("app/ssl/live/{$domainName}");
+                $certificate = file_get_contents("{$certPath}/fullchain.pem");
+                $privateKey = file_get_contents("{$certPath}/privkey.pem");
+                $chain = file_get_contents("{$certPath}/chain.pem");
             }
-
-            // Read updated certificate files
-            $certPath = storage_path("app/ssl/live/{$domainName}");
-            $certificate = file_get_contents("{$certPath}/fullchain.pem");
-            $privateKey = file_get_contents("{$certPath}/privkey.pem");
-            $chain = file_get_contents("{$certPath}/chain.pem");
 
             // Parse certificate info
             $certInfo = $this->parseCertificate($certificate);

@@ -137,6 +137,7 @@ git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
 
 # Option 1: Install with AWS ALB (Application Load Balancer) - Recommended for HTTP/HTTPS
+# Install with Helm (with optimized EKS storage)
 helm install control-panel ./helm/control-panel \
   --set ingress.className=alb \
   --set ingress.annotations."alb\.ingress\.kubernetes\.io/scheme"=internet-facing \
@@ -150,11 +151,20 @@ helm install control-panel ./helm/control-panel \
 # Option 2: Install with NGINX Ingress behind NLB - Better performance
 helm install control-panel ./helm/control-panel \
   --set ingress.className=nginx \
+  --set persistence.storageClass=gp3 \
+  --set mysql.primary.persistence.storageClass=gp3 \
+  --set kubernetes.storageClass=gp3 \
   --namespace control-panel \
   --create-namespace
 ```
 
 For advanced load balancing configurations, see the [Load Balancing Guide](LOAD_BALANCING_GUIDE.md).
+**Storage Options for EKS:**
+- Application storage: `gp3` (General Purpose SSD - recommended)
+- Database storage: `gp3` for standard workloads, `io2` for high IOPS
+- Shared storage (mail): Install EFS CSI driver and use `efs-sc`
+
+For complete storage configuration guide, see [Storage Class Selection Guide](STORAGE_CLASS_GUIDE.md).
 
 ## Azure AKS Setup
 
@@ -228,13 +238,22 @@ kubectl patch storageclass managed-premium -p '{"metadata": {"annotations":{"sto
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
 
-# Install with Helm
+# Install with Helm (with optimized AKS storage)
 helm install control-panel ./helm/control-panel \
   --set ingress.className=nginx \
-  --set storage.storageClassName=managed-premium \
+  --set persistence.storageClass=managed-csi \
+  --set mysql.primary.persistence.storageClass=managed-csi-premium \
+  --set kubernetes.storageClass=managed-csi \
   --namespace control-panel \
   --create-namespace
 ```
+
+**Storage Options for AKS:**
+- Application storage: `managed-csi` (Standard SSD - recommended)
+- Database storage: `managed-csi-premium` (Premium SSD for better IOPS)
+- Shared storage (mail): Use `azurefile` or `azurefile-premium`
+
+For complete storage configuration guide, see [Storage Class Selection Guide](STORAGE_CLASS_GUIDE.md).
 
 ## Google GKE Setup
 
@@ -313,12 +332,22 @@ kubectl patch storageclass premium-rwo -p '{"metadata": {"annotations":{"storage
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
 
-# Install with Helm
+# Install with Helm (with optimized GKE storage)
 helm install control-panel ./helm/control-panel \
   --set ingress.className=nginx \
+  --set persistence.storageClass=pd-balanced \
+  --set mysql.primary.persistence.storageClass=pd-ssd \
+  --set kubernetes.storageClass=pd-balanced \
   --namespace control-panel \
   --create-namespace
 ```
+
+**Storage Options for GKE:**
+- Application storage: `pd-balanced` (Balanced Persistent Disk - recommended)
+- Database storage: `pd-ssd` (SSD for better performance)
+- Shared storage (mail): Install Filestore CSI driver and use `filestore-nfs`
+
+For complete storage configuration guide, see [Storage Class Selection Guide](STORAGE_CLASS_GUIDE.md).
 
 ## DigitalOcean DOKS Setup
 
@@ -386,12 +415,22 @@ kubectl get storageclass do-block-storage -o yaml
 git clone https://github.com/liberu-control-panel/control-panel-laravel.git
 cd control-panel-laravel
 
-# Install with Helm
+# Install with Helm (with DOKS storage)
 helm install control-panel ./helm/control-panel \
   --set ingress.className=nginx \
+  --set persistence.storageClass=do-block-storage \
+  --set mysql.primary.persistence.storageClass=do-block-storage \
+  --set kubernetes.storageClass=do-block-storage \
   --namespace control-panel \
   --create-namespace
 ```
+
+**Storage Options for DOKS:**
+- Application storage: `do-block-storage` (SSD-backed Block Storage)
+- Database storage: `do-block-storage` (same, good for most workloads)
+- Shared storage (mail): Use DigitalOcean Spaces (S3-compatible) or deploy NFS
+
+For complete storage configuration guide, see [Storage Class Selection Guide](STORAGE_CLASS_GUIDE.md).
 
 ## Common Post-Setup Steps
 

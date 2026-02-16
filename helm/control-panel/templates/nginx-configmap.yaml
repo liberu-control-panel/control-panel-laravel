@@ -6,6 +6,18 @@ metadata:
     {{- include "control-panel.labels" . | nindent 4 }}
 data:
   default.conf: |
+    # Gzip compression for bandwidth reduction
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+    gzip_disable "msie6";
+
+    # Connection optimization
+    keepalive_timeout 65;
+    keepalive_requests 100;
+
     server {
         listen 80;
         server_name _;
@@ -14,8 +26,29 @@ data:
 
         charset utf-8;
 
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+        
+        # Enable sendfile for better performance
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+
+        client_max_body_size 100m;
+
         location / {
             try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # Static file caching
+        location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
         }
 
         location = /favicon.ico { access_log off; log_not_found off; }
@@ -23,10 +56,6 @@ data:
 
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log error;
-
-        sendfile off;
-
-        client_max_body_size 100m;
 
         location ~ \.php$ {
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -43,8 +72,11 @@ data:
             fastcgi_read_timeout 300;
         }
 
-        location ~ /\.ht {
+        # Deny access to hidden files
+        location ~ /\. {
             deny all;
+            access_log off;
+            log_not_found off;
         }
 
         location /health {
