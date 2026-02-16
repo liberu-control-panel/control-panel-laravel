@@ -4,7 +4,7 @@ namespace App\Filament\App\Resources\Domains\Actions;
 
 use App\Models\Domain;
 use App\Services\CloudProviderManager;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 
