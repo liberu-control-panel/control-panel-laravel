@@ -50,8 +50,9 @@ The easiest way to install the control panel is using our **unified installation
 **Supported Operating Systems:**
 - Ubuntu LTS (20.04, 22.04, 24.04)
 - Debian (11, 12)
-- AlmaLinux / RHEL 8/9
-- Rocky Linux 8/9
+- AlmaLinux / RHEL 8/9/10
+- Rocky Linux 8/9/10
+- CloudLinux 8/9/10 (Standalone only)
 
 **One-Line Installation:**
 

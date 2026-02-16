@@ -16,9 +16,10 @@ A comprehensive **unified installation script** (`install.sh`) that provides an 
 
 ✅ **Ubuntu LTS**: 20.04, 22.04, 24.04
 ✅ **Debian**: 11 (Bullseye), 12 (Bookworm)
-✅ **AlmaLinux**: 8, 9
-✅ **Red Hat Enterprise Linux (RHEL)**: 8, 9
-✅ **Rocky Linux**: 8, 9
+✅ **AlmaLinux**: 8, 9, 10
+✅ **Red Hat Enterprise Linux (RHEL)**: 8, 9, 10
+✅ **Rocky Linux**: 8, 9, 10
+✅ **CloudLinux**: 8, 9, 10 (Standalone only)
 
 ## What Was Implemented
 

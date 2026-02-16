@@ -22,9 +22,10 @@ The `install.sh` script provides an interactive installation wizard that support
 - 12 (Bookworm)
 
 ✅ **Red Hat Enterprise Linux Family**
-- AlmaLinux 8, 9
-- RHEL (Red Hat Enterprise Linux) 8, 9
-- Rocky Linux 8, 9
+- AlmaLinux 8, 9, 10
+- RHEL (Red Hat Enterprise Linux) 8, 9, 10
+- Rocky Linux 8, 9, 10
+- CloudLinux 8, 9, 10 (Standalone only)
 
 ## Quick Start
 

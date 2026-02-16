@@ -69,9 +69,10 @@ A comprehensive unified installation script (`install.sh`) that:
 - 12 (Bookworm)
 
 ✅ **Red Hat Enterprise Linux Family**
-- AlmaLinux 8, 9
-- RHEL 8, 9
-- Rocky Linux 8, 9
+- AlmaLinux 8, 9, 10
+- RHEL 8, 9, 10
+- Rocky Linux 8, 9, 10
+- CloudLinux 8, 9, 10 (Standalone only)
 
 ### 2. Installation Methods
 
