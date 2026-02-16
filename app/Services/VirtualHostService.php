@@ -10,6 +10,17 @@ use Illuminate\Support\Str;
 
 class VirtualHostService
 {
+    protected DeploymentDetectionService $detectionService;
+    protected StandaloneServiceHelper $standaloneHelper;
+
+    public function __construct(
+        DeploymentDetectionService $detectionService,
+        StandaloneServiceHelper $standaloneHelper
+    ) {
+        $this->detectionService = $detectionService;
+        $this->standaloneHelper = $standaloneHelper;
+    }
+
     /**
      * Create a new virtual host with nginx configuration
      */
@@ -33,8 +44,10 @@ class VirtualHostService
             $nginxConfig = $this->generateNginxConfig($virtualHost);
             $virtualHost->update(['nginx_config' => $nginxConfig]);
 
-            // Deploy to Kubernetes/NGINX Ingress if server is configured
-            if ($virtualHost->server_id) {
+            // Deploy based on environment
+            if ($this->detectionService->isStandalone()) {
+                $this->deployToStandalone($virtualHost);
+            } elseif ($virtualHost->server_id) {
                 $this->deployToKubernetes($virtualHost);
             }
 
@@ -67,7 +80,13 @@ class VirtualHostService
     {
         $hostname = $virtualHost->hostname;
         $documentRoot = $virtualHost->document_root;
-        $phpVersion = str_replace('.', '-', $virtualHost->php_version);
+        $phpVersion = $virtualHost->php_version;
+        
+        // For standalone, use unix socket; for containers, use network socket
+        $isStandalone = $this->detectionService->isStandalone();
+        $phpFpmSocket = $isStandalone 
+            ? "unix:/run/php/php{$phpVersion}-fpm.sock"
+            : "php-versions-" . str_replace('.', '-', $phpVersion) . ":9000";
 
         $config = "server {\n";
         $config .= "    listen 80;\n";
@@ -76,18 +95,23 @@ class VirtualHostService
             $config .= "    listen 443 ssl http2;\n";
             $config .= "    ssl_certificate /etc/letsencrypt/live/{$hostname}/fullchain.pem;\n";
             $config .= "    ssl_certificate_key /etc/letsencrypt/live/{$hostname}/privkey.pem;\n";
+            $config .= "    ssl_protocols TLSv1.2 TLSv1.3;\n";
+            $config .= "    ssl_ciphers HIGH:!aNULL:!MD5;\n";
         }
         
         $config .= "    server_name {$hostname};\n";
         $config .= "    root {$documentRoot};\n";
         $config .= "    index index.php index.html index.htm;\n\n";
         
+        $config .= "    access_log /var/log/nginx/{$hostname}-access.log;\n";
+        $config .= "    error_log /var/log/nginx/{$hostname}-error.log;\n\n";
+        
         $config .= "    location / {\n";
         $config .= "        try_files \$uri \$uri/ /index.php?\$query_string;\n";
         $config .= "    }\n\n";
         
         $config .= "    location ~ \\.php$ {\n";
-        $config .= "        fastcgi_pass php-versions-{$phpVersion}:9000;\n";
+        $config .= "        fastcgi_pass {$phpFpmSocket};\n";
         $config .= "        fastcgi_index index.php;\n";
         $config .= "        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;\n";
         $config .= "        include fastcgi_params;\n";
@@ -99,6 +123,48 @@ class VirtualHostService
         $config .= "}\n";
 
         return $config;
+    }
+
+    /**
+     * Deploy virtual host to standalone NGINX
+     */
+    protected function deployToStandalone(VirtualHost $virtualHost): array
+    {
+        try {
+            $hostname = $virtualHost->hostname;
+            $nginxConfig = $virtualHost->nginx_config;
+
+            // Create document root directory
+            $documentRoot = $virtualHost->document_root;
+            $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $documentRoot]);
+            $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', 'www-data:www-data', $documentRoot]);
+
+            // Deploy nginx configuration
+            $this->standaloneHelper->deployNginxConfig($hostname, $nginxConfig);
+
+            // Test nginx configuration
+            $testResult = $this->standaloneHelper->testNginxConfig();
+            if (!$testResult['success']) {
+                throw new \Exception('NGINX configuration test failed: ' . $testResult['error']);
+            }
+
+            // Reload nginx
+            $this->standaloneHelper->reloadSystemdService('nginx');
+
+            Log::info("Virtual host {$hostname} deployed to standalone NGINX");
+
+            return [
+                'success' => true,
+                'message' => 'Virtual host deployed to standalone NGINX',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Standalone deployment failed: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => 'Failed to deploy to standalone NGINX: ' . $e->getMessage(),
+            ];
+        }
     }
 
     /**
@@ -181,15 +247,33 @@ class VirtualHostService
     protected function requestLetsEncryptCertificate(VirtualHost $virtualHost): array
     {
         try {
-            // Let's Encrypt certificate is automatically requested by cert-manager
-            // via the Kubernetes Ingress annotations
-            
-            Log::info("Let's Encrypt certificate requested for {$virtualHost->hostname}");
-            
-            return [
-                'success' => true,
-                'message' => 'Let\'s Encrypt certificate request submitted',
-            ];
+            if ($this->detectionService->isStandalone()) {
+                // Use Certbot for standalone
+                $domains = [$virtualHost->hostname];
+                $email = config('app.admin_email', 'admin@' . $virtualHost->hostname);
+                $webroot = $virtualHost->document_root;
+                
+                $success = $this->standaloneHelper->executeCertbot($domains, $email, $webroot);
+                
+                if ($success) {
+                    Log::info("Let's Encrypt certificate obtained for {$virtualHost->hostname}");
+                    return [
+                        'success' => true,
+                        'message' => 'Let\'s Encrypt certificate obtained successfully',
+                    ];
+                } else {
+                    throw new \Exception('Certbot execution failed');
+                }
+            } else {
+                // Let's Encrypt certificate is automatically requested by cert-manager
+                // via the Kubernetes Ingress annotations
+                Log::info("Let's Encrypt certificate requested for {$virtualHost->hostname}");
+                
+                return [
+                    'success' => true,
+                    'message' => 'Let\'s Encrypt certificate request submitted',
+                ];
+            }
         } catch (\Exception $e) {
             Log::error('Let\'s Encrypt certificate request failed: ' . $e->getMessage());
             
@@ -214,8 +298,10 @@ class VirtualHostService
                 $virtualHost->update(['nginx_config' => $nginxConfig]);
             }
 
-            // Redeploy to Kubernetes if needed
-            if ($virtualHost->server_id) {
+            // Redeploy based on environment
+            if ($this->detectionService->isStandalone()) {
+                $this->deployToStandalone($virtualHost);
+            } elseif ($virtualHost->server_id) {
                 $this->deployToKubernetes($virtualHost);
             }
 
@@ -240,8 +326,10 @@ class VirtualHostService
     public function delete(VirtualHost $virtualHost): array
     {
         try {
-            // Remove from Kubernetes
-            if ($virtualHost->server_id) {
+            // Remove based on environment
+            if ($this->detectionService->isStandalone()) {
+                $this->removeFromStandalone($virtualHost);
+            } elseif ($virtualHost->server_id) {
                 $this->removeFromKubernetes($virtualHost);
             }
 
@@ -257,6 +345,42 @@ class VirtualHostService
             return [
                 'success' => false,
                 'message' => 'Failed to delete virtual host: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Remove virtual host from standalone NGINX
+     */
+    protected function removeFromStandalone(VirtualHost $virtualHost): array
+    {
+        try {
+            $hostname = $virtualHost->hostname;
+            
+            // Remove nginx configuration
+            $this->standaloneHelper->removeNginxConfig($hostname);
+
+            // Test nginx configuration
+            $testResult = $this->standaloneHelper->testNginxConfig();
+            if (!$testResult['success']) {
+                throw new \Exception('NGINX configuration test failed: ' . $testResult['error']);
+            }
+
+            // Reload nginx
+            $this->standaloneHelper->reloadSystemdService('nginx');
+
+            Log::info("Virtual host {$hostname} removed from standalone NGINX");
+
+            return [
+                'success' => true,
+                'message' => 'Virtual host removed from standalone NGINX',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Standalone removal failed: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => 'Failed to remove from standalone NGINX: ' . $e->getMessage(),
             ];
         }
     }

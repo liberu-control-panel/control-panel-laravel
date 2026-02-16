@@ -12,10 +12,17 @@ use Illuminate\Support\Facades\Log;
 class DnsService
 {
     protected $containerManager;
+    protected $standaloneDnsService;
+    protected $detectionService;
 
-    public function __construct(ContainerManagerService $containerManager)
-    {
+    public function __construct(
+        ContainerManagerService $containerManager,
+        StandaloneDnsService $standaloneDnsService,
+        DeploymentDetectionService $detectionService
+    ) {
         $this->containerManager = $containerManager;
+        $this->standaloneDnsService = $standaloneDnsService;
+        $this->detectionService = $detectionService;
     }
 
     /**
@@ -23,6 +30,13 @@ class DnsService
      */
     public function createDnsZone(Domain $domain, array $options = []): bool
     {
+        // Use standalone service if in standalone mode
+        if ($this->detectionService->isStandalone()) {
+            $result = $this->standaloneDnsService->createDnsZone($domain, $options);
+            return $result['success'];
+        }
+
+        // Use container-based service
         try {
             $domainName = $domain->domain_name;
             $zoneFile = $this->generateZoneFile($domain, $options);
@@ -155,6 +169,12 @@ EOT;
      */
     public function addDnsRecord(Domain $domain, array $recordData): ?DnsSetting
     {
+        // Use standalone service if in standalone mode
+        if ($this->detectionService->isStandalone()) {
+            return $this->standaloneDnsService->addDnsRecord($domain, $recordData);
+        }
+
+        // Use container-based service
         try {
             $dnsRecord = DnsSetting::create([
                 'domain_id' => $domain->id,
@@ -183,6 +203,12 @@ EOT;
      */
     public function updateDnsRecord(DnsSetting $dnsRecord, array $data): bool
     {
+        // Use standalone service if in standalone mode
+        if ($this->detectionService->isStandalone()) {
+            return $this->standaloneDnsService->updateDnsRecord($dnsRecord, $data);
+        }
+
+        // Use container-based service
         try {
             $dnsRecord->update($data);
 
@@ -204,6 +230,12 @@ EOT;
      */
     public function deleteDnsRecord(DnsSetting $dnsRecord): bool
     {
+        // Use standalone service if in standalone mode
+        if ($this->detectionService->isStandalone()) {
+            return $this->standaloneDnsService->deleteDnsRecord($dnsRecord);
+        }
+
+        // Use container-based service
         try {
             $domain = $dnsRecord->domain;
             $dnsRecord->delete();
