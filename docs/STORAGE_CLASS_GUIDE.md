@@ -439,6 +439,202 @@ All major cloud providers support encryption at rest:
 
 ---
 
+## Database Storage Best Practices
+
+### Database Services Storage Configuration
+
+The control panel includes several database services that require persistent storage:
+
+| Service | Chart | Default Size | Recommended Storage Class | Notes |
+|---------|-------|--------------|--------------------------|-------|
+| **MySQL/MariaDB** | control-panel | 20Gi | gp3, managed-csi-premium, pd-ssd | Primary application database |
+| **Redis** | control-panel | 8Gi (optional) | gp3, managed-csi, pd-balanced | Cache - persistence optional |
+| **PowerDNS MySQL** | dns-cluster | 10Gi | gp3, managed-csi, pd-balanced | DNS zone storage |
+| **PowerDNS PostgreSQL** | dns-cluster | 10Gi | gp3, managed-csi, pd-balanced | Alternative DNS backend |
+| **Dovecot** | mail-services | 20Gi | gp3, managed-csi, pd-balanced | Mail storage (RWO) |
+| **Mail Shared** | mail-services | 50Gi | efs-sc, azurefile, filestore-nfs | Shared mail data (RWX) |
+
+### MySQL/MariaDB Configuration
+
+**Recommended Storage Classes by Platform:**
+
+```yaml
+# AWS EKS - Production
+mysql:
+  primary:
+    persistence:
+      storageClass: "gp3"  # Good balance of cost and performance
+      size: 20Gi
+
+# AWS EKS - High Performance
+mysql:
+  primary:
+    persistence:
+      storageClass: "io2"  # High IOPS for busy databases
+      size: 20Gi
+
+# Azure AKS - Production
+mysql:
+  primary:
+    persistence:
+      storageClass: "managed-csi-premium"  # Better IOPS for databases
+      size: 20Gi
+
+# Google GKE - Production
+mysql:
+  primary:
+    persistence:
+      storageClass: "pd-ssd"  # SSD for better performance
+      size: 20Gi
+```
+
+**Sizing Recommendations:**
+- **Small deployment** (< 100 sites): 20Gi
+- **Medium deployment** (100-1000 sites): 50Gi
+- **Large deployment** (1000+ sites): 100Gi+
+
+### Redis Persistence
+
+Redis is used for caching and typically runs in-memory. Persistence is **optional** but recommended for production:
+
+```yaml
+# Development/Testing - No persistence (faster)
+redis:
+  master:
+    persistence:
+      enabled: false
+
+# Production - Enable persistence
+redis:
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "gp3"  # EKS
+      # or "managed-csi" for AKS
+      # or "pd-balanced" for GKE
+```
+
+**When to Enable Redis Persistence:**
+- ✅ Production environments
+- ✅ When queue jobs stored in Redis
+- ✅ When session data stored in Redis
+- ❌ Development/testing environments
+- ❌ When Redis is purely a cache (data can be regenerated)
+
+### DNS Cluster Database Storage
+
+PowerDNS can use MySQL or PostgreSQL backend. Both require persistent storage:
+
+```yaml
+# Configure storage size and class
+powerdns:
+  persistence:
+    enabled: true
+    size: 10Gi  # Adjust based on number of zones
+    storageClassName: "gp3"  # Platform-specific
+```
+
+**Sizing Guidelines:**
+- **Small DNS setup** (< 100 zones): 10Gi
+- **Medium DNS setup** (100-1000 zones): 20Gi
+- **Large DNS setup** (1000+ zones): 50Gi+
+
+### Mail Services Storage
+
+Mail services have two types of storage:
+
+**1. Dovecot Mail Storage (ReadWriteOnce):**
+```yaml
+dovecot:
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "gp3"  # Standard block storage
+```
+
+**2. Shared Mail Storage (ReadWriteMany):**
+```yaml
+# WARNING: Requires RWX-compatible storage class
+persistence:
+  enabled: true
+  size: 50Gi
+  accessMode: ReadWriteMany
+  storageClass: "efs-sc"  # EKS example - MUST support RWX
+```
+
+**Important Notes:**
+- ⚠️ **ReadWriteMany is REQUIRED** for shared mail storage
+- ⚠️ Standard block storage (gp3, managed-csi, pd-ssd) does **NOT** support RWX
+- ✅ Use NFS-compatible storage classes (efs-sc, azurefile, filestore-nfs)
+- ✅ Alternative: Use S3-compatible storage for mail data
+
+**S3 Alternative for Mail Storage:**
+```yaml
+# Instead of ReadWriteMany block storage
+s3:
+  enabled: true
+  endpoint: "https://s3.amazonaws.com"
+  bucket: "mail-storage"
+  region: "us-east-1"
+```
+
+### Database Performance Tuning
+
+**IOPS Requirements:**
+
+| Workload | IOPS Needed | AWS | Azure | GCP |
+|----------|-------------|-----|-------|-----|
+| Light | 3,000 | gp3 | managed-csi | pd-balanced |
+| Medium | 6,000 | gp3 (3000 provisioned) | managed-csi-premium | pd-ssd |
+| Heavy | 10,000+ | io2 | managed-csi-premium | pd-ssd |
+
+**Storage Class Parameters:**
+
+**AWS gp3 with custom IOPS:**
+```yaml
+# Create custom storage class
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-high-iops
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "6000"  # 3000-16000 range
+  throughput: "250"  # 125-1000 MiB/s
+  encrypted: "true"
+```
+
+**Azure Premium with high IOPS:**
+```yaml
+# Premium_LRS provides up to 20,000 IOPS
+storageClass: "managed-csi-premium"
+```
+
+### Backup Considerations
+
+**Volume Snapshots:**
+Enable volume snapshots for database backups:
+
+```bash
+# AWS EKS
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/examples/kubernetes/snapshot/manifests/classes/snapshotclass.yaml
+
+# Azure AKS
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/azuredisk-csi-driver/master/deploy/example/snapshot/storageclass-azuredisk-snapshot.yaml
+
+# Google GKE
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/master/examples/kubernetes/snapshot/snapshot-class.yaml
+```
+
+**Backup Strategies:**
+1. **Volume Snapshots**: Fast, space-efficient (recommended)
+2. **Database Dumps**: Portable, can be stored in S3
+3. **Replication**: Real-time protection (multi-region)
+
+---
+
 ## Troubleshooting
 
 ### Issue: PVC Stuck in Pending

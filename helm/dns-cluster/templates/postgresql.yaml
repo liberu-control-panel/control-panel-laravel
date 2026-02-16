@@ -79,7 +79,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: {{ .Values.powerdns.persistence.size | default "10Gi" }}
       {{- if .Values.powerdns.persistence.storageClassName }}
       storageClassName: {{ .Values.powerdns.persistence.storageClassName }}
       {{- end }}

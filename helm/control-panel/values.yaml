@@ -116,7 +116,16 @@ redis:
     enabled: false
   master:
     persistence:
+      # Enable persistence for production to survive pod restarts
+      # For development/testing, keep disabled for faster performance
       enabled: false
+      size: 8Gi
+      # For managed Kubernetes, use platform-specific storage classes:
+      # - AWS EKS: "gp3" (recommended for Redis)
+      # - Azure AKS: "managed-csi" (Standard SSD)
+      # - Google GKE: "pd-ssd" (for better performance) or "pd-balanced"
+      # - DigitalOcean DOKS: "do-block-storage"
+      storageClass: ""  # Uses cluster default if empty
     resources:
       limits:
         cpu: 500m
