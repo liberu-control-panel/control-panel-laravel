@@ -6,7 +6,8 @@ return [
     'middleware' => ['web'],
     'prompt' => 'Or Login Via',
     'providers' => [
-        // Providers::github(),
+        Providers::github(),
+        Providers::gitlab(),
     ],
     'component' => 'socialstream::components.socialstream',
 ];
