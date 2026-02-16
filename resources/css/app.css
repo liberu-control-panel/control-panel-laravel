@@ -33,4 +33,68 @@
             scroll-behavior: smooth;
         }
     }
+
+    /* Skeleton animation */
+    @keyframes skeleton-pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .skeleton-pulse {
+        animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Custom scroll styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Better text selection */
+    ::selection {
+        background-color: rgb(96 165 250 / 0.3);
+        color: inherit;
+    }
+}
+
+/* Base component improvements */
+@layer components {
+    /* Form field spacing consistency */
+    .form-group {
+        @apply space-y-2;
+    }
+
+    /* Card component */
+    .card {
+        @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
+    }
+
+    .card-header {
+        @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
+    }
+
+    .card-body {
+        @apply px-6 py-4;
+    }
+
+    .card-footer {
+        @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+    }
 }
