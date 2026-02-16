@@ -8,7 +8,7 @@ use App\Models\Domain;
 use App\Models\Database;
 use App\Services\LaravelApplicationService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,15 +19,15 @@ class LaravelApplicationResource extends Resource
 {
     protected static ?string $model = LaravelApplication::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-code-bracket';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-code-bracket';
 
     protected static ?string $navigationLabel = 'Laravel Apps';
 
-    protected static ?string $navigationGroup = 'Applications';
+    protected static string | \UnitEnum | null $navigationGroup = 'Applications';
 
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         $service = app(LaravelApplicationService::class);
         $repositories = $service->getAvailableRepositories();
@@ -37,8 +37,8 @@ class LaravelApplicationResource extends Resource
             $repositoryOptions[$repo['slug']] = $repo['name'] . ' - ' . $repo['description'];
         }
 
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Application Type')
                     ->schema([
                         Forms\Components\Select::make('repository_slug')

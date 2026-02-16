@@ -5,7 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\VirtualHostResource\Pages;
 use App\Models\VirtualHost;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,18 +15,18 @@ class VirtualHostResource extends Resource
 {
     protected static ?string $model = VirtualHost::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-server';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-server';
 
     protected static ?string $navigationLabel = 'Virtual Hosts';
 
-    protected static ?string $navigationGroup = 'Hosting';
+    protected static string | \UnitEnum | null $navigationGroup = 'Hosting';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('hostname')
