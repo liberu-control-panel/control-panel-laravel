@@ -12,15 +12,27 @@ class DeploymentAwareService
     protected DeploymentDetectionService $detectionService;
     protected KubernetesService $kubernetesService;
     protected DockerComposeService $dockerService;
+    protected WebServerService $webServerService;
+    protected SslService $sslService;
+    protected DatabaseService $databaseService;
+    protected StandaloneServiceHelper $standaloneHelper;
 
     public function __construct(
         DeploymentDetectionService $detectionService,
         KubernetesService $kubernetesService,
-        DockerComposeService $dockerService
+        DockerComposeService $dockerService,
+        WebServerService $webServerService,
+        SslService $sslService,
+        DatabaseService $databaseService,
+        StandaloneServiceHelper $standaloneHelper
     ) {
         $this->detectionService = $detectionService;
         $this->kubernetesService = $kubernetesService;
         $this->dockerService = $dockerService;
+        $this->webServerService = $webServerService;
+        $this->sslService = $sslService;
+        $this->databaseService = $databaseService;
+        $this->standaloneHelper = $standaloneHelper;
     }
 
     /**
@@ -96,16 +108,60 @@ class DeploymentAwareService
         try {
             Log::info("Deploying {$domain->domain_name} to standalone server {$server->name}");
             
-            // For standalone, we would typically:
-            // 1. Create virtual host configuration
-            // 2. Set up SSL certificates
-            // 3. Configure FTP/SSH access
-            // 4. Create databases if needed
+            // 1. Create Nginx virtual host configuration
+            $phpVersion = $options['php_version'] ?? '8.2';
+            $documentRoot = $options['document_root'] ?? "/var/www/{$domain->domain_name}/public";
+            $enableSSL = $options['enable_ssl'] ?? true;
             
-            // This would use traditional Linux services
-            // For now, log that it's not fully implemented
-            Log::warning("Standalone deployment is basic - using traditional methods");
+            $this->webServerService->createNginxConfig($domain, [
+                'php_version' => $phpVersion,
+                'document_root' => $documentRoot,
+                'enable_ssl' => false, // Initially without SSL
+            ]);
             
+            // 2. Test Nginx configuration
+            $testResult = $this->webServerService->testNginxConfig($domain);
+            if (!$testResult['success']) {
+                Log::error("Nginx configuration test failed: " . $testResult['error']);
+                return false;
+            }
+            
+            // 3. Reload Nginx to apply configuration
+            if (!$this->webServerService->reloadNginx($domain)) {
+                Log::error("Failed to reload Nginx");
+                return false;
+            }
+            
+            // 4. Set up SSL certificates if requested
+            if ($enableSSL && $this->standaloneHelper->isCertbotInstalled()) {
+                $sslCertificate = $this->sslService->generateLetsEncryptCertificate($domain, [
+                    'email' => $domain->user->email ?? config('mail.from.address'),
+                    'include_www' => true,
+                    'webroot' => $documentRoot
+                ]);
+                
+                if ($sslCertificate) {
+                    // Update Nginx config with SSL
+                    $this->webServerService->createNginxConfig($domain, [
+                        'php_version' => $phpVersion,
+                        'document_root' => $documentRoot,
+                        'enable_ssl' => true,
+                    ]);
+                    
+                    // Reload Nginx again with SSL config
+                    $this->webServerService->reloadNginx($domain);
+                }
+            }
+            
+            // 5. Create databases if needed
+            if (isset($options['create_database']) && $options['create_database']) {
+                $this->databaseService->createDatabase($domain, [
+                    'name' => $options['database_name'] ?? $domain->domain_name,
+                    'engine' => $options['database_engine'] ?? 'mysql',
+                ]);
+            }
+            
+            Log::info("Successfully deployed {$domain->domain_name} to standalone server");
             return true;
         } catch (Exception $e) {
             Log::error("Standalone deployment failed: " . $e->getMessage());
@@ -164,7 +220,17 @@ class DeploymentAwareService
     {
         try {
             Log::info("Deleting standalone deployment for {$domain->domain_name}");
-            // Implement standalone cleanup
+            
+            // 1. Remove Nginx configuration
+            $this->standaloneHelper->removeNginxConfig($domain->domain_name);
+            
+            // 2. Reload Nginx
+            $this->standaloneHelper->reloadSystemdService('nginx');
+            
+            // 3. Remove SSL certificates if they exist
+            // Note: We don't delete Let's Encrypt certificates as they can be reused
+            
+            Log::info("Successfully deleted standalone deployment for {$domain->domain_name}");
             return true;
         } catch (Exception $e) {
             Log::error("Failed to delete standalone deployment: " . $e->getMessage());
@@ -242,11 +308,34 @@ class DeploymentAwareService
      */
     protected function getStandaloneStatus(Domain $domain): array
     {
-        // Check if virtual host exists and is enabled
-        return [
-            'status' => 'unknown',
-            'details' => ['method' => 'standalone'],
-        ];
+        try {
+            // Check if Nginx configuration exists
+            $configExists = $this->standaloneHelper->nginxConfigExists($domain->domain_name);
+            
+            // Check if Nginx is running
+            $nginxRunning = $this->standaloneHelper->isSystemdServiceRunning('nginx');
+            
+            // Check if SSL certificate exists
+            $sslExists = $this->standaloneHelper->certificateExists($domain->domain_name);
+            
+            $status = $configExists && $nginxRunning ? 'running' : 'stopped';
+            
+            return [
+                'status' => $status,
+                'details' => [
+                    'method' => 'standalone',
+                    'nginx_config_exists' => $configExists,
+                    'nginx_running' => $nginxRunning,
+                    'ssl_enabled' => $sslExists,
+                ],
+            ];
+        } catch (Exception $e) {
+            Log::error("Failed to get standalone status: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'details' => ['error' => $e->getMessage()],
+            ];
+        }
     }
 
     /**
@@ -313,9 +402,23 @@ class DeploymentAwareService
     protected function restartStandaloneDeployment(Domain $domain): bool
     {
         try {
-            // Reload nginx/apache configuration
-            exec("sudo systemctl reload nginx 2>&1", $output, $returnCode);
-            return $returnCode === 0;
+            // Test Nginx configuration before restarting
+            $testResult = $this->webServerService->testNginxConfig($domain);
+            if (!$testResult['success']) {
+                Log::error("Nginx configuration test failed, aborting restart: " . $testResult['error']);
+                return false;
+            }
+            
+            // Reload Nginx (graceful restart)
+            $reloadSuccess = $this->standaloneHelper->reloadSystemdService('nginx');
+            
+            if ($reloadSuccess) {
+                Log::info("Successfully restarted standalone deployment for {$domain->domain_name}");
+            } else {
+                Log::error("Failed to reload Nginx for {$domain->domain_name}");
+            }
+            
+            return $reloadSuccess;
         } catch (Exception $e) {
             Log::error("Failed to restart standalone deployment: " . $e->getMessage());
             return false;
