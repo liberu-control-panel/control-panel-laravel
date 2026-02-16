@@ -103,13 +103,29 @@ class StandaloneServiceHelper
             $availablePath = "/etc/nginx/sites-available/{$domainName}";
             $enabledPath = "/etc/nginx/sites-enabled/{$domainName}";
 
-            // Write config to sites-available
-            file_put_contents($availablePath, $configContent);
-            chmod($availablePath, 0644);
+            // Write config to temporary file first
+            $tempPath = sys_get_temp_dir() . "/{$domainName}.conf";
+            file_put_contents($tempPath, $configContent);
+            chmod($tempPath, 0644);
+
+            // Move to sites-available using sudo
+            $result = $this->executeCommand([
+                'sudo', 'mv', $tempPath, $availablePath
+            ]);
+
+            if (!$result['success']) {
+                Log::error("Failed to move Nginx config to sites-available");
+                return false;
+            }
+
+            // Set proper permissions
+            $this->executeCommand(['sudo', 'chmod', '644', $availablePath]);
 
             // Create symlink in sites-enabled if it doesn't exist
             if (!file_exists($enabledPath)) {
-                symlink($availablePath, $enabledPath);
+                $this->executeCommand([
+                    'sudo', 'ln', '-s', $availablePath, $enabledPath
+                ]);
             }
 
             return true;
@@ -129,13 +145,13 @@ class StandaloneServiceHelper
             $enabledPath = "/etc/nginx/sites-enabled/{$domainName}";
 
             // Remove symlink
-            if (is_link($enabledPath)) {
-                unlink($enabledPath);
+            if (file_exists($enabledPath) || is_link($enabledPath)) {
+                $this->executeCommand(['sudo', 'rm', $enabledPath]);
             }
 
             // Remove config file
             if (file_exists($availablePath)) {
-                unlink($availablePath);
+                $this->executeCommand(['sudo', 'rm', $availablePath]);
             }
 
             return true;
