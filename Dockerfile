@@ -1,4 +1,4 @@
-FROM php:8.1-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -9,13 +9,17 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    netcat-openbsd
+    netcat-openbsd \
+    libicu-dev \
+    libzip-dev
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-configure intl && \
+    docker-php-ext-configure zip && \
+    docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip sockets
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -27,11 +31,28 @@ RUN groupadd -g 1000 appuser && \
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy composer files first for better caching
+COPY --chown=appuser:appuser composer.json composer.lock ./
+
+# Install application dependencies with cache mount
+# GitHub token can be provided via --secret id=github_token for better security
+RUN --mount=type=cache,target=/tmp/cache \
+    --mount=type=secret,id=github_token,required=false \
+    if [ -f /run/secrets/github_token ]; then \
+        export COMPOSER_AUTH="{\"github-oauth\": {\"github.com\": \"$(cat /run/secrets/github_token)\"}}"; \
+    fi && \
+    COMPOSER_CACHE_DIR=/tmp/cache composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist
+
 # Copy existing application directory contents
 COPY --chown=appuser:appuser . /var/www/html
 
-# Install application dependencies as root (composer cache needs permission)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Run post-install scripts
+RUN composer run-script post-install-cmd --no-interaction || true
 
 # Create directories for secrets (Docker Swarm/K8s secrets mount point)
 RUN mkdir -p /run/secrets && \
