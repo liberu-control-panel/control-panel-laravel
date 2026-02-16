@@ -54,10 +54,70 @@ class DatabaseResource extends Resource
                             ->default(Database::ENGINE_MARIADB)
                             ->required()
                             ->live(),
+
+                        Forms\Components\Select::make('connection_type')
+                            ->label('Connection Type')
+                            ->options(Database::getConnectionTypes())
+                            ->default(Database::CONNECTION_SELF_HOSTED)
+                            ->required()
+                            ->live()
+                            ->helperText('Choose self-hosted for local databases or managed for cloud providers'),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Configuration')
+                Forms\Components\Section::make('Managed Database Configuration')
+                    ->schema([
+                        Forms\Components\Select::make('provider')
+                            ->label('Cloud Provider')
+                            ->options(Database::getProviders())
+                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->live()
+                            ->helperText('Select your managed database provider'),
+
+                        Forms\Components\TextInput::make('external_host')
+                            ->label('Database Host')
+                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->placeholder('database.example.com'),
+
+                        Forms\Components\TextInput::make('external_port')
+                            ->label('Port')
+                            ->numeric()
+                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->default(3306),
+
+                        Forms\Components\TextInput::make('external_username')
+                            ->label('Username')
+                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED),
+
+                        Forms\Components\TextInput::make('external_password')
+                            ->label('Password')
+                            ->password()
+                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->revealable(),
+
+                        Forms\Components\TextInput::make('instance_identifier')
+                            ->label('Instance Identifier')
+                            ->helperText('The unique identifier for your managed database instance'),
+
+                        Forms\Components\TextInput::make('region')
+                            ->label('Region')
+                            ->helperText('The cloud provider region where your database is hosted'),
+
+                        Forms\Components\Toggle::make('use_ssl')
+                            ->label('Use SSL/TLS')
+                            ->default(true)
+                            ->helperText('Enable secure connections to your managed database'),
+
+                        Forms\Components\Textarea::make('ssl_ca')
+                            ->label('SSL CA Certificate')
+                            ->rows(3)
+                            ->helperText('Optional: SSL Certificate Authority certificate'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Self-Hosted Configuration')
                     ->schema([
                         Forms\Components\Select::make('charset')
                             ->label('Character Set')
@@ -92,7 +152,9 @@ class DatabaseResource extends Resource
                             ->label('Active')
                             ->default(true),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_SELF_HOSTED)
+                    ->collapsible(),
 
                 Forms\Components\Section::make('Auto-Provisioning')
                     ->schema([
@@ -120,10 +182,35 @@ class DatabaseResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('connection_type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        Database::CONNECTION_SELF_HOSTED => 'gray',
+                        Database::CONNECTION_MANAGED => 'success',
+                        default => 'gray',
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('provider')
+                    ->label('Provider')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => 
+                        $state ? strtoupper($state) : 'N/A'
+                    )
+                    ->color('info')
+                    ->sortable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('engine')
                     ->label('Engine')
                     ->badge()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('external_host')
+                    ->label('Host')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('charset')
                     ->label('Charset')
@@ -147,6 +234,14 @@ class DatabaseResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('connection_type')
+                    ->options(Database::getConnectionTypes())
+                    ->label('Connection Type'),
+
+                Tables\Filters\SelectFilter::make('provider')
+                    ->options(Database::getProviders())
+                    ->label('Provider'),
+
                 Tables\Filters\SelectFilter::make('engine')
                     ->options(Database::getEngines()),
 
