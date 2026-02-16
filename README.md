@@ -26,12 +26,14 @@ Key features
 - **Multi-site management** with comprehensive performance monitoring and uptime tracking
 - **Multi-deployment support**: Kubernetes (recommended), Docker Compose, and Standalone deployments
 - **Auto-scaling**: Automatic horizontal and vertical scaling on AWS EKS, Azure AKS, Google GKE, DigitalOcean DOKS, OVH
+- **Production-optimized nginx** with gzip compression, security headers, and static caching
 - Manage NGINX virtual hosts with automated Let's Encrypt support
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
 - MySQL database + user lifecycle and backup/restore helpers
 - Kubernetes and Docker orchestration: deploy, monitor, and manage services
 - Secure SSH-based remote server management
+- **Managed Kubernetes storage support** with platform-specific storage classes (EBS, Azure Disk, GCE PD, DO Block Storage)
 - **S3-compatible storage support** for persistent volumes (AWS S3, MinIO, DigitalOcean Spaces, etc.)
 - **WordPress auto-deployment** with one-click installation and automatic updates
 - **Git repository deployment** from GitHub, GitLab, Bitbucket with webhook support
@@ -279,7 +281,9 @@ Notes
 - **[Multi-Deployment & Auto-Scaling Guide](docs/MULTI_DEPLOYMENT_AUTOSCALING.md)** - Support for Kubernetes, Docker, and Standalone deployments with cloud auto-scaling
 - **[Complete Kubernetes Installation](docs/KUBERNETES_INSTALLATION.md)** - Full installation guide for Kubernetes cluster and all services
 - **[Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md)** - Deploy on AWS EKS, Azure AKS, Google GKE, or DigitalOcean DOKS
+- **[Storage Class Selection Guide](docs/STORAGE_CLASS_GUIDE.md)** - ⭐ **NEW**: Choose the right storage for managed Kubernetes platforms
 - **[S3 Storage Guide](docs/S3_STORAGE.md)** - Configure S3-compatible storage for persistent volumes
+- **[Nginx Configuration Guide](docs/NGINX_CONFIGURATION.md)** - ⭐ **NEW**: Production-ready nginx setup with security and performance
 - **[Helm GUI Installer](docs/HELM_GUI_INSTALLER.md)** - Graphical interface for installing services via Helm charts
 - **[Kubernetes Setup Guide](docs/KUBERNETES_SETUP.md)** - Deploy control panel on existing Kubernetes cluster
 - **[Kubernetes Manifests](k8s/README.md)** - Raw Kubernetes manifests and Kustomize overlays
