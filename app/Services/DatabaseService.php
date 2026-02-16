@@ -7,6 +7,7 @@ use App\Models\Domain;
 use App\Models\Database;
 use App\Models\DatabaseUser;
 use App\Models\Container;
+use App\Services\ManagedDatabase\ManagedDatabaseManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -18,15 +19,18 @@ class DatabaseService
     protected $containerManager;
     protected $standaloneHelper;
     protected $detectionService;
+    protected $managedDatabaseManager;
 
     public function __construct(
         ContainerManagerService $containerManager,
         StandaloneServiceHelper $standaloneHelper,
-        DeploymentDetectionService $detectionService
+        DeploymentDetectionService $detectionService,
+        ManagedDatabaseManager $managedDatabaseManager
     ) {
         $this->containerManager = $containerManager;
         $this->standaloneHelper = $standaloneHelper;
         $this->detectionService = $detectionService;
+        $this->managedDatabaseManager = $managedDatabaseManager;
     }
 
     /**
@@ -37,21 +41,57 @@ class DatabaseService
         $engine = $data['engine'] ?? Database::ENGINE_MYSQL;
         $charset = $data['charset'] ?? Database::getDefaultCharset($engine);
         $collation = $data['collation'] ?? Database::getDefaultCollation($engine);
+        $connectionType = $data['connection_type'] ?? Database::CONNECTION_SELF_HOSTED;
 
-        $database = Database::create([
+        $databaseData = [
             'domain_id' => $domain->id,
             'user_id' => $domain->user_id,
             'name' => $data['name'],
             'engine' => $engine,
             'charset' => $charset,
             'collation' => $collation,
+            'connection_type' => $connectionType,
             'is_active' => true
-        ]);
+        ];
 
-        // Create the actual database in the container
-        $this->createDatabaseInContainer($domain, $database);
+        // Add managed database specific fields
+        if ($connectionType === Database::CONNECTION_MANAGED) {
+            $databaseData['provider'] = $data['provider'] ?? null;
+            $databaseData['external_host'] = $data['external_host'] ?? null;
+            $databaseData['external_port'] = $data['external_port'] ?? null;
+            $databaseData['external_username'] = $data['external_username'] ?? null;
+            $databaseData['external_password'] = $data['external_password'] ?? null;
+            $databaseData['use_ssl'] = $data['use_ssl'] ?? true;
+            $databaseData['ssl_ca'] = $data['ssl_ca'] ?? null;
+            $databaseData['instance_identifier'] = $data['instance_identifier'] ?? null;
+            $databaseData['region'] = $data['region'] ?? null;
+        }
+
+        $database = Database::create($databaseData);
+
+        // Create the actual database
+        if ($connectionType === Database::CONNECTION_MANAGED) {
+            // For managed databases, just test the connection
+            $this->testManagedDatabaseConnection($database);
+        } else {
+            // For self-hosted, create in container or standalone
+            $this->createDatabaseInContainer($domain, $database);
+        }
 
         return $database;
+    }
+
+    /**
+     * Test managed database connection
+     */
+    protected function testManagedDatabaseConnection(Database $database): bool
+    {
+        try {
+            return $this->managedDatabaseManager->testConnection($database);
+        } catch (Exception $e) {
+            Log::warning("Failed to test managed database connection: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -296,6 +336,21 @@ class DatabaseService
     public function deleteDatabase(Database $database): bool
     {
         try {
+            // Handle managed databases differently
+            if ($database->isManaged()) {
+                $success = $this->managedDatabaseManager->deleteDatabase($database);
+                
+                if ($success) {
+                    // Delete database users
+                    $database->databaseUsers()->delete();
+                    // Delete database record
+                    $database->delete();
+                }
+                
+                return $success;
+            }
+
+            // Handle self-hosted databases
             $domain = $database->domain;
             $containerName = "{$domain->domain_name}_database";
 

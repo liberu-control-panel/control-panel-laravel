@@ -18,13 +18,28 @@ class Database extends Model
         'charset',
         'collation',
         'engine',
+        'connection_type',
+        'provider',
+        'external_host',
+        'external_port',
+        'external_username',
+        'external_password',
+        'use_ssl',
+        'ssl_ca',
+        'ssl_cert',
+        'ssl_key',
+        'instance_identifier',
+        'region',
         'size',
         'is_active'
     ];
 
     protected $casts = [
         'size' => 'integer',
+        'external_port' => 'integer',
         'is_active' => 'boolean',
+        'use_ssl' => 'boolean',
+        'external_password' => 'encrypted',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
@@ -35,6 +50,22 @@ class Database extends Model
     const ENGINE_MYSQL = 'mysql';
     const ENGINE_POSTGRESQL = 'postgresql';
     const ENGINE_MARIADB = 'mariadb';
+    const ENGINE_REDIS = 'redis';
+
+    /**
+     * Connection types
+     */
+    const CONNECTION_SELF_HOSTED = 'self-hosted';
+    const CONNECTION_MANAGED = 'managed';
+
+    /**
+     * Cloud providers
+     */
+    const PROVIDER_AWS = 'aws';
+    const PROVIDER_AZURE = 'azure';
+    const PROVIDER_DIGITALOCEAN = 'digitalocean';
+    const PROVIDER_OVH = 'ovh';
+    const PROVIDER_GCP = 'gcp';
 
     /**
      * Get the user that owns this database
@@ -129,5 +160,62 @@ class Database extends Model
     public function scopeByEngine($query, string $engine)
     {
         return $query->where('engine', $engine);
+    }
+
+    /**
+     * Check if database is managed
+     */
+    public function isManaged(): bool
+    {
+        return $this->connection_type === self::CONNECTION_MANAGED;
+    }
+
+    /**
+     * Check if database is self-hosted
+     */
+    public function isSelfHosted(): bool
+    {
+        return $this->connection_type === self::CONNECTION_SELF_HOSTED;
+    }
+
+    /**
+     * Get available cloud providers
+     */
+    public static function getProviders(): array
+    {
+        return [
+            self::PROVIDER_AWS => 'AWS (RDS/Aurora)',
+            self::PROVIDER_AZURE => 'Azure Database',
+            self::PROVIDER_DIGITALOCEAN => 'DigitalOcean',
+            self::PROVIDER_OVH => 'OVH',
+            self::PROVIDER_GCP => 'Google Cloud SQL',
+        ];
+    }
+
+    /**
+     * Get connection types
+     */
+    public static function getConnectionTypes(): array
+    {
+        return [
+            self::CONNECTION_SELF_HOSTED => 'Self-Hosted',
+            self::CONNECTION_MANAGED => 'Managed Database',
+        ];
+    }
+
+    /**
+     * Scope for managed databases
+     */
+    public function scopeManaged($query)
+    {
+        return $query->where('connection_type', self::CONNECTION_MANAGED);
+    }
+
+    /**
+     * Scope for self-hosted databases
+     */
+    public function scopeSelfHosted($query)
+    {
+        return $query->where('connection_type', self::CONNECTION_SELF_HOSTED);
     }
 }
