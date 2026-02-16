@@ -31,6 +31,7 @@ Key features
 - BIND DNS zone and record management (A, AAAA, CNAME, MX, TXT, ...)
 - Mail domain and mailbox management (Postfix + Dovecot)
 - MySQL database + user lifecycle and backup/restore helpers
+- **Managed database support** for AWS RDS, Azure Database, DigitalOcean, OVH, and Google Cloud SQL (see [Managed Databases Guide](docs/MANAGED_DATABASES.md))
 - Kubernetes and Docker orchestration: deploy, monitor, and manage services
 - Secure SSH-based remote server management
 - **Managed Kubernetes storage support** with platform-specific storage classes (EBS, Azure Disk, GCE PD, DO Block Storage)
