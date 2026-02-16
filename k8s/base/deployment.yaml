@@ -73,16 +73,40 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 80
+            httpHeaders:
+            - name: X-Forwarded-Proto
+              value: https
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
         livenessProbe:
-          tcpSocket:
-            port: 9000
+          httpGet:
+            path: /health/live
+            port: 80
+            httpHeaders:
+            - name: X-Forwarded-Proto
+              value: https
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
-          tcpSocket:
-            port: 9000
+          httpGet:
+            path: /health/ready
+            port: 80
+            httpHeaders:
+            - name: X-Forwarded-Proto
+              value: https
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
