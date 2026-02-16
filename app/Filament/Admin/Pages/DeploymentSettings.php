@@ -7,7 +7,7 @@ use App\Services\CloudProviderManager;
 use App\Models\InstallationMetadata;
 use Filament\Pages\Page;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,13 +15,13 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cloud';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cloud';
     
     protected static ?string $navigationLabel = 'Deployment';
     
-    protected static ?string $navigationGroup = 'System';
+    protected static string | \UnitEnum | null $navigationGroup = 'System';
 
-    protected static string $view = 'filament.admin.pages.deployment-settings';
+    protected string $view = 'filament.admin.pages.deployment-settings';
 
     protected static ?int $navigationSort = 10;
 
@@ -43,12 +43,12 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
         $detectionService = app(DeploymentDetectionService::class);
         
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Deployment Information')
                     ->description('Current deployment environment and configuration')
                     ->schema([

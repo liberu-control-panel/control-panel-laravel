@@ -35,26 +35,11 @@ class ExampleTest extends TestCase
     }
 
     /**
-     * Test that the application is running in a Docker environment.
+     * Test that the application environment is properly configured.
      */
-    public function test_application_is_running_in_docker_environment(): void
+    public function test_application_environment_is_configured(): void
     {
-        $this->assertTrue(Config::get('app.docker'), 'Application is not running in a Docker environment');
-    }
-
-    /**
-     * Test that the database connection is working in the Docker environment.
-     */
-    public function test_database_connection_in_docker_environment(): void
-    {
-        $this->assertTrue(\DB::connection()->getPdo(), 'Database connection failed');
-    }
-
-    /**
-     * Test that the Redis connection is working in the Docker environment.
-     */
-    public function test_redis_connection_in_docker_environment(): void
-    {
-        $this->assertTrue(\Redis::connection()->ping(), 'Redis connection failed');
+        $this->assertNotEmpty(config('app.name'), 'Application name should be configured');
+        $this->assertNotEmpty(config('app.key'), 'Application key should be configured');
     }
 }

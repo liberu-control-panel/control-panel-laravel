@@ -6,7 +6,7 @@ use App\Filament\App\Resources\WebsiteResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 
 class ViewWebsite extends ViewRecord
 {
@@ -20,10 +20,10 @@ class ViewWebsite extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
+        return $schema
+            ->components([
                 Infolists\Components\Section::make('Website Information')
                     ->schema([
                         Infolists\Components\TextEntry::make('name')

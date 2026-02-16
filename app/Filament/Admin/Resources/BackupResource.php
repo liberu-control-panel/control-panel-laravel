@@ -26,10 +26,10 @@ class BackupResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cloud-upload';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),

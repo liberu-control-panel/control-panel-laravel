@@ -8,7 +8,7 @@ use App\Models\Domain;
 use App\Models\Database;
 use App\Services\WordPressService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,18 +19,18 @@ class WordPressApplicationResource extends Resource
 {
     protected static ?string $model = WordPressApplication::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'WordPress';
 
-    protected static ?string $navigationGroup = 'Applications';
+    protected static string | \UnitEnum | null $navigationGroup = 'Applications';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Domain & Database')
                     ->schema([
                         Forms\Components\Select::make('domain_id')

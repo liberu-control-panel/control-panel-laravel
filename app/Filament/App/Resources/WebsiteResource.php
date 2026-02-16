@@ -6,7 +6,7 @@ use App\Filament\App\Resources\WebsiteResource\Pages;
 use App\Filament\App\Resources\WebsiteResource\Widgets\WebsiteStatsWidget;
 use App\Models\Website;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -16,18 +16,18 @@ class WebsiteResource extends Resource
 {
     protected static ?string $model = Website::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'Websites';
 
-    protected static ?string $navigationGroup = 'Multi-Site Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'Multi-Site Management';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')

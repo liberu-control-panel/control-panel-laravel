@@ -6,6 +6,7 @@ use Exception;
 use App\Models\Domain;
 use App\Models\Backup;
 use App\Models\Database;
+use App\Models\BackupDestination;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Log;
@@ -16,15 +17,21 @@ class BackupService
     protected $containerManager;
     protected $databaseService;
     protected $fileManagerService;
+    protected $backupDestinationService;
+    protected $deploymentDetection;
 
     public function __construct(
         ContainerManagerService $containerManager,
         DatabaseService $databaseService,
-        FileManagerService $fileManagerService
+        FileManagerService $fileManagerService,
+        BackupDestinationService $backupDestinationService,
+        DeploymentDetectionService $deploymentDetection
     ) {
         $this->containerManager = $containerManager;
         $this->databaseService = $databaseService;
         $this->fileManagerService = $fileManagerService;
+        $this->backupDestinationService = $backupDestinationService;
+        $this->deploymentDetection = $deploymentDetection;
     }
 
     /**
@@ -35,6 +42,7 @@ class BackupService
         try {
             $backup = Backup::create([
                 'domain_id' => $domain->id,
+                'destination_id' => $options['destination_id'] ?? null,
                 'type' => Backup::TYPE_FULL,
                 'name' => $options['name'] ?? "Full backup - " . now()->format('Y-m-d H:i:s'),
                 'description' => $options['description'] ?? 'Automated full backup',
@@ -105,6 +113,7 @@ class BackupService
         try {
             $backup = Backup::create([
                 'domain_id' => $domain->id,
+                'destination_id' => $options['destination_id'] ?? null,
                 'type' => Backup::TYPE_FILES,
                 'name' => $options['name'] ?? "Files backup - " . now()->format('Y-m-d H:i:s'),
                 'description' => $options['description'] ?? 'Files backup',
@@ -152,6 +161,7 @@ class BackupService
         try {
             $backup = Backup::create([
                 'domain_id' => $domain->id,
+                'destination_id' => $options['destination_id'] ?? null,
                 'type' => Backup::TYPE_DATABASE,
                 'name' => $options['name'] ?? "Database backup - " . now()->format('Y-m-d H:i:s'),
                 'description' => $options['description'] ?? 'Database backup',
@@ -682,5 +692,318 @@ class BackupService
         }
 
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Create backup with specific destination
+     */
+    public function createBackupToDestination(Domain $domain, BackupDestination $destination, array $options = []): ?Backup
+    {
+        try {
+            // Set destination in options
+            $options['destination_id'] = $destination->id;
+            
+            // Create backup based on type
+            $type = $options['type'] ?? Backup::TYPE_FULL;
+            
+            $backup = match ($type) {
+                Backup::TYPE_FULL => $this->createFullBackup($domain, $options),
+                Backup::TYPE_FILES => $this->createFilesBackup($domain, $options),
+                Backup::TYPE_DATABASE => $this->createDatabaseBackup($domain, $options),
+                default => throw new Exception("Unknown backup type: {$type}"),
+            };
+
+            if (!$backup) {
+                return null;
+            }
+
+            // Upload to destination if not local
+            if ($destination->type !== BackupDestination::TYPE_LOCAL) {
+                $this->uploadBackupToDestination($backup, $destination);
+            }
+
+            return $backup;
+        } catch (Exception $e) {
+            Log::error("Backup to destination failed: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Upload backup to destination
+     */
+    protected function uploadBackupToDestination(Backup $backup, BackupDestination $destination): bool
+    {
+        try {
+            if (!file_exists($backup->file_path)) {
+                throw new Exception('Backup file not found');
+            }
+
+            $remotePath = $this->getRemoteBackupPath($backup);
+            
+            $success = $this->backupDestinationService->uploadFile(
+                $destination,
+                $backup->file_path,
+                $remotePath
+            );
+
+            if ($success) {
+                // Update backup with remote path
+                $backup->update([
+                    'file_path' => $remotePath,
+                    'destination_id' => $destination->id,
+                ]);
+            }
+
+            return $success;
+        } catch (Exception $e) {
+            Log::error("Failed to upload backup to destination: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get remote backup path
+     */
+    protected function getRemoteBackupPath(Backup $backup): string
+    {
+        $domain = $backup->domain;
+        $timestamp = $backup->created_at->format('Y-m-d_H-i-s');
+        return "backups/{$domain->domain_name}/{$backup->type}_{$timestamp}_{$backup->id}.tar.gz";
+    }
+
+    /**
+     * Create backup based on deployment mode
+     */
+    public function createBackupForDeployment(Domain $domain, array $options = []): ?Backup
+    {
+        $deploymentMode = $this->deploymentDetection->detectDeploymentMode();
+        
+        Log::info("Creating backup for deployment mode: {$deploymentMode}");
+
+        return match ($deploymentMode) {
+            DeploymentDetectionService::MODE_KUBERNETES => $this->createKubernetesBackup($domain, $options),
+            DeploymentDetectionService::MODE_DOCKER_COMPOSE => $this->createFullBackup($domain, $options),
+            DeploymentDetectionService::MODE_STANDALONE => $this->createStandaloneBackup($domain, $options),
+            default => $this->createFullBackup($domain, $options),
+        };
+    }
+
+    /**
+     * Create Kubernetes backup
+     */
+    protected function createKubernetesBackup(Domain $domain, array $options = []): ?Backup
+    {
+        try {
+            $backup = Backup::create([
+                'domain_id' => $domain->id,
+                'destination_id' => $options['destination_id'] ?? null,
+                'type' => Backup::TYPE_FULL,
+                'name' => $options['name'] ?? "Kubernetes backup - " . now()->format('Y-m-d H:i:s'),
+                'description' => $options['description'] ?? 'Kubernetes deployment backup',
+                'status' => Backup::STATUS_RUNNING,
+                'started_at' => now(),
+                'is_automated' => $options['is_automated'] ?? false
+            ]);
+
+            $backupDir = $this->createBackupDirectory($domain, $backup);
+            $namespace = "hosting-{$domain->domain_name}";
+            $podName = "{$domain->domain_name}-web";
+
+            // Backup files from Kubernetes pod
+            $filesBackupPath = $backupDir . '/files.tar.gz';
+            if (!$this->backupKubernetesFiles($namespace, $podName, $filesBackupPath)) {
+                throw new Exception('Kubernetes files backup failed');
+            }
+
+            // Backup databases
+            $databasesBackupPath = $backupDir . '/databases';
+            if (!$this->backupDatabases($domain, $databasesBackupPath)) {
+                throw new Exception('Database backup failed');
+            }
+
+            // Create final archive
+            $finalArchivePath = $this->createFinalArchive($domain, $backup, $backupDir);
+            $fileSize = file_exists($finalArchivePath) ? filesize($finalArchivePath) : 0;
+
+            $backup->update([
+                'status' => Backup::STATUS_COMPLETED,
+                'completed_at' => now(),
+                'file_path' => $finalArchivePath,
+                'file_size' => $fileSize
+            ]);
+
+            $this->cleanupDirectory($backupDir);
+
+            return $backup;
+        } catch (Exception $e) {
+            Log::error("Kubernetes backup failed: " . $e->getMessage());
+            
+            if (isset($backup)) {
+                $backup->update([
+                    'status' => Backup::STATUS_FAILED,
+                    'completed_at' => now(),
+                    'error_message' => $e->getMessage()
+                ]);
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Backup files from Kubernetes pod
+     */
+    protected function backupKubernetesFiles(string $namespace, string $podName, string $backupPath): bool
+    {
+        try {
+            // Create archive in pod
+            $process = new Process([
+                'kubectl', 'exec', '-n', $namespace, $podName, '--',
+                'tar', '-czf', '/tmp/files_backup.tar.gz', '/var/www/html'
+            ]);
+            $process->setTimeout(1800);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new Exception('Failed to create archive in pod: ' . $process->getErrorOutput());
+            }
+
+            // Copy archive from pod
+            $copyProcess = new Process([
+                'kubectl', 'cp', "{$namespace}/{$podName}:/tmp/files_backup.tar.gz", $backupPath
+            ]);
+            $copyProcess->run();
+
+            if (!$copyProcess->isSuccessful()) {
+                throw new Exception('Failed to copy archive from pod: ' . $copyProcess->getErrorOutput());
+            }
+
+            // Clean up pod
+            $cleanupProcess = new Process([
+                'kubectl', 'exec', '-n', $namespace, $podName, '--',
+                'rm', '/tmp/files_backup.tar.gz'
+            ]);
+            $cleanupProcess->run();
+
+            return true;
+        } catch (Exception $e) {
+            Log::error("Kubernetes files backup failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Create standalone backup
+     */
+    protected function createStandaloneBackup(Domain $domain, array $options = []): ?Backup
+    {
+        try {
+            $backup = Backup::create([
+                'domain_id' => $domain->id,
+                'destination_id' => $options['destination_id'] ?? null,
+                'type' => Backup::TYPE_FULL,
+                'name' => $options['name'] ?? "Standalone backup - " . now()->format('Y-m-d H:i:s'),
+                'description' => $options['description'] ?? 'Standalone server backup',
+                'status' => Backup::STATUS_RUNNING,
+                'started_at' => now(),
+                'is_automated' => $options['is_automated'] ?? false
+            ]);
+
+            $backupDir = $this->createBackupDirectory($domain, $backup);
+            $webRoot = $options['web_root'] ?? "/var/www/{$domain->domain_name}/public_html";
+
+            // Backup files from web root
+            $filesBackupPath = $backupDir . '/files.tar.gz';
+            if (!$this->backupStandaloneFiles($webRoot, $filesBackupPath)) {
+                throw new Exception('Standalone files backup failed');
+            }
+
+            // Backup databases
+            $databasesBackupPath = $backupDir . '/databases';
+            if (!$this->backupDatabases($domain, $databasesBackupPath)) {
+                throw new Exception('Database backup failed');
+            }
+
+            // Create final archive
+            $finalArchivePath = $this->createFinalArchive($domain, $backup, $backupDir);
+            $fileSize = file_exists($finalArchivePath) ? filesize($finalArchivePath) : 0;
+
+            $backup->update([
+                'status' => Backup::STATUS_COMPLETED,
+                'completed_at' => now(),
+                'file_path' => $finalArchivePath,
+                'file_size' => $fileSize
+            ]);
+
+            $this->cleanupDirectory($backupDir);
+
+            return $backup;
+        } catch (Exception $e) {
+            Log::error("Standalone backup failed: " . $e->getMessage());
+            
+            if (isset($backup)) {
+                $backup->update([
+                    'status' => Backup::STATUS_FAILED,
+                    'completed_at' => now(),
+                    'error_message' => $e->getMessage()
+                ]);
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Backup files from standalone server
+     */
+    protected function backupStandaloneFiles(string $webRoot, string $backupPath): bool
+    {
+        try {
+            if (!is_dir($webRoot)) {
+                Log::warning("Web root does not exist: {$webRoot}");
+                return true; // Not a failure if no files exist
+            }
+
+            $process = new Process([
+                'tar', '-czf', $backupPath, '-C', dirname($webRoot), basename($webRoot)
+            ]);
+            $process->setTimeout(1800);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new Exception('Failed to create files archive: ' . $process->getErrorOutput());
+            }
+
+            return true;
+        } catch (Exception $e) {
+            Log::error("Standalone files backup failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Download backup from destination
+     */
+    public function downloadBackupFromDestination(Backup $backup): ?string
+    {
+        try {
+            if (!$backup->destination) {
+                throw new Exception('Backup has no destination');
+            }
+
+            $localPath = storage_path("app/temp/backup_{$backup->id}.tar.gz");
+            
+            $success = $this->backupDestinationService->downloadFile(
+                $backup->destination,
+                $backup->file_path,
+                $localPath
+            );
+
+            return $success ? $localPath : null;
+        } catch (Exception $e) {
+            Log::error("Failed to download backup from destination: " . $e->getMessage());
+            return null;
+        }
     }
 }

@@ -6,7 +6,7 @@ use App\Filament\App\Resources\GitDeploymentResource\Pages;
 use App\Models\GitDeployment;
 use App\Services\GitDeploymentService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,18 +17,18 @@ class GitDeploymentResource extends Resource
 {
     protected static ?string $model = GitDeployment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-code-bracket';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-code-bracket';
 
     protected static ?string $navigationLabel = 'Git Deployments';
 
-    protected static ?string $navigationGroup = 'Applications';
+    protected static string | \UnitEnum | null $navigationGroup = 'Applications';
 
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Domain Configuration')
                     ->schema([
                         Forms\Components\Select::make('domain_id')

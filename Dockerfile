@@ -1,28 +1,4 @@
-# Multi-stage build for optimized image size
-# Stage 1: Composer dependencies
-FROM composer:latest AS composer-dependencies
-
-WORKDIR /app
-
-# Copy composer files first for better layer caching
-COPY composer.json composer.lock ./
-
-# Install dependencies
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist \
-    --no-interaction
-
-# Copy the rest of the application
-COPY . .
-
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --no-dev
-
-# Stage 2: Production image
-FROM php:8.1-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -34,11 +10,16 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     netcat-openbsd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    libicu-dev \
+    libzip-dev
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-configure intl && \
+    docker-php-ext-configure zip && \
+    docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip sockets
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
@@ -50,8 +31,28 @@ RUN groupadd -g 1000 appuser && \
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application from composer stage
-COPY --from=composer-dependencies --chown=appuser:appuser /app /var/www/html
+# Copy composer files first for better caching
+COPY --chown=appuser:appuser composer.json composer.lock ./
+
+# Install application dependencies with cache mount
+# GitHub token can be provided via --secret id=github_token for better security
+RUN --mount=type=cache,target=/tmp/cache \
+    --mount=type=secret,id=github_token,required=false \
+    if [ -f /run/secrets/github_token ]; then \
+        export COMPOSER_AUTH="{\"github-oauth\": {\"github.com\": \"$(cat /run/secrets/github_token)\"}}"; \
+    fi && \
+    COMPOSER_CACHE_DIR=/tmp/cache composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist
+
+# Copy existing application directory contents
+COPY --chown=appuser:appuser . /var/www/html
+
+# Run post-install scripts
+RUN composer run-script post-install-cmd --no-interaction || true
 
 # Create directories for secrets (Docker Swarm/K8s secrets mount point)
 RUN mkdir -p /run/secrets && \
