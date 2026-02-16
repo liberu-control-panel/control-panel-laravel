@@ -57,7 +57,12 @@ dovecot:
       
   persistence:
     enabled: true
-    storageClass: standard
+    # For managed Kubernetes, use platform-specific storage classes:
+    # - AWS EKS: "gp3" (recommended)
+    # - Azure AKS: "managed-csi-premium" (for better IOPS)
+    # - Google GKE: "pd-ssd" or "pd-balanced"
+    # - DigitalOcean DOKS: "do-block-storage"
+    storageClass: ""  # Uses cluster default if empty
     size: 20Gi
     
   resources:
@@ -68,14 +73,26 @@ dovecot:
       cpu: 100m
       memory: 128Mi
 
-# Shared storage for mail data
+# Shared storage for mail data (requires ReadWriteMany support)
+# WARNING: "standard" storage class typically does NOT support ReadWriteMany
+# You MUST use a ReadWriteMany-compatible storage class or enable S3 storage below
 persistence:
   enabled: true
-  storageClass: standard
+  # For ReadWriteMany access, use NFS-compatible storage:
+  # - AWS EKS: "efs-sc" (EFS CSI driver required - see STORAGE_CLASS_GUIDE.md)
+  # - Azure AKS: "azurefile" or "azurefile-premium"
+  # - Google GKE: "filestore-nfs" (Filestore CSI driver required)
+  # - DigitalOcean DOKS: Use S3-compatible Spaces (enable s3 below) or NFS
+  # - Self-hosted: NFS storage class or Longhorn
+  # 
+  # IMPORTANT: If your cluster doesn't support ReadWriteMany storage,
+  # consider using S3-compatible storage (see s3 configuration below)
+  storageClass: ""  # MUST be set to RWX-compatible class or left empty to fail fast
   size: 50Gi
   accessMode: ReadWriteMany
 
 # S3-compatible storage configuration for mail data
+# Alternative to ReadWriteMany block storage - provides shared access
 s3:
   enabled: false
   endpoint: ""
