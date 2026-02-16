@@ -1,1 +1,36 @@
 @import 'tailwindcss';
+
+/* Custom enhancements for improved UX */
+@layer utilities {
+    /* Smooth focus transitions */
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+        transition-property: border-color, box-shadow, background-color;
+        transition-duration: 150ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Smooth hover transitions for interactive elements */
+    a,
+    button,
+    [role="button"] {
+        transition-property: color, background-color, border-color, opacity, transform;
+        transition-duration: 150ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Improved focus visible for keyboard navigation */
+    *:focus-visible {
+        outline: 2px solid rgb(37 99 235);
+        outline-offset: 2px;
+    }
+
+    /* Smooth page transitions */
+    @media (prefers-reduced-motion: no-preference) {
+        html {
+            scroll-behavior: smooth;
+        }
+    }
+}
