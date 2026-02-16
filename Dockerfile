@@ -21,8 +21,8 @@ RUN docker-php-ext-configure intl && \
     docker-php-ext-configure zip && \
     docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip sockets
 
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Create application user (non-root)
 RUN groupadd -g 1000 appuser && \
@@ -59,16 +59,25 @@ RUN mkdir -p /run/secrets && \
     chown -R appuser:appuser /run/secrets
 
 # Set proper permissions for Laravel directories
-RUN chown -R appuser:appuser /var/www/html && \
-    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache && \
-    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chown -R appuser:appuser storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # Copy PHP-FPM configuration for non-root user
 COPY .docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
 
+# Copy PHP configuration
+COPY .docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+
 # Copy entrypoint script
 COPY --chown=appuser:appuser .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD php artisan schedule:run --verbose --no-interaction || exit 1
 
 # Switch to non-root user
 USER appuser
