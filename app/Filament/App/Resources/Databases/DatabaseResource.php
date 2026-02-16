@@ -18,11 +18,11 @@ class DatabaseResource extends Resource
 {
     protected static ?string $model = Database::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-circle-stack';
 
     protected static ?string $navigationLabel = 'Databases';
 
-    protected static ?string $navigationGroup = 'Hosting';
+    protected static string | \UnitEnum | null $navigationGroup = 'Hosting';
 
     protected static ?int $navigationSort = 3;
 

@@ -15,11 +15,11 @@ class VirtualHostResource extends Resource
 {
     protected static ?string $model = VirtualHost::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-server';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-server';
 
     protected static ?string $navigationLabel = 'Virtual Hosts';
 
-    protected static ?string $navigationGroup = 'Hosting';
+    protected static string | \UnitEnum | null $navigationGroup = 'Hosting';
 
     protected static ?int $navigationSort = 1;
 

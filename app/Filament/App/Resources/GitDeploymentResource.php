@@ -17,11 +17,11 @@ class GitDeploymentResource extends Resource
 {
     protected static ?string $model = GitDeployment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-code-bracket';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-code-bracket';
 
     protected static ?string $navigationLabel = 'Git Deployments';
 
-    protected static ?string $navigationGroup = 'Applications';
+    protected static string | \UnitEnum | null $navigationGroup = 'Applications';
 
     protected static ?int $navigationSort = 2;
 

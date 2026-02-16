@@ -16,9 +16,9 @@ class KubernetesNodeResource extends Resource
 {
     protected static ?string $model = KubernetesNode::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-server-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-server-stack';
 
-    protected static ?string $navigationGroup = 'Infrastructure';
+    protected static string | \UnitEnum | null $navigationGroup = 'Infrastructure';
 
     protected static ?string $navigationLabel = 'Kubernetes Nodes';
 

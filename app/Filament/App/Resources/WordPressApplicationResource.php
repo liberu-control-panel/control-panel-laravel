@@ -19,11 +19,11 @@ class WordPressApplicationResource extends Resource
 {
     protected static ?string $model = WordPressApplication::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'WordPress';
 
-    protected static ?string $navigationGroup = 'Applications';
+    protected static string | \UnitEnum | null $navigationGroup = 'Applications';
 
     protected static ?int $navigationSort = 1;
 

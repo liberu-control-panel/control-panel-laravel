@@ -18,11 +18,11 @@ class HelmReleaseResource extends Resource
 {
     protected static ?string $model = HelmRelease::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
 
     protected static ?string $navigationLabel = 'Helm Charts';
 
-    protected static ?string $navigationGroup = 'Kubernetes';
+    protected static string | \UnitEnum | null $navigationGroup = 'Kubernetes';
 
     protected static ?int $navigationSort = 2;
 
