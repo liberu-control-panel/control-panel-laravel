@@ -38,12 +38,14 @@ service:
   type: ClusterIP
   port: 80
   # Session affinity for load balancing
-  # Options: None, ClientIP
+  # Options:
+  #   - None: Default round-robin load balancing, no session stickiness
+  #   - ClientIP: Routes requests from the same client IP to the same pod (recommended for stateful apps)
   sessionAffinity: ClientIP
   # Session affinity timeout in seconds (only used when sessionAffinity is ClientIP)
   sessionAffinityTimeout: 10800  # 3 hours
   annotations: {}
-    # Example EKS NLB annotations:
+    # Example EKS NLB annotations (uncomment when using type: LoadBalancer with NLB):
     # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
     # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
@@ -89,12 +91,6 @@ ingress:
     - secretName: control-panel-tls
       hosts:
         - control-panel.example.com
-  # Load balancing configuration
-  loadBalancing:
-    # Algorithm: round_robin, least_conn, ip_hash
-    algorithm: "round_robin"
-    # Enable cross-zone load balancing for cloud providers
-    crossZone: true
 
 resources:
   limits:
