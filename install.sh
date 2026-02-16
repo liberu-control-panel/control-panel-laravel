@@ -1303,7 +1303,7 @@ display_dns_only_next_steps() {
         echo "   - Primary server: Add AXFR allowed IPs in config"
         echo "   - Secondary server: Configure as slave"
         echo ""
-        echo "6. Check PowerDNS status:"
+        echo "7. Check PowerDNS status:"
         if systemctl list-units --type=service | grep -q "pdns.service"; then
             echo "   systemctl status pdns"
         elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
@@ -1312,7 +1312,7 @@ display_dns_only_next_steps() {
             echo "   systemctl status pdns"
         fi
         echo ""
-        echo "7. View PowerDNS logs:"
+        echo "8. View PowerDNS logs:"
         if systemctl list-units --type=service | grep -q "pdns.service"; then
             echo "   journalctl -u pdns -f"
         elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
