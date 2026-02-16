@@ -24,7 +24,6 @@ ingress:
     nginx.ingress.kubernetes.io/session-cookie-name: "WEBSOCKET"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
     nginx.ingress.kubernetes.io/session-cookie-secure: "true"
-    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
     
     # Buffering (disable for WebSocket)
     nginx.ingress.kubernetes.io/proxy-buffering: "off"

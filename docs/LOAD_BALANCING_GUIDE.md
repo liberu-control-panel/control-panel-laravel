@@ -40,13 +40,10 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
-    # Session affinity with cookies
+    # Session affinity with cookies (recommended for most use cases)
     nginx.ingress.kubernetes.io/affinity: "cookie"
     nginx.ingress.kubernetes.io/session-cookie-name: "INGRESSCOOKIE"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "10800"  # 3 hours
-    
-    # Consistent hashing for session persistence
-    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
     
     # Connection settings
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
@@ -58,7 +55,25 @@ ingress:
     nginx.ingress.kubernetes.io/limit-rps: "100"
 ```
 
+**Note**: Cookie-based affinity is used by default. This is more reliable than IP-based hashing as it survives client IP changes and works better behind proxies or load balancers.
+
 ### Advanced NGINX Configurations
+
+#### Alternative: IP-Based Session Persistence
+
+If you cannot use cookies (e.g., for non-browser clients), use IP-based hashing instead:
+
+```yaml
+ingress:
+  annotations:
+    # Remove cookie-based affinity and use IP hashing instead
+    # Note: Do not use both together - they conflict
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+```
+
+**Important**: Do not use both cookie-based affinity and upstream-hash-by together. Choose one based on your use case:
+- **Cookie-based affinity**: Best for web applications, survives IP changes
+- **IP-based hashing**: Best for non-browser clients, simpler but less reliable
 
 #### Least Connections Algorithm
 

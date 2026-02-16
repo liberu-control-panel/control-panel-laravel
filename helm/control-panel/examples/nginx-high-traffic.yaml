@@ -18,7 +18,6 @@ ingress:
     nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
     nginx.ingress.kubernetes.io/session-cookie-secure: "true"
     nginx.ingress.kubernetes.io/session-cookie-samesite: "Lax"
-    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
     
     # Performance optimizations
     nginx.ingress.kubernetes.io/upstream-keepalive-connections: "100"
