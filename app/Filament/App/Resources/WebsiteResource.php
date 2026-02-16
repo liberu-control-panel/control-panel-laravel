@@ -6,7 +6,7 @@ use App\Filament\App\Resources\WebsiteResource\Pages;
 use App\Filament\App\Resources\WebsiteResource\Widgets\WebsiteStatsWidget;
 use App\Models\Website;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -24,9 +24,9 @@ class WebsiteResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Section::make('Basic Information')
                     ->schema([

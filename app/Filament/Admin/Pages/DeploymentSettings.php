@@ -7,7 +7,7 @@ use App\Services\CloudProviderManager;
 use App\Models\InstallationMetadata;
 use Filament\Pages\Page;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -43,11 +43,11 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
         $detectionService = app(DeploymentDetectionService::class);
         
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Section::make('Deployment Information')
                     ->description('Current deployment environment and configuration')

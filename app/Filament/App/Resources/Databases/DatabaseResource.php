@@ -8,7 +8,7 @@ use App\Filament\App\Resources\Databases\Pages\EditResource;
 use App\Models\Database;
 use App\Services\MySqlDatabaseService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,10 +26,10 @@ class DatabaseResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Database Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')

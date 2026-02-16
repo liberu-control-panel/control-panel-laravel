@@ -7,7 +7,7 @@ use App\Models\HelmRelease;
 use App\Models\Server;
 use App\Services\HelmChartService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,12 +26,12 @@ class HelmReleaseResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         $helmService = app(HelmChartService::class);
         $charts = $helmService->getAvailableCharts();
 
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Section::make('Release Information')
                     ->schema([

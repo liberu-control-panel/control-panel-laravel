@@ -5,7 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\VirtualHostResource\Pages;
 use App\Models\VirtualHost;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -23,9 +23,9 @@ class VirtualHostResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Section::make('Basic Information')
                     ->schema([

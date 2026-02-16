@@ -6,7 +6,7 @@ use App\Filament\App\Resources\GitDeploymentResource\Pages;
 use App\Models\GitDeployment;
 use App\Services\GitDeploymentService;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -25,9 +25,9 @@ class GitDeploymentResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Section::make('Domain Configuration')
                     ->schema([
