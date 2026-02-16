@@ -1032,6 +1032,16 @@ configure_powerdns() {
     # Get server IP for restricted API access
     SERVER_IP=$(hostname -I | awk '{print $1}')
     
+    # Determine PowerDNS user/group based on OS
+    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+        PDNS_USER="pdns"
+        PDNS_GROUP="pdns"
+    else
+        # RHEL-based systems
+        PDNS_USER="pdns"
+        PDNS_GROUP="pdns"
+    fi
+    
     # Create PowerDNS configuration
     cat > "$PDNS_CONF" << EOF
 # PowerDNS Configuration for DNS Cluster
@@ -1064,8 +1074,8 @@ query-cache-ttl=20
 cache-ttl=20
 
 # Security
-setuid=pdns
-setgid=pdns
+setuid=$PDNS_USER
+setgid=$PDNS_GROUP
 EOF
     
     # Save credentials securely
@@ -1073,11 +1083,22 @@ EOF
     echo "$PDNS_API_KEY" > /root/pdns-api-key.txt
     chmod 600 /root/pdns-db-password.txt /root/pdns-api-key.txt
     
+    # Secure the PowerDNS config file
+    chmod 640 "$PDNS_CONF"
+    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+        chown root:pdns "$PDNS_CONF" 2>/dev/null || true
+    else
+        chown root:pdns "$PDNS_CONF" 2>/dev/null || chown root:root "$PDNS_CONF"
+    fi
+    
     # Start and enable PowerDNS
+    PDNS_SERVICE=""
     if systemctl list-units --type=service | grep -q "pdns.service"; then
+        PDNS_SERVICE="pdns"
         systemctl start pdns
         systemctl enable pdns
     elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+        PDNS_SERVICE="pdns-server"
         systemctl start pdns-server
         systemctl enable pdns-server
     fi
@@ -1282,12 +1303,20 @@ display_dns_only_next_steps() {
         echo "   - Primary server: Add AXFR allowed IPs in config"
         echo "   - Secondary server: Configure as slave"
         echo ""
-        echo "7. Check PowerDNS status:"
-        echo "   systemctl status pdns"
+        echo "6. Check PowerDNS status:"
+        if systemctl list-units --type=service | grep -q "pdns.service"; then
+            echo "   systemctl status pdns"
+        elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+            echo "   systemctl status pdns-server"
+        else
+            echo "   systemctl status pdns"
+        fi
         echo ""
-        echo "8. View PowerDNS logs:"
-        if [[ -f /var/log/pdns.log ]]; then
-            echo "   tail -f /var/log/pdns.log"
+        echo "7. View PowerDNS logs:"
+        if systemctl list-units --type=service | grep -q "pdns.service"; then
+            echo "   journalctl -u pdns -f"
+        elif systemctl list-units --type=service | grep -q "pdns-server.service"; then
+            echo "   journalctl -u pdns-server -f"
         else
             echo "   journalctl -u pdns -f"
         fi
@@ -1345,9 +1374,9 @@ display_dns_only_next_steps() {
     echo "  - Firewalld: sudo firewall-cmd --add-service=dns --permanent"
     echo ""
     if [[ "$DNS_SERVER_CHOICE" == "2" ]]; then
-        echo "  For PowerDNS API (port 8081):"
-        echo "  - UFW: sudo ufw allow 8081/tcp"
-        echo "  - Firewalld: sudo firewall-cmd --add-port=8081/tcp --permanent"
+        echo -e "${YELLOW}Note:${NC} PowerDNS API is bound to localhost (127.0.0.1) for security."
+        echo "  To access remotely, use SSH tunneling (see step 3 above)."
+        echo "  DO NOT open port 8081 to the internet unless you have specific security measures in place."
         echo ""
     fi
     echo -e "${YELLOW}Documentation:${NC}"
