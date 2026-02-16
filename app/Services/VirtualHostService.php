@@ -82,7 +82,7 @@ class VirtualHostService
         $documentRoot = $virtualHost->document_root;
         $phpVersion = $virtualHost->php_version;
         
-        // For standalone, use unix socket
+        // For standalone, use unix socket; for containers, use network socket
         $isStandalone = $this->detectionService->isStandalone();
         $phpFpmSocket = $isStandalone 
             ? "unix:/run/php/php{$phpVersion}-fpm.sock"
@@ -111,11 +111,7 @@ class VirtualHostService
         $config .= "    }\n\n";
         
         $config .= "    location ~ \\.php$ {\n";
-        if ($isStandalone) {
-            $config .= "        fastcgi_pass {$phpFpmSocket};\n";
-        } else {
-            $config .= "        fastcgi_pass {$phpFpmSocket};\n";
-        }
+        $config .= "        fastcgi_pass {$phpFpmSocket};\n";
         $config .= "        fastcgi_index index.php;\n";
         $config .= "        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;\n";
         $config .= "        include fastcgi_params;\n";

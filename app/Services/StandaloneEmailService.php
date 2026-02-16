@@ -135,7 +135,7 @@ class StandaloneEmailService
     /**
      * Create mailbox directory
      */
-    protected function createMailbox(EmailAccount $emailAccount): void
+    protected function createMailbox(EmailAccount $emailAccount, string $password): void
     {
         $mailboxPath = "/var/mail/vhosts/{$emailAccount->domain->domain_name}/{$emailAccount->email_address}";
         
@@ -153,6 +153,9 @@ class StandaloneEmailService
         $this->helper->executeCommand([
             'sudo', 'chmod', '-R', '700', $mailboxPath
         ]);
+
+        // Update Dovecot password
+        $this->updateDovecotPassword($emailAccount, $password);
     }
 
     /**

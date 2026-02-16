@@ -83,8 +83,8 @@ class StandaloneServiceChecker
      */
     public function checkPhpFpm(): array
     {
-        // Check for common PHP-FPM versions
-        $versions = ['8.3', '8.2', '8.1', '8.4'];
+        // Check for common PHP-FPM versions (ordered from newest to oldest)
+        $versions = ['8.4', '8.3', '8.2', '8.1'];
         $installed = false;
         $running = false;
         $availableVersions = [];

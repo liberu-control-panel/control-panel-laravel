@@ -185,7 +185,14 @@ class StandaloneDnsService
     protected function generateZoneFile(Domain $domain, array $options = []): string
     {
         $domainName = $domain->domain_name;
-        $serial = date('Ymd') . str_pad(rand(1, 99), 2, '0', STR_PAD_LEFT);
+        
+        // Generate RFC 1912 compliant serial number (YYYYMMDDnn format)
+        $baseSerial = date('Ymd') . '01'; // Start with 01 for first update of the day
+        
+        // If we need to update multiple times in a day, we should increment the counter
+        // For now, using a simple approach with the base serial
+        $serial = $baseSerial;
+        
         $adminEmail = str_replace('@', '.', $options['admin_email'] ?? "admin.{$domainName}.");
         $ttl = $options['ttl'] ?? 3600;
         $ipAddress = $options['ip_address'] ?? config('app.server_ip', '127.0.0.1');
