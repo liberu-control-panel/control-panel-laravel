@@ -28,10 +28,25 @@ class EmailAccount extends Model
         'password',
         'quota',
         'forwarding_rules',
+        'autoresponder_enabled',
+        'autoresponder_subject',
+        'autoresponder_message',
+        'autoresponder_start_date',
+        'autoresponder_end_date',
+        'spam_filter_enabled',
+        'spam_threshold',
+        'spam_action',
+        'keep_copy_on_server',
     ];
 
     protected $casts = [
         'forwarding_rules' => 'array',
+        'autoresponder_enabled' => 'boolean',
+        'autoresponder_start_date' => 'datetime',
+        'autoresponder_end_date' => 'datetime',
+        'spam_filter_enabled' => 'boolean',
+        'spam_threshold' => 'integer',
+        'keep_copy_on_server' => 'boolean',
     ];
 
     /**
