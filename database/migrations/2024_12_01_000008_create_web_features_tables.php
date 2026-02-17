@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('custom_error_pages', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('domain_id');
-            $table->integer('error_code'); // 400, 401, 403, 404, 500, etc.
+            $table->unsignedSmallInteger('error_code'); // 100-599 HTTP status codes
             $table->text('custom_content')->nullable(); // HTML content
             $table->string('custom_file_path')->nullable(); // Path to custom error file
             $table->boolean('is_active')->default(true);

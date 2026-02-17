@@ -45,7 +45,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('directory_protection_id');
             $table->string('username');
-            $table->string('password'); // Hashed with bcrypt
+            $table->string('password'); // Hashed with APR1-MD5
             $table->timestamps();
 
             // Foreign key constraint
