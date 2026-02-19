@@ -30,6 +30,8 @@
         @include('components.footer')
     </div>
 
+    <x-toast />
+
     <!-- Scripts -->
     @vite('resources/js/app.js')
     @livewireScripts
