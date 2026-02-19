@@ -241,6 +241,118 @@ class StandaloneServiceHelper
     }
 
     /**
+     * Get the PHP-FPM pool configuration file path for a system user
+     */
+    public function getPhpFpmPoolPath(string $username, string $phpVersion): string
+    {
+        // Ubuntu/Debian layout
+        $debianPath = "/etc/php/{$phpVersion}/fpm/pool.d/{$username}.conf";
+        if (is_dir(dirname($debianPath))) {
+            return $debianPath;
+        }
+        // RHEL/AlmaLinux/Rocky layout
+        return "/etc/php-fpm.d/{$username}.conf";
+    }
+
+    /**
+     * Get the PHP-FPM unix socket path for a system user
+     */
+    public function getPhpFpmSocketPath(string $username, string $phpVersion): string
+    {
+        return "/run/php/php{$phpVersion}-fpm-{$username}.sock";
+    }
+
+    /**
+     * Resolve the nginx/web-server user that must be able to read the PHP-FPM socket.
+     * On Debian/Ubuntu the worker runs as www-data; on RHEL-family as nginx.
+     */
+    protected function resolveWebServerUser(): string
+    {
+        if (file_exists('/etc/debian_version') || is_dir('/etc/apt')) {
+            return 'www-data';
+        }
+        return 'nginx';
+    }
+
+    /**
+     * Deploy a per-user PHP-FPM pool configuration
+     */
+    public function deployPhpFpmPool(string $username, string $phpVersion): bool
+    {
+        try {
+            $poolPath      = $this->getPhpFpmPoolPath($username, $phpVersion);
+            $socketPath    = $this->getPhpFpmSocketPath($username, $phpVersion);
+            $webServerUser = $this->resolveWebServerUser();
+
+            $poolConfig  = "; Per-user PHP-FPM pool for {$username} (managed by Liberu Control Panel)\n";
+            $poolConfig .= "[{$username}]\n";
+            $poolConfig .= "user = {$username}\n";
+            $poolConfig .= "group = {$username}\n";
+            $poolConfig .= "listen = {$socketPath}\n";
+            $poolConfig .= "listen.owner = {$webServerUser}\n";
+            $poolConfig .= "listen.group = {$webServerUser}\n";
+            $poolConfig .= "listen.mode = 0660\n";
+            $poolConfig .= "pm = dynamic\n";
+            $poolConfig .= "pm.max_children = 5\n";
+            $poolConfig .= "pm.start_servers = 1\n";
+            $poolConfig .= "pm.min_spare_servers = 1\n";
+            $poolConfig .= "pm.max_spare_servers = 3\n";
+
+            $tempPath = sys_get_temp_dir() . "/{$username}-php-fpm.conf";
+            file_put_contents($tempPath, $poolConfig);
+            chmod($tempPath, 0644);
+
+            $result = $this->executeCommand(['sudo', 'mv', $tempPath, $poolPath]);
+            if (!$result['success']) {
+                Log::error("Failed to deploy PHP-FPM pool config for {$username}");
+                return false;
+            }
+
+            $this->executeCommand(['sudo', 'chmod', '644', $poolPath]);
+
+            // Reload PHP-FPM to activate the new pool
+            $fpmService = str_contains($phpVersion, '.')
+                ? "php{$phpVersion}-fpm"
+                : 'php-fpm';
+            $this->reloadSystemdService($fpmService);
+
+            return true;
+        } catch (Exception $e) {
+            Log::error("Failed to deploy PHP-FPM pool for {$username}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove a per-user PHP-FPM pool configuration
+     */
+    public function removePhpFpmPool(string $username, string $phpVersion): bool
+    {
+        try {
+            $poolPath = $this->getPhpFpmPoolPath($username, $phpVersion);
+
+            if (file_exists($poolPath)) {
+                $result = $this->executeCommand(['sudo', 'rm', '-f', $poolPath]);
+                if (!$result['success']) {
+                    Log::error("Failed to remove PHP-FPM pool config for {$username}");
+                    return false;
+                }
+
+                // Reload PHP-FPM to deactivate the pool
+                $fpmService = str_contains($phpVersion, '.')
+                    ? "php{$phpVersion}-fpm"
+                    : 'php-fpm';
+                $this->reloadSystemdService($fpmService);
+            }
+
+            return true;
+        } catch (Exception $e) {
+            Log::error("Failed to remove PHP-FPM pool for {$username}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Execute Certbot for Let's Encrypt certificate
      */
     public function executeCertbot(array $domains, string $email, string $webroot = '/var/www/html'): bool

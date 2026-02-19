@@ -74,6 +74,37 @@ class VirtualHostService
     }
 
     /**
+     * Derive the system (Linux) username for a virtual host's owner.
+     * Only the control-panel service account gets sudo; site users run PHP
+     * as their own account via a dedicated PHP-FPM pool.
+     *
+     * All per-site accounts use a "cp-user-" prefix so that the sudoers
+     * rules for chown/useradd can safely be restricted to that pattern.
+     */
+    protected function getSystemUsername(VirtualHost $virtualHost): string
+    {
+        $raw = $virtualHost->user->username ?? '';
+
+        // Linux usernames: lowercase, alphanumeric, hyphens and underscores, max 32 chars
+        $sanitized = strtolower(preg_replace('/[^a-z0-9_-]/i', '', $raw));
+        $sanitized = substr($sanitized, 0, 20); // leave room for the prefix
+
+        // Must not be empty after sanitisation
+        if ($sanitized === '') {
+            return 'cp-user-' . $virtualHost->user_id;
+        }
+
+        // Linux usernames must start with a letter or underscore (not a digit or hyphen)
+        if (preg_match('/^[0-9-]/', $sanitized)) {
+            $sanitized = 'u' . $sanitized;
+        }
+
+        // All per-site accounts use a consistent prefix so they are distinct from
+        // system accounts and match the cp-user-* pattern in the sudoers file.
+        return substr('cp-user-' . $sanitized, 0, 32);
+    }
+
+    /**
      * Generate nginx configuration for virtual host
      */
     protected function generateNginxConfig(VirtualHost $virtualHost): string
@@ -82,11 +113,15 @@ class VirtualHostService
         $documentRoot = $virtualHost->document_root;
         $phpVersion = $virtualHost->php_version;
         
-        // For standalone, use unix socket; for containers, use network socket
+        // For standalone, use a per-user unix socket so PHP runs as the site owner;
+        // for containers, use a network socket.
         $isStandalone = $this->detectionService->isStandalone();
-        $phpFpmSocket = $isStandalone 
-            ? "unix:/run/php/php{$phpVersion}-fpm.sock"
-            : "php-versions-" . str_replace('.', '-', $phpVersion) . ":9000";
+        if ($isStandalone) {
+            $username     = $this->getSystemUsername($virtualHost);
+            $phpFpmSocket = 'unix:' . $this->standaloneHelper->getPhpFpmSocketPath($username, $phpVersion);
+        } else {
+            $phpFpmSocket = "php-versions-" . str_replace('.', '-', $phpVersion) . ":9000";
+        }
 
         $config = "server {\n";
         $config .= "    listen 80;\n";
@@ -134,10 +169,18 @@ class VirtualHostService
             $hostname = $virtualHost->hostname;
             $nginxConfig = $virtualHost->nginx_config;
 
-            // Create document root directory
+            // Derive the system user that will own this virtual host
+            $username = $this->getSystemUsername($virtualHost);
+
+            // Create document root directory owned by the site user
             $documentRoot = $virtualHost->document_root;
             $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $documentRoot]);
-            $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', 'www-data:www-data', $documentRoot]);
+            $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', "{$username}:{$username}", $documentRoot]);
+            // Ensure nginx worker can traverse the directory to serve static files
+            $this->standaloneHelper->executeCommand(['sudo', 'chmod', '755', $documentRoot]);
+
+            // Create the per-user PHP-FPM pool so PHP runs as the site owner
+            $this->standaloneHelper->deployPhpFpmPool($username, $virtualHost->php_version);
 
             // Deploy nginx configuration
             $this->standaloneHelper->deployNginxConfig($hostname, $nginxConfig);
@@ -356,7 +399,11 @@ class VirtualHostService
     {
         try {
             $hostname = $virtualHost->hostname;
-            
+            $username = $this->getSystemUsername($virtualHost);
+
+            // Remove per-user PHP-FPM pool
+            $this->standaloneHelper->removePhpFpmPool($username, $virtualHost->php_version);
+
             // Remove nginx configuration
             $this->standaloneHelper->removeNginxConfig($hostname);
 

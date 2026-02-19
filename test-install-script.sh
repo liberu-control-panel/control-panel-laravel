@@ -129,6 +129,81 @@ else
     TEST_RESULTS=$((TEST_RESULTS + 1))
 fi
 
+# Test 11: setup_sudo_access function exists for standalone sudo setup
+echo -n "Test 11: setup_sudo_access function exists... "
+if grep -q "^setup_sudo_access()" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 12: setup_sudo_access is called during standalone app setup
+echo -n "Test 12: setup_sudo_access is called from setup_standalone_app... "
+if awk '/^setup_standalone_app\(\)/,/^\}/' "$SCRIPT_DIR/install.sh" | grep -q "setup_sudo_access"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 13: sudoers file path is defined in setup_sudo_access
+echo -n "Test 13: sudoers.d path defined in setup_sudo_access... "
+if grep -q "sudoers.d/control-panel" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 14: Dedicated cp-panel service account creation function exists
+echo -n "Test 14: create_control_panel_service_user function exists... "
+if grep -q "^create_control_panel_service_user()" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 15: Dedicated PHP-FPM pool creation function exists
+echo -n "Test 15: create_control_panel_php_fpm_pool function exists... "
+if grep -q "^create_control_panel_php_fpm_pool()" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 16: sudo is scoped to cp-panel, NOT www-data or nginx
+echo -n "Test 16: sudo is scoped to cp-panel service account only... "
+# setup_sudo_access must reference cp-panel and must NOT grant sudo to www-data/nginx
+SUDO_SECTION=$(awk '/^setup_sudo_access\(\)/,/^\}/' "$SCRIPT_DIR/install.sh")
+if echo "$SUDO_SECTION" | grep -q 'CP_USER="cp-panel"' && \
+   ! echo "$SUDO_SECTION" | grep -qE 'CP_USER="(www-data|nginx)"'; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 17: nginx control panel config uses cp-panel PHP-FPM socket
+echo -n "Test 17: nginx config uses cp-panel PHP-FPM socket... "
+if grep -q "php8.3-fpm-cp-panel.sock" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 18: sudoers includes PHP-FPM pool.d directory rules
+echo -n "Test 18: sudoers includes PHP-FPM pool management rules... "
+if grep -q "fpm/pool.d" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
 echo ""
 echo "================================="
 echo "Test Summary"
