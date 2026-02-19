@@ -129,6 +129,33 @@ else
     TEST_RESULTS=$((TEST_RESULTS + 1))
 fi
 
+# Test 11: setup_sudo_access function exists for standalone sudo setup
+echo -n "Test 11: setup_sudo_access function exists... "
+if grep -q "^setup_sudo_access()" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 12: setup_sudo_access is called during standalone app setup
+echo -n "Test 12: setup_sudo_access is called from setup_standalone_app... "
+if awk '/^setup_standalone_app\(\)/,/^\}/' "$SCRIPT_DIR/install.sh" | grep -q "setup_sudo_access"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
+# Test 13: sudoers file path is defined in setup_sudo_access
+echo -n "Test 13: sudoers.d path defined in setup_sudo_access... "
+if grep -q "sudoers.d/control-panel" "$SCRIPT_DIR/install.sh"; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${RED}FAIL${NC}"
+    TEST_RESULTS=$((TEST_RESULTS + 1))
+fi
+
 echo ""
 echo "================================="
 echo "Test Summary"
