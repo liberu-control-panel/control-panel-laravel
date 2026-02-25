@@ -20,19 +20,20 @@ use Illuminate\Support\Facades\Storage;
 use App\Filament\App\Resources\EmailResource\DovecotConfigGenerator;
 use App\Filament\App\Resources\EmailResource\PostfixConfigGenerator;
 use App\Filament\App\Resources\EmailResource\ContainerRestarter;
+use App\Models\EmailAccount;
 use Filament\Forms\Components\Repeater;
 
 class EmailResource extends Resource
 {
-    protected static ?string $model = Email::class;
+    protected static ?string $model = EmailAccount::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-mail';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-envelope';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('email')
+                TextInput::make('email_address')
                     ->email()
                     ->required()
                     ->maxLength(255),
@@ -48,7 +49,7 @@ class EmailResource extends Resource
                             ->maxLength(255),
                     ])
                     ->columns(1)
-                    ->createItemButtonLabel('Add Forwarding Rule')
+                    ->addActionLabel('Add Forwarding Rule')
                     ->label('Forwarding Rules'),
             ]);
     }
@@ -57,7 +58,7 @@ class EmailResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('email')
+                TextColumn::make('email_address')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime(),
@@ -84,9 +85,9 @@ class EmailResource extends Resource
         ];
     }
 
-    protected function handleRecordCreation(array $data): Email
+    protected function handleRecordCreation(array $data): EmailAccount
     {
-        $email = Email::create($data);
+        $email = EmailAccount::create($data);
 
         // Generate Dovecot configuration
         $dovecotConfig = $this->generateDovecotConfig($email->email, $email->password, $email->forwarding_rules);
@@ -105,7 +106,7 @@ class EmailResource extends Resource
         return $email;
     }
 
-    protected function handleRecordUpdate(Email $email, array $data): Email
+    protected function handleRecordUpdate(EmailAccount $email, array $data): EmailAccount
     {
         $email->update($data);
 
@@ -123,7 +124,7 @@ class EmailResource extends Resource
         return $email;
     }
 
-    protected function handleRecordDeletion(Email $email)
+    protected function handleRecordDeletion(EmailAccount $email)
     {
         // Remove Dovecot configuration
         Storage::disk('dovecot_config')->delete($email->email . '.conf');
