@@ -23,7 +23,6 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Jetstream;
 
@@ -35,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login([AuthenticatedSessionController::class, 'create'])
+            ->login()
             ->passwordReset()
             ->emailVerification()
             ->viteTheme('resources/css/filament/admin/theme.css')

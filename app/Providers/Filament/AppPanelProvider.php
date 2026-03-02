@@ -29,7 +29,6 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Event;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Jetstream;
 
@@ -38,10 +37,9 @@ class AppPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         $panel
-            ->default()
             ->id('app')
             ->path('app')
-            ->login([AuthenticatedSessionController::class, 'create'])
+            ->login()
             ->registration()
             ->passwordReset()
             ->emailVerification()
