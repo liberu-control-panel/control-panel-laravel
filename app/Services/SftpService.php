@@ -14,13 +14,16 @@ class SftpService
 {
     protected $detectionService;
     protected $containerManager;
+    protected JailkitService $jailkitService;
 
     public function __construct(
         DeploymentDetectionService $detectionService,
-        ContainerManagerService $containerManager
+        ContainerManagerService $containerManager,
+        JailkitService $jailkitService
     ) {
         $this->detectionService = $detectionService;
         $this->containerManager = $containerManager;
+        $this->jailkitService   = $jailkitService;
     }
 
     /**
@@ -28,12 +31,15 @@ class SftpService
      */
     public function createSftpAccount(array $data): SftpAccount
     {
-        // Validate home directory
-        $homeDir = $data['home_directory'] ?? '/var/www/html';
-        
+        // Home directories live under /home/<username> so that each SFTP user
+        // is isolated and the paths are consistent with nginx document roots.
+        $username = $data['username'];
+        $homeDir  = $data['home_directory'] ?? "/home/{$username}";
+
         if ($data['domain_id'] ?? null) {
-            $domain = Domain::findOrFail($data['domain_id']);
-            $homeDir = "/var/www/vhosts/{$domain->domain_name}";
+            $domain  = Domain::findOrFail($data['domain_id']);
+            // Place the home directory inside /home/<username> as a per-domain sub-directory
+            $homeDir = "/home/{$username}/{$domain->domain_name}";
         }
 
         // Generate SSH keys if requested
@@ -185,9 +191,9 @@ class SftpService
     protected function createSftpUserStandalone(SftpAccount $sftpAccount, ?string $password): void
     {
         $username = $sftpAccount->username;
-        $homeDir = $sftpAccount->home_directory;
+        $homeDir  = $sftpAccount->home_directory;
 
-        // Create home directory if it doesn't exist
+        // Ensure the home directory exists under /home/<username>
         if (!file_exists($homeDir)) {
             mkdir($homeDir, 0755, true);
         }
@@ -216,8 +222,18 @@ class SftpService
             $this->setupSshKeys($sftpAccount);
         }
 
-        // Configure SFTP chroot
-        $this->configureSftpChroot($sftpAccount);
+        // Prefer jailkit for chroot isolation when available; fall back to
+        // the traditional sshd_config ChrootDirectory approach otherwise.
+        if ($this->jailkitService->isInstalled()) {
+            $result = $this->jailkitService->setupUserJail($username);
+            if (!$result['success']) {
+                Log::warning("JailkitService: jail setup failed for {$username}, falling back to sshd chroot: " . $result['message']);
+                $this->configureSftpChroot($sftpAccount);
+            }
+        } else {
+            // Configure SFTP chroot via sshd_config
+            $this->configureSftpChroot($sftpAccount);
+        }
     }
 
     /**
