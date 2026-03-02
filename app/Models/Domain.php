@@ -192,6 +192,30 @@ class Domain extends Model
     }
 
     /**
+     * Get the PHP configuration for the domain.
+     */
+    public function phpConfig()
+    {
+        return $this->hasOne(PhpConfig::class);
+    }
+
+    /**
+     * Get the resource usage records for the domain.
+     */
+    public function resourceUsage()
+    {
+        return $this->hasMany(ResourceUsage::class);
+    }
+
+    /**
+     * Get the backup schedules for the domain.
+     */
+    public function backupSchedules()
+    {
+        return $this->hasMany(BackupSchedule::class);
+    }
+
+    /**
      * Get WordPress applications for the domain
      */
     public function wordpressApplications()

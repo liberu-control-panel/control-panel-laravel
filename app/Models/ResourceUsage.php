@@ -23,6 +23,7 @@ class ResourceUsage extends Model
      */
     protected $fillable = [
         'user_id',
+        'domain_id',
         'disk_usage',
         'bandwidth_usage',
         'cpu_usage',
@@ -37,6 +38,30 @@ class ResourceUsage extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the domain associated with this resource usage snapshot.
+     */
+    public function domain()
+    {
+        return $this->belongsTo(Domain::class);
+    }
+
+    /**
+     * Scope to filter by a specific domain.
+     */
+    public function scopeForDomain($query, int $domainId)
+    {
+        return $query->where('domain_id', $domainId);
+    }
+
+    /**
+     * Scope to filter by a specific month and year.
+     */
+    public function scopeForMonth($query, int $month, int $year)
+    {
+        return $query->where('month', $month)->where('year', $year);
     }
 }
 
