@@ -145,6 +145,55 @@ spec:
     app: powerdns
     {{- include "dns-cluster.selectorLabels" . | nindent 4 }}
 ---
+{{- if .Values.powerdns.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-powerdns
+  labels:
+    app: powerdns
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "dns-cluster.fullname" . }}-powerdns
+  minReplicas: {{ .Values.powerdns.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.powerdns.autoscaling.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.powerdns.autoscaling.targetCPUUtilizationPercentage }}
+  {{- if .Values.powerdns.autoscaling.targetMemoryUtilizationPercentage }}
+  # Memory metric is optional; omit targetMemoryUtilizationPercentage to disable it
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.powerdns.autoscaling.targetMemoryUtilizationPercentage }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.powerdns.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dns-cluster.fullname" . }}-powerdns
+  labels:
+    app: powerdns
+    {{- include "dns-cluster.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.powerdns.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app: powerdns
+      {{- include "dns-cluster.selectorLabels" . | nindent 6 }}
+{{- end }}
+---
 apiVersion: v1
 kind: Secret
 metadata:

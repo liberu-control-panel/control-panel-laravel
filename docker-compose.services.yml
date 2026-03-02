@@ -67,6 +67,35 @@ services:
       retries: 3
       start_period: 30s
 
+  # Secondary BIND9 nameserver – receives zone transfers (AXFR) from the primary.
+  # Exposed on port 5353 (host) → 53 (container) so both instances can run on the
+  # same host without conflicting. Configure your registrar / glue records to point
+  # ns2 to this host on the standard port 53 when deploying on separate machines.
+  bind9-secondary:
+    image: internetsystemsconsortium/bind9:9.18
+    restart: always
+    ports:
+      - "5353:53/udp"
+      - "5353:53/tcp"
+    volumes:
+      - bind-secondary-config:/etc/bind
+      - bind-secondary-cache:/var/cache/bind
+      - bind-secondary-records:/var/lib/bind
+    environment:
+      - BIND9_USER=bind
+      - TZ=${TZ:-UTC}
+    networks:
+      - proxy-network
+    depends_on:
+      bind9:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "host", "-t", "A", "localhost", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postfix-data:
     driver: local
@@ -81,6 +110,12 @@ volumes:
   bind-cache:
     driver: local
   bind-records:
+    driver: local
+  bind-secondary-config:
+    driver: local
+  bind-secondary-cache:
+    driver: local
+  bind-secondary-records:
     driver: local
 
 networks:
