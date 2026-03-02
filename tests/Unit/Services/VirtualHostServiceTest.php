@@ -190,6 +190,57 @@ class VirtualHostServiceTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // Home directory document root defaults
+    // ------------------------------------------------------------------
+
+    /** @test */
+    public function derive_system_username_is_consistent_with_get_system_username()
+    {
+        $user = User::factory()->make(['id' => 10, 'username' => 'testuser']);
+        $virtualHost = VirtualHost::factory()->make(['user_id' => 10]);
+        $virtualHost->setRelation('user', $user);
+
+        $viaVirtualHost = $this->callProtected('getSystemUsername', $virtualHost);
+        $viaDirect      = $this->callProtected('deriveSystemUsername', $user->username, $user->id);
+
+        $this->assertSame($viaVirtualHost, $viaDirect);
+    }
+
+    /** @test */
+    public function derive_system_username_handles_null_username()
+    {
+        $result = $this->callProtected('deriveSystemUsername', null, 42);
+        $this->assertSame('cp-user-42', $result);
+    }
+
+    /** @test */
+    public function standalone_helper_has_home_directory_helpers()
+    {
+        $helper = new StandaloneServiceHelper(
+            Mockery::mock(DeploymentDetectionService::class)
+        );
+
+        $this->assertTrue(method_exists($helper, 'getHomeDirectory'));
+        $this->assertTrue(method_exists($helper, 'getPublicHtmlDirectory'));
+    }
+
+    /** @test */
+    public function get_public_html_directory_uses_home_based_path()
+    {
+        $helper = new StandaloneServiceHelper(
+            Mockery::mock(DeploymentDetectionService::class)
+        );
+
+        $path = $helper->getPublicHtmlDirectory('cp-user-alice', 'example.com');
+
+        $this->assertStringStartsWith('/home/', $path);
+        $this->assertStringContainsString('cp-user-alice', $path);
+        $this->assertStringContainsString('example.com', $path);
+        $this->assertStringEndsWith('public_html', $path);
+        $this->assertStringNotContainsString('/var/www', $path);
+    }
+
+    // ------------------------------------------------------------------
     // Helper: call protected method via reflection
     // ------------------------------------------------------------------
 

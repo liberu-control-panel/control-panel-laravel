@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\VirtualHost;
 use App\Models\Domain;
 use App\Models\Server;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -27,12 +28,27 @@ class VirtualHostService
     public function create(array $data): array
     {
         try {
+            // Resolve the document root before persisting.
+            // In standalone mode the canonical location is /home/<username>/<hostname>/public_html;
+            // for container deployments we keep the traditional /var/www layout.
+            if (!isset($data['document_root'])) {
+                if ($this->detectionService->isStandalone()) {
+                    $user     = User::find($data['user_id']);
+                    $username = $this->deriveSystemUsername($user?->username, $data['user_id']);
+                    $data['document_root'] = $this->standaloneHelper->getPublicHtmlDirectory(
+                        $username, $data['hostname'] ?? ''
+                    );
+                } else {
+                    $data['document_root'] = '/var/www/html';
+                }
+            }
+
             $virtualHost = VirtualHost::create([
                 'user_id' => $data['user_id'],
                 'domain_id' => $data['domain_id'] ?? null,
                 'server_id' => $data['server_id'] ?? null,
                 'hostname' => $data['hostname'],
-                'document_root' => $data['document_root'] ?? '/var/www/html',
+                'document_root' => $data['document_root'],
                 'php_version' => $data['php_version'] ?? '8.3',
                 'ssl_enabled' => $data['ssl_enabled'] ?? false,
                 'letsencrypt_enabled' => $data['letsencrypt_enabled'] ?? true,
@@ -83,7 +99,16 @@ class VirtualHostService
      */
     protected function getSystemUsername(VirtualHost $virtualHost): string
     {
-        $raw = $virtualHost->user->username ?? '';
+        return $this->deriveSystemUsername($virtualHost->user->username ?? '', $virtualHost->user_id);
+    }
+
+    /**
+     * Derive a safe Linux system username from a raw username string and a fallback ID.
+     * Extracted so that it can be called before a VirtualHost record is saved.
+     */
+    protected function deriveSystemUsername(?string $rawUsername, int $fallbackId): string
+    {
+        $raw = $rawUsername ?? '';
 
         // Linux usernames: lowercase, alphanumeric, hyphens and underscores, max 32 chars
         $sanitized = strtolower(preg_replace('/[^a-z0-9_-]/i', '', $raw));
@@ -91,7 +116,7 @@ class VirtualHostService
 
         // Must not be empty after sanitisation
         if ($sanitized === '') {
-            return 'cp-user-' . $virtualHost->user_id;
+            return 'cp-user-' . $fallbackId;
         }
 
         // Linux usernames must start with a letter or underscore (not a digit or hyphen)
@@ -166,17 +191,27 @@ class VirtualHostService
     protected function deployToStandalone(VirtualHost $virtualHost): array
     {
         try {
-            $hostname = $virtualHost->hostname;
+            $hostname    = $virtualHost->hostname;
             $nginxConfig = $virtualHost->nginx_config;
 
             // Derive the system user that will own this virtual host
             $username = $this->getSystemUsername($virtualHost);
 
-            // Create document root directory owned by the site user
+            // Ensure the user's home directory tree exists and is owned by the site user.
+            // The parent /home/<username> directory must be traversable by nginx (755) but
+            // NOT owned by nginx – nginx reads the site root inside it which is 750/755.
+            $homeDir      = $this->standaloneHelper->getHomeDirectory($username);
             $documentRoot = $virtualHost->document_root;
+
+            // Create /home/<username> with correct ownership
+            $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $homeDir]);
+            $this->standaloneHelper->executeCommand(['sudo', 'chown', "{$username}:{$username}", $homeDir]);
+            $this->standaloneHelper->executeCommand(['sudo', 'chmod', '755', $homeDir]);
+
+            // Create the per-vhost public_html directory
             $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $documentRoot]);
             $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', "{$username}:{$username}", $documentRoot]);
-            // Ensure nginx worker can traverse the directory to serve static files
+            // nginx worker must be able to traverse to serve static files
             $this->standaloneHelper->executeCommand(['sudo', 'chmod', '755', $documentRoot]);
 
             // Create the per-user PHP-FPM pool so PHP runs as the site owner

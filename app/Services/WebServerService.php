@@ -32,8 +32,16 @@ class WebServerService
     public function createNginxConfig(Domain $domain, array $options = []): string
     {
         $phpVersion = $options['php_version'] ?? '8.2';
-        $documentRoot = $options['document_root'] ?? '/var/www/html';
         $enableSSL = $options['enable_ssl'] ?? true;
+
+        // In standalone mode, place site files under /home/<username>/<domain>/public_html
+        // so each site owner is isolated from others and from /var/www.
+        if ($this->detectionService->isStandalone() && !isset($options['document_root'])) {
+            $username     = $options['username'] ?? 'www-data';
+            $documentRoot = $this->standaloneHelper->getPublicHtmlDirectory($username, $domain->domain_name);
+        } else {
+            $documentRoot = $options['document_root'] ?? '/var/www/html';
+        }
 
         $config = $this->generateNginxServerBlock($domain, $phpVersion, $documentRoot, $enableSSL);
 

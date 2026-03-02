@@ -241,6 +241,34 @@ class StandaloneServiceHelper
     }
 
     /**
+     * Return the home directory for a control-panel system user.
+     * All per-site accounts live under /home/<username> so that each
+     * user is isolated from others and site files are never stored in
+     * the shared /var/www tree.
+     */
+    public function getHomeDirectory(string $username): string
+    {
+        return "/home/{$username}";
+    }
+
+    /**
+     * Return the web-accessible public_html directory for a site user.
+     * Nginx document roots point here instead of /var/www.
+     */
+    public function getPublicHtmlDirectory(string $username, string $hostname = ''): string
+    {
+        $homeDir = $this->getHomeDirectory($username);
+
+        // If a hostname is provided, place the document root in a per-vhost
+        // subdirectory so that one user can host multiple sites.
+        if ($hostname !== '') {
+            return "{$homeDir}/{$hostname}/public_html";
+        }
+
+        return "{$homeDir}/public_html";
+    }
+
+    /**
      * Get the PHP-FPM pool configuration file path for a system user
      */
     public function getPhpFpmPoolPath(string $username, string $phpVersion): string

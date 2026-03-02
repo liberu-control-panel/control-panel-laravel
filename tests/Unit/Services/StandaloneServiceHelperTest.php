@@ -111,4 +111,36 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertArrayHasKey('error', $result);
         $this->assertArrayHasKey('exit_code', $result);
     }
+
+    // ------------------------------------------------------------------
+    // Home directory helpers
+    // ------------------------------------------------------------------
+
+    /** @test */
+    public function get_home_directory_returns_correct_path()
+    {
+        $this->assertSame('/home/cp-user-alice', $this->helper->getHomeDirectory('cp-user-alice'));
+    }
+
+    /** @test */
+    public function get_public_html_directory_without_hostname_returns_default()
+    {
+        $path = $this->helper->getPublicHtmlDirectory('cp-user-alice');
+        $this->assertSame('/home/cp-user-alice/public_html', $path);
+    }
+
+    /** @test */
+    public function get_public_html_directory_with_hostname_returns_per_vhost_path()
+    {
+        $path = $this->helper->getPublicHtmlDirectory('cp-user-alice', 'example.com');
+        $this->assertSame('/home/cp-user-alice/example.com/public_html', $path);
+    }
+
+    /** @test */
+    public function home_directory_is_always_under_slash_home()
+    {
+        foreach (['user1', 'cp-user-alice', 'cp-user-bob'] as $username) {
+            $this->assertStringStartsWith('/home/', $this->helper->getHomeDirectory($username));
+        }
+    }
 }

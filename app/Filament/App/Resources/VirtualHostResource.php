@@ -62,8 +62,8 @@ class VirtualHostResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('document_root')
                             ->label('Document Root')
-                            ->default('/var/www/html')
-                            ->required()
+                            ->placeholder('/home/<username>/<hostname>/public_html')
+                            ->helperText('Leave blank to use the default home-directory path (/home/<username>/<hostname>/public_html). In standalone mode this is auto-resolved from the system username.')
                             ->maxLength(255),
 
                         Forms\Components\Select::make('php_version')
