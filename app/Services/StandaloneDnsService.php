@@ -196,11 +196,25 @@ class StandaloneDnsService
         $adminEmail = str_replace('@', '.', $options['admin_email'] ?? "admin.{$domainName}.");
         $ttl = $options['ttl'] ?? 3600;
         $ipAddress = $options['ip_address'] ?? config('app.server_ip', '127.0.0.1');
-        
+
+        // Build nameserver cluster: supports a list of nameservers with individual IPs
+        // Format: [['name' => 'ns1', 'ip' => '1.2.3.4'], ...]
+        $nameservers = $options['nameservers'] ?? [
+            ['name' => 'ns1', 'ip' => $ipAddress],
+            ['name' => 'ns2', 'ip' => $ipAddress],
+        ];
+
+        if (empty($nameservers)) {
+            $nameservers = [['name' => 'ns1', 'ip' => $ipAddress]];
+        }
+
+        // Primary NS for SOA record
+        $primaryNs = $nameservers[0]['name'] . ".{$domainName}.";
+
         $zoneFile = <<<EOT
 \$TTL {$ttl}
 \$ORIGIN {$domainName}.
-@   IN  SOA ns1.{$domainName}. {$adminEmail} (
+@   IN  SOA {$primaryNs} {$adminEmail} (
         {$serial}     ; Serial
         3600          ; Refresh
         1800          ; Retry
@@ -208,15 +222,20 @@ class StandaloneDnsService
         86400         ; Minimum TTL
 )
 
-; Name servers
-@   IN  NS  ns1.{$domainName}.
-@   IN  NS  ns2.{$domainName}.
-
-; Name server A records
-ns1 IN  A   {$ipAddress}
-ns2 IN  A   {$ipAddress}
-
 EOT;
+
+        // NS records
+        $zoneFile .= "; Name servers\n";
+        foreach ($nameservers as $ns) {
+            $zoneFile .= "@   IN  NS  {$ns['name']}.{$domainName}.\n";
+        }
+
+        $zoneFile .= "\n; Name server A records\n";
+        foreach ($nameservers as $ns) {
+            $zoneFile .= "{$ns['name']} IN  A   {$ns['ip']}\n";
+        }
+
+        $zoneFile .= "\n";
 
         // Add existing DNS records from database
         $dnsRecords = DnsSetting::where('domain_id', $domain->id)->get();

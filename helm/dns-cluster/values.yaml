@@ -75,6 +75,25 @@ powerdns:
       cpu: 100m
       memory: 128Mi
 
+  # HorizontalPodAutoscaler – automatically scales PowerDNS pods under load.
+  # Review minReplicas/maxReplicas before enabling; minReplicas should be at
+  # least as large as powerdns.podDisruptionBudget.minAvailable.
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # PodDisruptionBudget – guarantees availability during node maintenance.
+  # minAvailable must be less than powerdns.replicaCount (default 3) so that
+  # voluntary disruptions (e.g. node drains) are permitted.
+  podDisruptionBudget:
+    enabled: true
+    # Minimum number of pods that must remain available during voluntary disruptions.
+    # Keep at least 2 pods running in a 3-replica cluster.
+    minAvailable: 2
+
 # PowerDNS Admin web interface
 powerdnsAdmin:
   enabled: true
@@ -113,10 +132,16 @@ powerdnsAdmin:
       memory: 128Mi
 
 # Secondary nameservers configuration
+# Each entry represents a nameserver in the DNS cluster.
+# The 'name' field is the NS record hostname; 'ip' is its A record address.
+# Add as many nameservers as needed for your cluster.
 secondaryNameservers:
-  - ns1.example.com
-  - ns2.example.com
-  - ns3.example.com
+  - name: ns1.example.com
+    ip: ""
+  - name: ns2.example.com
+    ip: ""
+  - name: ns3.example.com
+    ip: ""
 
 # DNSSEC configuration
 dnssec:

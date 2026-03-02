@@ -71,14 +71,27 @@ class DnsService
         $adminEmail = str_replace('@', '.', $options['admin_email'] ?? 'admin@' . $domainName);
         $ttl = $options['ttl'] ?? 86400;
         $ipAddress = $options['ip_address'] ?? '127.0.0.1';
-        $ns1Ip = $options['ns1_ip'] ?? $ipAddress;
-        $ns2Ip = $options['ns2_ip'] ?? $ipAddress;
         $mailIp = $options['mail_ip'] ?? $ipAddress;
         $ftpIp = $options['ftp_ip'] ?? $ipAddress;
 
+        // Build nameserver cluster: supports a list of nameservers with individual IPs
+        // Format: [['name' => 'ns1', 'ip' => '1.2.3.4'], ...]
+        // Backwards-compatible: ns1_ip / ns2_ip options still work as a two-node cluster
+        $nameservers = $options['nameservers'] ?? [
+            ['name' => 'ns1', 'ip' => $options['ns1_ip'] ?? $ipAddress],
+            ['name' => 'ns2', 'ip' => $options['ns2_ip'] ?? $ipAddress],
+        ];
+
+        if (empty($nameservers)) {
+            $nameservers = [['name' => 'ns1', 'ip' => $ipAddress]];
+        }
+
+        // Primary NS for SOA
+        $primaryNs = $nameservers[0]['name'] . ".{$domainName}.";
+
         $zoneFile = <<<EOT
 \$TTL {$ttl}
-@   IN  SOA {$domainName}. {$adminEmail}. (
+@   IN  SOA {$primaryNs} {$adminEmail}. (
         {$serial}     ; Serial
         3600          ; Refresh
         1800          ; Retry
@@ -86,26 +99,29 @@ class DnsService
         86400         ; Minimum TTL
 )
 
-; Name servers
-@   IN  NS  ns1.{$domainName}.
-@   IN  NS  ns2.{$domainName}.
-
-; A records
-@   IN  A   {$ipAddress}
-www IN  A   {$ipAddress}
-
-; Name server A records
-ns1 IN  A   {$ns1Ip}
-ns2 IN  A   {$ns2Ip}
-
-; Mail server records
-@   IN  MX  10  mail.{$domainName}.
-mail IN  A   {$mailIp}
-
-; FTP server
-ftp IN  A   {$ftpIp}
-
 EOT;
+
+        // NS records
+        $zoneFile .= "; Name servers\n";
+        foreach ($nameservers as $ns) {
+            $zoneFile .= "@   IN  NS  {$ns['name']}.{$domainName}.\n";
+        }
+
+        $zoneFile .= "\n; A records\n";
+        $zoneFile .= "@   IN  A   {$ipAddress}\n";
+        $zoneFile .= "www IN  A   {$ipAddress}\n";
+
+        $zoneFile .= "\n; Name server A records\n";
+        foreach ($nameservers as $ns) {
+            $zoneFile .= "{$ns['name']} IN  A   {$ns['ip']}\n";
+        }
+
+        $zoneFile .= "\n; Mail server records\n";
+        $zoneFile .= "@   IN  MX  10  mail.{$domainName}.\n";
+        $zoneFile .= "mail IN  A   {$mailIp}\n";
+
+        $zoneFile .= "\n; FTP server\n";
+        $zoneFile .= "ftp IN  A   {$ftpIp}\n";
 
         return $zoneFile;
     }
