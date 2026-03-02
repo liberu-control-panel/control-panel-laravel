@@ -28,12 +28,13 @@ class SftpService
      */
     public function createSftpAccount(array $data): SftpAccount
     {
-        // Validate home directory
-        $homeDir = $data['home_directory'] ?? '/var/www/html';
-        
+        // Derive home directory from username rather than /var/www
+        $username = $data['username'];
+        $homeDir = $data['home_directory'] ?? "/home/{$username}";
+
         if ($data['domain_id'] ?? null) {
             $domain = Domain::findOrFail($data['domain_id']);
-            $homeDir = "/var/www/vhosts/{$domain->domain_name}";
+            $homeDir = "/home/{$username}";
         }
 
         // Generate SSH keys if requested

@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use App\Models\User;
 use App\Models\VirtualHost;
 use App\Services\DeploymentDetectionService;
+use App\Services\JailkitService;
 use App\Services\StandaloneServiceHelper;
 use App\Services\VirtualHostService;
 use Tests\TestCase;
@@ -15,6 +16,7 @@ class VirtualHostServiceTest extends TestCase
     protected VirtualHostService $service;
     protected $detectionService;
     protected $standaloneHelper;
+    protected $jailkitService;
 
     protected function setUp(): void
     {
@@ -22,10 +24,12 @@ class VirtualHostServiceTest extends TestCase
 
         $this->detectionService = Mockery::mock(DeploymentDetectionService::class);
         $this->standaloneHelper  = Mockery::mock(StandaloneServiceHelper::class);
+        $this->jailkitService    = Mockery::mock(JailkitService::class);
 
         $this->service = new VirtualHostService(
             $this->detectionService,
-            $this->standaloneHelper
+            $this->standaloneHelper,
+            $this->jailkitService
         );
     }
 
@@ -158,6 +162,47 @@ class VirtualHostServiceTest extends TestCase
         // Container mode uses a network socket, not a unix socket
         $this->assertStringContainsString('php-versions-8-2:9000', $config);
         $this->assertStringNotContainsString('unix:', $config);
+    }
+
+    // ------------------------------------------------------------------
+    // JailkitService integration tests
+    // ------------------------------------------------------------------
+
+    /** @test */
+    public function jailkit_service_has_required_methods()
+    {
+        $helper = new \App\Services\StandaloneServiceHelper(
+            Mockery::mock(DeploymentDetectionService::class)
+        );
+        $jailkit = new \App\Services\JailkitService($helper);
+
+        $this->assertTrue(method_exists($jailkit, 'isInstalled'));
+        $this->assertTrue(method_exists($jailkit, 'initJail'));
+        $this->assertTrue(method_exists($jailkit, 'jailUser'));
+        $this->assertTrue(method_exists($jailkit, 'setupUserJail'));
+        $this->assertTrue(method_exists($jailkit, 'removeUserJail'));
+        $this->assertTrue(method_exists($jailkit, 'removeUserHomeDirectory'));
+        $this->assertTrue(method_exists($jailkit, 'getDocumentRoot'));
+        $this->assertTrue(method_exists($jailkit, 'getJailRoot'));
+    }
+
+    /** @test */
+    public function derive_system_username_produces_home_directory_path()
+    {
+        $user = User::factory()->make(['id' => 10, 'username' => 'testuser']);
+        $virtualHost = VirtualHost::factory()->make(['user_id' => 10]);
+        $virtualHost->setRelation('user', $user);
+
+        $username = $this->callProtected('getSystemUsername', $virtualHost);
+
+        // The document root should live under /home/<username>
+        $realJailkit = new \App\Services\JailkitService(
+            new \App\Services\StandaloneServiceHelper(
+                Mockery::mock(DeploymentDetectionService::class)
+            )
+        );
+        $this->assertStringStartsWith('/home/', $realJailkit->getDocumentRoot($username));
+        $this->assertStringEndsWith('/public_html', $realJailkit->getDocumentRoot($username));
     }
 
     // ------------------------------------------------------------------

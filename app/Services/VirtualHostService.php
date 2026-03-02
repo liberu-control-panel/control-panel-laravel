@@ -12,13 +12,16 @@ class VirtualHostService
 {
     protected DeploymentDetectionService $detectionService;
     protected StandaloneServiceHelper $standaloneHelper;
+    protected JailkitService $jailkitService;
 
     public function __construct(
         DeploymentDetectionService $detectionService,
-        StandaloneServiceHelper $standaloneHelper
+        StandaloneServiceHelper $standaloneHelper,
+        JailkitService $jailkitService
     ) {
         $this->detectionService = $detectionService;
         $this->standaloneHelper = $standaloneHelper;
+        $this->jailkitService = $jailkitService;
     }
 
     /**
@@ -27,12 +30,20 @@ class VirtualHostService
     public function create(array $data): array
     {
         try {
+            // Derive system username early so we can build the home-directory path
+            $userId = $data['user_id'];
+            $user = \App\Models\User::find($userId);
+            $systemUsername = $this->deriveSystemUsername($user?->username, $userId);
+
+            // Default document root: /home/<username>/public_html
+            $defaultDocumentRoot = $this->jailkitService->getDocumentRoot($systemUsername);
+
             $virtualHost = VirtualHost::create([
-                'user_id' => $data['user_id'],
+                'user_id' => $userId,
                 'domain_id' => $data['domain_id'] ?? null,
                 'server_id' => $data['server_id'] ?? null,
                 'hostname' => $data['hostname'],
-                'document_root' => $data['document_root'] ?? '/var/www/html',
+                'document_root' => $data['document_root'] ?? $defaultDocumentRoot,
                 'php_version' => $data['php_version'] ?? '8.3',
                 'ssl_enabled' => $data['ssl_enabled'] ?? false,
                 'letsencrypt_enabled' => $data['letsencrypt_enabled'] ?? true,
@@ -74,16 +85,12 @@ class VirtualHostService
     }
 
     /**
-     * Derive the system (Linux) username for a virtual host's owner.
-     * Only the control-panel service account gets sudo; site users run PHP
-     * as their own account via a dedicated PHP-FPM pool.
-     *
-     * All per-site accounts use a "cp-user-" prefix so that the sudoers
-     * rules for chown/useradd can safely be restricted to that pattern.
+     * Derive the system (Linux) username from a raw username string and a user ID.
+     * Exposed as a protected helper so it can be called before a VirtualHost exists.
      */
-    protected function getSystemUsername(VirtualHost $virtualHost): string
+    protected function deriveSystemUsername(?string $rawUsername, int $userId): string
     {
-        $raw = $virtualHost->user->username ?? '';
+        $raw = $rawUsername ?? '';
 
         // Linux usernames: lowercase, alphanumeric, hyphens and underscores, max 32 chars
         $sanitized = strtolower(preg_replace('/[^a-z0-9_-]/i', '', $raw));
@@ -91,7 +98,7 @@ class VirtualHostService
 
         // Must not be empty after sanitisation
         if ($sanitized === '') {
-            return 'cp-user-' . $virtualHost->user_id;
+            return 'cp-user-' . $userId;
         }
 
         // Linux usernames must start with a letter or underscore (not a digit or hyphen)
@@ -102,6 +109,22 @@ class VirtualHostService
         // All per-site accounts use a consistent prefix so they are distinct from
         // system accounts and match the cp-user-* pattern in the sudoers file.
         return substr('cp-user-' . $sanitized, 0, 32);
+    }
+
+    /**
+     * Derive the system (Linux) username for a virtual host's owner.
+     * Only the control-panel service account gets sudo; site users run PHP
+     * as their own account via a dedicated PHP-FPM pool.
+     *
+     * All per-site accounts use a "cp-user-" prefix so that the sudoers
+     * rules for chown/useradd can safely be restricted to that pattern.
+     */
+    protected function getSystemUsername(VirtualHost $virtualHost): string
+    {
+        return $this->deriveSystemUsername(
+            $virtualHost->user->username ?? null,
+            $virtualHost->user_id
+        );
     }
 
     /**
@@ -172,12 +195,20 @@ class VirtualHostService
             // Derive the system user that will own this virtual host
             $username = $this->getSystemUsername($virtualHost);
 
-            // Create document root directory owned by the site user
-            $documentRoot = $virtualHost->document_root;
-            $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $documentRoot]);
-            $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', "{$username}:{$username}", $documentRoot]);
-            // Ensure nginx worker can traverse the directory to serve static files
-            $this->standaloneHelper->executeCommand(['sudo', 'chmod', '755', $documentRoot]);
+            // Ensure the system user exists with their home directory at /home/<username>
+            $this->provisionSystemUser($username);
+
+            // Set up jailkit if available; fall back to plain directory otherwise
+            if ($this->jailkitService->isInstalled()) {
+                $this->jailkitService->setupUserJail($username);
+            } else {
+                // Fallback: create the document root directory without a jail
+                $documentRoot = $virtualHost->document_root;
+                $this->standaloneHelper->executeCommand(['sudo', 'mkdir', '-p', $documentRoot]);
+                $this->standaloneHelper->executeCommand(['sudo', 'chown', '-R', "{$username}:{$username}", $documentRoot]);
+                // Ensure nginx worker can traverse the directory to serve static files
+                $this->standaloneHelper->executeCommand(['sudo', 'chmod', '0750', $documentRoot]);
+            }
 
             // Create the per-user PHP-FPM pool so PHP runs as the site owner
             $this->standaloneHelper->deployPhpFpmPool($username, $virtualHost->php_version);
@@ -208,6 +239,39 @@ class VirtualHostService
                 'message' => 'Failed to deploy to standalone NGINX: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Ensure the system user exists with their home directory under /home/<username>.
+     *
+     * If the user already exists this is a no-op.  The account is created with
+     * a nologin shell; jailkit (when installed) replaces the shell with jk_lsh.
+     *
+     * @param string $username  Linux system username (cp-user-* prefix)
+     */
+    protected function provisionSystemUser(string $username): void
+    {
+        // Skip if the user already exists
+        $checkResult = $this->standaloneHelper->executeCommand(['id', $username]);
+        if ($checkResult['success']) {
+            return;
+        }
+
+        $noLoginShell = file_exists('/usr/sbin/nologin') ? '/usr/sbin/nologin' : '/sbin/nologin';
+
+        $this->standaloneHelper->executeCommand([
+            'sudo', 'useradd',
+            '--home-dir', "/home/{$username}",
+            '--create-home',
+            '--shell', $noLoginShell,
+            '--user-group',
+            $username,
+        ]);
+
+        // Ensure the home directory has root ownership so jailkit can use it as
+        // the chroot root (jailkit requires jail root owned by root:root mode 0755)
+        $this->standaloneHelper->executeCommand(['sudo', 'chown', 'root:root', "/home/{$username}"]);
+        $this->standaloneHelper->executeCommand(['sudo', 'chmod', '0755', "/home/{$username}"]);
     }
 
     /**
@@ -415,6 +479,18 @@ class VirtualHostService
 
             // Reload nginx
             $this->standaloneHelper->reloadSystemdService('nginx');
+
+            // Check whether this user has other virtual hosts; if not, remove the jail
+            $remainingHosts = VirtualHost::where('user_id', $virtualHost->user_id)
+                ->where('id', '!=', $virtualHost->id)
+                ->count();
+
+            if ($remainingHosts === 0) {
+                if ($this->jailkitService->isInstalled()) {
+                    $this->jailkitService->removeUserJail($username);
+                }
+                $this->jailkitService->removeUserHomeDirectory($username);
+            }
 
             Log::info("Virtual host {$hostname} removed from standalone NGINX");
 
