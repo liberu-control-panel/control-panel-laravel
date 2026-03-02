@@ -25,6 +25,7 @@ class ResourceUsageFactory extends Factory
             'user_id' => function () {
                 return \App\Models\User::factory()->create()->id;
             },
+            'domain_id' => null,
             'disk_usage' => $this->faker->numberBetween(100, 5000), // Disk usage between 100 MB to 5000 MB
             'bandwidth_usage' => $this->faker->numberBetween(100, 10000), // Bandwidth usage between 100 MB to 10,000 MB
             'month' => $this->faker->numberBetween(1, 12), // Random month between 1 (January) to 12 (December)

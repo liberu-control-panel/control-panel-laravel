@@ -5,7 +5,7 @@ namespace App\Console;
 use Exception;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use App\Models\Backup;
+use App\Models\BackupSchedule;
 use App\Services\BackupService;
 use Illuminate\Support\Facades\Log;
 
@@ -16,21 +16,29 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $backups = Backup::all();
+        // Run each active backup schedule according to its configured cron expression
+        $schedules = BackupSchedule::active()->with('domain')->get();
 
-        foreach ($backups as $backup) {
-            $schedule->call(function () use ($backup) {
+        foreach ($schedules as $backupSchedule) {
+            $schedule->call(function () use ($backupSchedule) {
                 try {
-                    $backupService = new BackupService();
-                    $backupService->createBackup($backup);
-                    Log::info("Backup created successfully for {$backup->name}");
+                    /** @var BackupService $backupService */
+                    $backupService = app(BackupService::class);
+                    $backupService->createFullBackup($backupSchedule->domain, [
+                        'type'           => $backupSchedule->type,
+                        'name'           => $backupSchedule->name . ' - ' . now()->format('Y-m-d H:i:s'),
+                        'destination_id' => $backupSchedule->destination_id,
+                        'is_automated'   => true,
+                    ]);
+                    $backupSchedule->update(['last_run_at' => now()]);
+                    Log::info("Scheduled backup '{$backupSchedule->name}' completed successfully.");
                 } catch (Exception $e) {
-                    Log::error("Failed to create backup for {$backup->name}: " . $e->getMessage());
+                    Log::error("Scheduled backup '{$backupSchedule->name}' failed: " . $e->getMessage());
                 }
-            })->cron($this->getCronExpression($backup));
+            })->cron($backupSchedule->toCronExpression());
         }
 
-        // Add a daily log cleanup task
+        // Daily log cleanup task
         $schedule->command('log:clear')->daily();
     }
 
@@ -42,22 +50,5 @@ class Kernel extends ConsoleKernel
         $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
-    }
-
-    private function getCronExpression(Backup $backup): string
-    {
-        $time = $backup->time;
-        $frequency = $backup->frequency;
-
-        switch ($frequency) {
-            case 'daily':
-                return "{$time->format('i')} {$time->format('H')} * * *";
-            case 'weekly':
-                return "{$time->format('i')} {$time->format('H')} * * 0";
-            case 'monthly':
-                return "{$time->format('i')} {$time->format('H')} 1 * *";
-            default:
-                return "0 0 * * *"; // Default to daily at midnight
-        }
     }
 }
