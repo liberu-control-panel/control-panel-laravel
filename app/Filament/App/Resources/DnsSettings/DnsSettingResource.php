@@ -39,6 +39,10 @@ class DnsSettingResource extends Resource {
 
     protected static ?string $navigationLabel = 'DNS Records';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Domains & Websites';
+
+    protected static ?int $navigationSort = 4;
+
     protected static ?string $modelLabel = 'DNS Record';
 
     public function __construct(protected DnsSettingService $dnsSettingService)
