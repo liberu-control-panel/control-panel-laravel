@@ -203,6 +203,9 @@ install_common_prerequisites() {
             ;;
     esac
     
+    # Ensure /usr/local/bin is in PATH (needed for composer and other tools)
+    export PATH="$PATH:/usr/local/bin"
+
     log_success "Common prerequisites installed"
 }
 
@@ -512,21 +515,25 @@ install_standalone_ubuntu() {
     log_info "Installing NGINX..."
     apt-get install -y nginx
     
-    # Install PHP and extensions
-    log_info "Installing PHP 8.3 and extensions..."
-    apt-get install -y \
-        php8.3-fpm \
-        php8.3-cli \
-        php8.3-common \
-        php8.3-mysql \
-        php8.3-zip \
-        php8.3-gd \
-        php8.3-mbstring \
-        php8.3-curl \
-        php8.3-xml \
-        php8.3-bcmath \
-        php8.3-redis \
-        php8.3-intl
+    # Install PHP 8.2, 8.3, 8.4, and 8.5 with commonly used extensions
+    log_info "Installing PHP 8.2, 8.3, 8.4, and 8.5 with extensions..."
+    for PHP_VER in 8.2 8.3 8.4 8.5; do
+        apt-get install -y \
+            php${PHP_VER}-fpm \
+            php${PHP_VER}-cli \
+            php${PHP_VER}-common \
+            php${PHP_VER}-mysql \
+            php${PHP_VER}-zip \
+            php${PHP_VER}-gd \
+            php${PHP_VER}-mbstring \
+            php${PHP_VER}-curl \
+            php${PHP_VER}-xml \
+            php${PHP_VER}-bcmath \
+            php${PHP_VER}-redis \
+            php${PHP_VER}-intl \
+            php${PHP_VER}-opcache \
+            php${PHP_VER}-sqlite3 || log_warning "Some PHP ${PHP_VER} packages may not be available"
+    done
     
     # Install MariaDB
     log_info "Installing MariaDB..."
@@ -536,18 +543,14 @@ install_standalone_ubuntu() {
     log_info "Installing Redis..."
     apt-get install -y redis-server
     
-    # Install Composer
+    # Install Composer (latest)
     log_info "Installing Composer..."
-    if ! command -v composer &> /dev/null; then
-        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-    fi
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
     
-    # Install Node.js and npm
-    log_info "Installing Node.js..."
-    if ! command -v node &> /dev/null; then
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-        apt-get install -y nodejs
-    fi
+    # Install Node.js (latest LTS)
+    log_info "Installing Node.js (latest LTS)..."
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+    apt-get install -y nodejs
     
     # Install Certbot
     log_info "Installing Certbot..."
@@ -564,8 +567,11 @@ install_standalone_ubuntu() {
     # Start and enable services
     systemctl start nginx
     systemctl enable nginx
-    systemctl start php8.3-fpm
-    systemctl enable php8.3-fpm
+    # Start all installed PHP-FPM versions; PHP 8.3 is the primary for the control panel
+    for PHP_VER in 8.2 8.3 8.4 8.5; do
+        systemctl start php${PHP_VER}-fpm 2>/dev/null || true
+        systemctl enable php${PHP_VER}-fpm 2>/dev/null || true
+    done
     systemctl start mariadb
     systemctl enable mariadb
     systemctl start redis-server
@@ -577,21 +583,21 @@ install_standalone_ubuntu() {
 # Install standalone services on RHEL/AlmaLinux/Rocky/CloudLinux
 install_standalone_rhel() {
     log_info "Installing services on RHEL/AlmaLinux/Rocky/CloudLinux..."
-    
+
+    # Determine major OS version for conditional package selection
+    local OS_MAJOR_VERSION
+    OS_MAJOR_VERSION=$(echo "$OS_VERSION" | cut -d'.' -f1)
+
     # Enable EPEL repository
     dnf install -y epel-release
     
     # Add Remi repository for PHP
-    dnf install -y https://rpms.remirepo.net/enterprise/remi-release-$(rpm -E %rhel).rpm
-    dnf module reset php -y
-    dnf module enable php:remi-8.3 -y
-    
-    # Install NGINX
-    log_info "Installing NGINX..."
-    dnf install -y nginx
-    
-    # Install PHP and extensions
-    log_info "Installing PHP 8.3 and extensions..."
+    dnf install -y https://rpms.remirepo.net/enterprise/remi-release-${OS_MAJOR_VERSION}.rpm
+
+    # Install PHP 8.3 as the primary system PHP via module (used by control panel)
+    dnf module reset php -y || true
+    dnf module enable php:remi-8.3 -y || true
+    log_info "Installing PHP 8.3 (primary) and extensions..."
     dnf install -y \
         php \
         php-fpm \
@@ -605,27 +611,71 @@ install_standalone_rhel() {
         php-xml \
         php-bcmath \
         php-redis \
-        php-intl
+        php-intl \
+        php-opcache \
+        php-pdo \
+        php-json
+
+    # Install PHP 8.2, 8.4, and 8.5 as additional versions via Remi SCL packages
+    for PHP_SHORT_VER in 82 84 85; do
+        PHP_DOT_VER="${PHP_SHORT_VER:0:1}.${PHP_SHORT_VER:1:1}"
+        log_info "Installing PHP ${PHP_DOT_VER} (additional) and extensions..."
+        dnf install -y --enablerepo=remi \
+            php${PHP_SHORT_VER} \
+            php${PHP_SHORT_VER}-php-fpm \
+            php${PHP_SHORT_VER}-php-cli \
+            php${PHP_SHORT_VER}-php-common \
+            php${PHP_SHORT_VER}-php-mysqlnd \
+            php${PHP_SHORT_VER}-php-zip \
+            php${PHP_SHORT_VER}-php-gd \
+            php${PHP_SHORT_VER}-php-mbstring \
+            php${PHP_SHORT_VER}-php-curl \
+            php${PHP_SHORT_VER}-php-xml \
+            php${PHP_SHORT_VER}-php-bcmath \
+            php${PHP_SHORT_VER}-php-redis \
+            php${PHP_SHORT_VER}-php-intl \
+            php${PHP_SHORT_VER}-php-opcache \
+            php${PHP_SHORT_VER}-php-pdo || \
+            log_warning "Some PHP ${PHP_DOT_VER} packages may not be available"
+    done
+    
+    # Install NGINX
+    log_info "Installing NGINX..."
+    dnf install -y nginx
     
     # Install MariaDB
     log_info "Installing MariaDB..."
     dnf install -y mariadb-server mariadb
     
-    # Install Redis
-    log_info "Installing Redis..."
-    dnf install -y redis
+    # Install Redis or Valkey (Redis-compatible) depending on OS version
+    # RHEL/AlmaLinux/Rocky/CloudLinux 10+ ships Valkey as the Redis replacement
+    log_info "Installing Redis/Valkey cache..."
+    if [[ "$OS_MAJOR_VERSION" -ge 10 ]]; then
+        log_info "Installing Valkey (Redis-compatible replacement) for version ${OS_MAJOR_VERSION}..."
+        dnf install -y valkey
+        systemctl start valkey
+        systemctl enable valkey
+        # Create a systemd alias so applications expecting the 'redis' unit still work
+        local VALKEY_UNIT
+        VALKEY_UNIT=$(systemctl cat valkey 2>/dev/null | awk '/^# /{print $2; exit}') || true
+        if [[ -n "$VALKEY_UNIT" && -f "$VALKEY_UNIT" ]]; then
+            ln -sf "$VALKEY_UNIT" /etc/systemd/system/redis.service 2>/dev/null || true
+            systemctl daemon-reload 2>/dev/null || true
+        fi
+    else
+        dnf install -y redis
+        systemctl start redis
+        systemctl enable redis
+    fi
     
-    # Install Composer
+    # Install Composer (latest)
     log_info "Installing Composer..."
-    if ! command -v composer &> /dev/null; then
-        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-    fi
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
     
-    # Install Node.js
-    log_info "Installing Node.js..."
-    if ! command -v node &> /dev/null; then
-        dnf module install -y nodejs:20
-    fi
+    # Install Node.js (latest LTS) via NodeSource
+    log_info "Installing Node.js (latest LTS)..."
+    curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash -
+    dnf install -y nodejs
     
     # Install Certbot
     log_info "Installing Certbot..."
@@ -646,12 +696,16 @@ install_standalone_rhel() {
     # Start and enable services
     systemctl start nginx
     systemctl enable nginx
+    # PHP 8.3 is the primary FPM for the control panel
     systemctl start php-fpm
     systemctl enable php-fpm
+    # Start additional PHP-FPM versions installed via Remi SCL
+    for PHP_SHORT_VER in 82 84 85; do
+        systemctl start php${PHP_SHORT_VER}-php-fpm 2>/dev/null || true
+        systemctl enable php${PHP_SHORT_VER}-php-fpm 2>/dev/null || true
+    done
     systemctl start mariadb
     systemctl enable mariadb
-    systemctl start redis
-    systemctl enable redis
     
     log_success "All services installed and started"
 }
