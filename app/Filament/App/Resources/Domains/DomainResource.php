@@ -37,6 +37,10 @@ class DomainResource extends Resource
 
     protected static ?string $navigationLabel = 'Domains';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Domains & Websites';
+
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $modelLabel = 'Domain';
 
     public static function form(Schema $schema): Schema

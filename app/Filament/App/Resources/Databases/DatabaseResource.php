@@ -22,9 +22,9 @@ class DatabaseResource extends Resource
 
     protected static ?string $navigationLabel = 'Databases';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Hosting';
+    protected static string | \UnitEnum | null $navigationGroup = 'Databases';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

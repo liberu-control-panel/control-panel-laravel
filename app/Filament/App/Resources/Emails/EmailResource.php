@@ -29,6 +29,12 @@ class EmailResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-envelope';
 
+    protected static ?string $navigationLabel = 'Email Accounts';
+
+    protected static string | \UnitEnum | null $navigationGroup = 'Email';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Schema $schema): Schema
     {
         return $schema

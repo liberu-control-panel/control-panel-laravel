@@ -20,7 +20,7 @@ class WebsiteResource extends Resource
 
     protected static ?string $navigationLabel = 'Websites';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Multi-Site Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'Domains & Websites';
 
     protected static ?int $navigationSort = 1;
 

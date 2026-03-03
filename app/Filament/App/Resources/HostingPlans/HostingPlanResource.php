@@ -28,6 +28,12 @@ class HostingPlanResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Hosting Plans';
+
+    protected static string | \UnitEnum | null $navigationGroup = 'Account Management';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Schema $schema): Schema
     {
         return $schema

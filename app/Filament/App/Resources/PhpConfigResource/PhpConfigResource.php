@@ -21,9 +21,9 @@ class PhpConfigResource extends Resource
 
     protected static ?string $navigationLabel = 'PHP Settings';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Hosting';
+    protected static string|\UnitEnum|null $navigationGroup = 'Server Configuration';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
