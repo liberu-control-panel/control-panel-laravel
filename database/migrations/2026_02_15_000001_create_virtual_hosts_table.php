@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('document_root')->default('/var/www/html');
             $table->string('php_version')->default('8.3');
             $table->boolean('ssl_enabled')->default(false);
-            $table->foreignId('ssl_certificate_id')->nullable()->constrained('ssl_certificates')->onDelete('set null');
+            // $table->foreignId('ssl_certificate_id')->nullable()->constrained('ssl_certificates')->onDelete('set null');
             $table->boolean('letsencrypt_enabled')->default(true);
             $table->text('nginx_config')->nullable();
             $table->string('status')->default('pending');

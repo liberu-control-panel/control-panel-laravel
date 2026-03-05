@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('email_accounts', function (Blueprint $table) {
             // Email autoresponder fields
-            $table->boolean('autoresponder_enabled')->default(false)->after('forwarding_rules');
+            $table->boolean('autoresponder_enabled')->default(false)->after('quota');
             $table->string('autoresponder_subject')->nullable()->after('autoresponder_enabled');
             $table->text('autoresponder_message')->nullable()->after('autoresponder_subject');
             $table->timestamp('autoresponder_start_date')->nullable()->after('autoresponder_message');
