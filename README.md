@@ -5,16 +5,17 @@
 ![](https://img.shields.io/badge/PHP-8.5-informational?style=flat&logo=php&color=4f5b93)
 ![](https://img.shields.io/badge/Laravel-12-informational?style=flat&logo=laravel&color=ef3b2d)
 ![](https://img.shields.io/badge/Filament-5-informational?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgeG1sbnM6dj0iaHR0cHM6Ly92ZWN0YS5pby9uYW5vIj48cGF0aCBkPSJNMCAwaDQ4djQ4SDBWMHoiIGZpbGw9IiNmNGIyNWUiLz48cGF0aCBkPSJNMjggN2wtMSA2LTMuNDM3LjgxM0wyMCAxNWwtMSAzaDZ2NWgtN2wtMyAxOEg4Yy41MTUtNS44NTMgMS40NTQtMTEuMzMgMy0xN0g4di01bDUtMSAuMjUtMy4yNUMxNCAxMSAxNCAxMSAxNS40MzggOC41NjMgMTkuNDI5IDYuMTI4IDIzLjQ0MiA2LjY4NyAyOCA3eiIgZmlsbD0iIzI4MjQxZSIvPjxwYXRoIGQ9Ik0zMCAxOGg0YzIuMjMzIDUuMzM0IDIuMjMzIDUuMzM0IDEuMTI1IDguNUwzNCAyOWMtLjE2OCAzLjIwOS0uMTY4IDMuMjA5IDAgNmwtMiAxIDEgM2gtNXYyaC0yYy44NzUtNy42MjUuODc1LTcuNjI1IDItMTFoMnYtMmgtMnYtMmwyLTF2LTQtM3oiIGZpbGw9IiMyYTIwMTIiLz48cGF0aCBkPSJNMzUuNTYzIDYuODEzQzM4IDcgMzggNyAzOSA4Yy4xODggMi40MzguMTg4IDIuNDM4IDAgNWwtMiAyYy0yLjYyNS0uMzc1LTIuNjI1LS4zNzUtNS0xLS42MjUtMi4zNzUtLjYyNS0yLjM3NS0xLTUgMi0yIDItMiA0LjU2My0yLjE4N3oiIGZpbGw9IiM0MDM5MzEiLz48cGF0aCBkPSJNMzAgMThoNGMyLjA1NSA1LjMxOSAyLjA1NSA1LjMxOSAxLjgxMyA4LjMxM0wzNSAyOGwtMyAxdi0ybC00IDF2LTJsMi0xdi00LTN6IiBmaWxsPSIjMzEyODFlIi8+PHBhdGggZD0iTTI5IDI3aDN2MmgydjJoLTJ2MmwtNC0xdi0yaDJsLTEtM3oiIGZpbGw9IiMxNTEzMTAiLz48cGF0aCBkPSJNMzAgMThoNHYzaC0ydjJsLTMgMSAxLTZ6IiBmaWxsPSIjNjA0YjMyIi8+PC9zdmc+&&color=fdae4b&link=https://filamentphp.com)
-![](https://img.shields.io/badge/Livewire-4.1-informational?style=flat&logo=Livewire&color=fb70a9)
+![](https://img.shields.io/badge/Livewire-4-informational?style=flat&logo=Livewire&color=fb70a9)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Open Source Love](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red.svg)
+[![Latest Release](https://img.shields.io/github/v/release/liberu-control-panel/control-panel-laravel)](https://github.com/liberu-control-panel/control-panel-laravel/releases)
 
-
-## Welcome to Liberu, our visionary open-source initiative that marries the power of Laravel 12, PHP 8.5 and Filament 5.2 to redefine the landscape of web development.
 [![Install](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/install.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/install.yml) [![Tests](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/tests.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/tests.yml) [![Docker](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/main.yml/badge.svg)](https://github.com/liberu-control-panel/control-panel-laravel/actions/workflows/main.yml) [![Codecov](https://codecov.io/gh/liberu-control-panel/control-panel-laravel/branch/main/graph/badge.svg)](https://codecov.io/gh/liberu-control-panel/control-panel-laravel)
 
+## Open-source Kubernetes, Docker & Standalone Web Hosting Control Panel — powered by Laravel 12, PHP 8.5 and Filament 5
 
-A modular, **Kubernetes-native** Laravel control panel for managing web hosting: virtual hosts (NGINX), BIND DNS zones, Postfix/Dovecot mail, MySQL databases, and container orchestration. Designed for sysadmins and self-hosting teams who want a single web interface to manage hosting infrastructure with production-grade **Kubernetes deployment** (recommended), as well as Docker Compose and standalone options.
+
+**Liberu Control Panel** is a modular, **Kubernetes-native** open-source web hosting control panel built on Laravel 12, PHP 8.5, Filament 5 and Livewire 4. It gives sysadmins and self-hosting teams a single, modern web interface to manage their entire hosting infrastructure — from NGINX virtual hosts and BIND DNS zones to Postfix/Dovecot mail services, MySQL databases, and full container orchestration. Whether you run a small VPS or a multi-region cloud cluster, Liberu scales with you: deploy on **Kubernetes** (recommended for production), **Docker Compose**, or a traditional **standalone** server — all from one codebase.
 
 > **🚀 Production-Ready Kubernetes Deployment**  
 > Kubernetes is the **recommended deployment method** for production environments, offering auto-scaling, high availability, and enterprise-grade orchestration. See our [Complete Kubernetes Installation Guide](docs/KUBERNETES_INSTALLATION.md) and [Managed Kubernetes Setup](docs/MANAGED_KUBERNETES_SETUP.md) for AWS EKS, Azure AKS, Google GKE, and DigitalOcean DOKS.
@@ -58,7 +59,7 @@ The easiest way to install the control panel is using our **unified installation
 - Rocky Linux 8/9/10
 - CloudLinux 8/9/10 (Standalone only)
 
-**One-Line Installation:**
+**Option A — Command-line installer:**
 
 ```bash
 # Clone the repository
@@ -69,7 +70,11 @@ cd control-panel-laravel
 sudo ./install.sh
 ```
 
-The script will:
+**Option B — Graphical (GUI) installer:**
+
+For a point-and-click installation experience, navigate to **Kubernetes → Helm Charts** inside the control panel after an initial deployment. The built-in [Helm GUI Installer](docs/HELM_GUI_INSTALLER.md) lets you install, upgrade, and monitor all services without touching the command line.
+
+The script / GUI wizard will:
 1. Detect your operating system
 2. Present a menu to choose installation method
 3. Install all required dependencies
@@ -452,16 +457,33 @@ If you maintain or use one of these projects and would like a more detailed desc
 
 Contributing
 
-Contributions are welcome. Please open issues for bugs or feature requests, and submit pull requests from a feature branch. Ensure CI passes and include tests for new behavior where appropriate. For larger changes, open a short proposal issue first.
+Contributions are very welcome! We follow a standard GitHub flow:
+
+1. **Fork** the repository and create a feature branch from `main`.
+2. **Make your changes** — include tests for any new behaviour where appropriate.
+3. **Ensure CI passes** — run `composer test` / `npm run test` locally before pushing.
+4. **Open a Pull Request** against the `main` branch with a clear description of what changed and why.
+5. For larger features or architectural changes, please **open an issue first** to discuss the proposal before writing code.
+
+We review PRs as quickly as possible. All contributors are expected to follow the project's code of conduct. Bug reports and feature requests via GitHub Issues are also warmly encouraged.
 
 License
 
-This project is licensed under the MIT License — see the LICENSE file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for full details.
+
+The MIT License is one of the most permissive open-source licenses available. Key benefits:
+
+- **Freedom to use** — use the software in any project, commercial or personal, at no cost.
+- **Freedom to modify** — adapt and extend the code however you need without restriction.
+- **Freedom to distribute** — share the original or modified software with anyone.
+- **Minimal obligations** — simply retain the copyright notice and license text; no copyleft or viral provisions.
+- **Business-friendly** — compatible with proprietary software and most other open-source licenses.
 
 Where to get help
 
 - Use GitHub Issues for bugs and feature requests.
 - For direct support or urgent questions, contact the maintainers via the project site: https://liberu.co.uk
+- WhatsApp: [+44 1793 200950](https://wa.me/441793200950)
 
 Acknowledgements
 
