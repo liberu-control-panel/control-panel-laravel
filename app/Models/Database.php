@@ -44,6 +44,11 @@ class Database extends Model
         'updated_at' => 'datetime'
     ];
 
+    protected $attributes = [
+        'connection_type' => 'self-hosted',
+        'engine' => 'mysql',
+    ];
+
     /**
      * Database engines
      */

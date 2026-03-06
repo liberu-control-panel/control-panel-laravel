@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('domains', function (Blueprint $table) {
-            $table->foreignId('hosting_plan_id')->nullable()->constrained('user_hosting_plans')->onDelete('set null');
+        Schema::table('databases', function (Blueprint $table) {
+            $table->foreignId('domain_id')->nullable()->after('user_id')->constrained('domains')->onDelete('cascade');
         });
     }
 
@@ -21,9 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('domains', function (Blueprint $table) {
-            $table->dropForeign(['hosting_plan_id']);
-            $table->dropColumn('hosting_plan_id');
+        Schema::table('databases', function (Blueprint $table) {
+            $table->dropForeign(['domain_id']);
+            $table->dropColumn('domain_id');
         });
     }
 };

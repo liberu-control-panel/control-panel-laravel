@@ -24,7 +24,7 @@ class MonitoringService
             'bandwidth_usage' => $bandwidthUsage,
             'cpu_usage' => $cpuUsage,
             'memory_usage' => $memoryUsage,
-            'month' => now()->format('F'),
+            'month' => now()->month,
             'year' => now()->year,
         ]);
     }

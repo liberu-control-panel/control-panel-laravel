@@ -26,6 +26,9 @@ return new class extends Migration
             
             // Email forwarding enhancements
             $table->boolean('keep_copy_on_server')->default(true)->after('spam_action');
+            
+            // Forwarding rules (JSON)
+            $table->json('forwarding_rules')->nullable()->after('keep_copy_on_server');
         });
     }
 
@@ -44,7 +47,8 @@ return new class extends Migration
                 'spam_filter_enabled',
                 'spam_threshold',
                 'spam_action',
-                'keep_copy_on_server'
+                'keep_copy_on_server',
+                'forwarding_rules'
             ]);
         });
     }
