@@ -17,21 +17,21 @@ class ExampleTest extends TestCase
     }
 
     /**
-     * Test the "/app" route returns a successful response.
+     * Test the "/app" route returns a successful response (redirects to login when unauthenticated).
      */
     public function test_the_app_route_returns_a_successful_response(): void
     {
         $response = $this->get('/app');
-        $response->assertStatus(200);
+        $response->assertStatus(302);
     }
 
     /**
-     * Test the "/admin" route returns a successful response.
+     * Test the "/admin" route returns a successful response (redirects to login when unauthenticated).
      */
     public function test_the_admin_route_returns_a_successful_response(): void
     {
         $response = $this->get('/admin');
-        $response->assertStatus(200);
+        $response->assertStatus(302);
     }
 
     /**
