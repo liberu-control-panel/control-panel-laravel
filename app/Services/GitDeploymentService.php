@@ -154,8 +154,10 @@ class GitDeploymentService
         if ($deployment->usesOAuth()) {
             // Use OAuth token for authentication
             $account = $deployment->connectedAccount;
-            $this->oauthService->refreshTokenIfNeeded($account);
-            $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            if ($this->oauthService) {
+                $this->oauthService->refreshTokenIfNeeded($account);
+                $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
@@ -186,17 +188,19 @@ class GitDeploymentService
         if ($deployment->usesOAuth()) {
             // Refresh OAuth token if needed
             $account = $deployment->connectedAccount;
-            $this->oauthService->refreshTokenIfNeeded($account);
-            
-            // Update remote URL to use OAuth token
-            $oauthUrl = $this->oauthService->setupOAuthDeployKey($deployment);
-            $this->sshService->executeCommand(
-                $connection,
-                sprintf("cd %s && git remote set-url origin %s", 
-                    escapeshellarg($deployPath),
-                    escapeshellarg($oauthUrl)
-                )
-            );
+            if ($this->oauthService) {
+                $this->oauthService->refreshTokenIfNeeded($account);
+
+                // Update remote URL to use OAuth token
+                $oauthUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+                $this->sshService->executeCommand(
+                    $connection,
+                    sprintf("cd %s && git remote set-url origin %s",
+                        escapeshellarg($deployPath),
+                        escapeshellarg($oauthUrl)
+                    )
+                );
+            }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);

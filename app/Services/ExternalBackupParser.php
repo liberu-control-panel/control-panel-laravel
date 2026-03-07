@@ -23,10 +23,11 @@ class ExternalBackupParser
             // Extract first few files to check structure
             $tempDir = $this->createTempDirectory();
             
-            // List archive contents
+            // List archive contents (check first 20 lines to avoid memory issues with large archives)
             $process = new Process(['tar', '-tzf', $backupPath]);
             $process->run();
-            $contents = $process->getOutput();
+            $lines = array_slice(explode("\n", $process->getOutput()), 0, 20);
+            $contents = implode("\n", $lines);
 
             // Clean up temp directory
             $this->cleanupDirectory($tempDir);
