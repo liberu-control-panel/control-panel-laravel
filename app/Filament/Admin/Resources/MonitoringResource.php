@@ -13,10 +13,10 @@ use App\Filament\Admin\Resources\MonitoringResource\Pages;
 use App\Models\ResourceUsage;
 use App\Models\AccessLog;
 use Filament\Forms;
-use Filament\Resources\Form;
 use Filament\Resources\Resource;
-use Filament\Resources\Table;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class MonitoringResource extends Resource
