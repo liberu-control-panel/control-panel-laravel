@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Admin\Resources\EmailResource;
+namespace App\Filament\App\Resources\Domains;
 
 class PostfixConfigGenerator
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Admin\Resources\DomainResource;
+namespace App\Filament\App\Resources\Domains;
 
 use RuntimeException;
 use Symfony\Component\Process\Process;
