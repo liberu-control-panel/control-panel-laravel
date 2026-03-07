@@ -157,6 +157,8 @@ class GitDeploymentService
             if ($this->oauthService) {
                 $this->oauthService->refreshTokenIfNeeded($account);
                 $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            } else {
+                throw new \RuntimeException('OAuthRepositoryService is required for OAuth deployments but was not provided.');
             }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
@@ -200,6 +202,8 @@ class GitDeploymentService
                         escapeshellarg($oauthUrl)
                     )
                 );
+            } else {
+                throw new \RuntimeException('OAuthRepositoryService is required for OAuth deployments but was not provided.');
             }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
