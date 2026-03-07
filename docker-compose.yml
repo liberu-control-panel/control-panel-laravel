@@ -1,177 +1,144 @@
-version: '3'
 services:
-  nginx-proxy:
-    image: jwilder/nginx-proxy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./certs:/etc/nginx/certs
-      - ./vhost.d:/etc/nginx/vhost.d
-      - ./html:/usr/share/nginx/html
-    labels:
-      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
-    networks:
-      - proxy-network
-
-  letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion
-    restart: always
-    volumes:
-      - ./certs:/etc/nginx/certs:rw
-      - ./vhost.d:/etc/nginx/vhost.d:rw
-      - ./html:/usr/share/nginx/html:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      - NGINX_PROXY_CONTAINER=nginx-proxy
-    networks:
-      - proxy-network
-
-  postfix:
-    image: postfix:latest
-    volumes:
-      - ./postfix_data:/var/spool/postfix
-      - ./postfix_config:/etc/postfix
-    environment:
-      - MAILNAME=example.com
-    ports:
-      - "25:25"
-      - "587:587"
-    networks:
-      - proxy-network
-
-  dovecot:
-    image: dovecot:latest
-    volumes:
-      - ./dovecot_data:/var/mail
-      - ./dovecot_config:/etc/dovecot
-    ports:
-      - "110:110"
-      - "143:143"
-      - "993:993"
-      - "995:995"
-    networks:
-      - proxy-network
-
-  bind9:
-    image: internetsystemsconsortium/bind9:9.16
-    restart: always
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
-    volumes:
-      - ./bind:/etc/bind
-      - ./bind/cache:/var/cache/bind
-      - ./bind/records:/var/lib/bind
-    networks:
-      - proxy-network
-
-  mysql:
-    image: mariadb:11.2
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MYSQL_DATABASE: myapp
-      MYSQL_USER: myapp
-      MYSQL_PASSWORD_FILE: /run/secrets/db_password
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    secrets:
-      - db_root_password
-      - db_password
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - proxy-network
-
-  # PostgreSQL (optional) - Use with: docker-compose --profile postgresql up
-  # To use PostgreSQL instead of MariaDB:
-  # 1. Start with: docker-compose --profile postgresql up
-  # 2. Set DB_CONNECTION=pgsql and DB_HOST=postgresql in .env
-  postgresql:
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_DB: myapp
-      POSTGRES_USER: myapp
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-    secrets:
-      - db_password
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U myapp"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - proxy-network
-    profiles:
-      - postgresql
-
   control-panel:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
     environment:
-      - APP_ENV=production
+      - APP_ENV=${APP_ENV:-production}
       - APP_KEY=${APP_KEY}
+      - CONTAINER_MODE=http
+      - OCTANE_SERVER=${OCTANE_SERVER:-roadrunner}
       - DB_HOST=mysql
-      - DB_DATABASE=myapp
-      - DB_USERNAME=myapp
-      - DB_PASSWORD_FILE=/run/secrets/db_password
-      - VIRTUAL_HOST=${CONTROL_PANEL_DOMAIN}
-      - LETSENCRYPT_HOST=${CONTROL_PANEL_DOMAIN}
-      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-liberu}
+      - DB_USERNAME=${DB_USERNAME:-liberu}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WITH_HORIZON=${WITH_HORIZON:-false}
+      - WITH_SCHEDULER=${WITH_SCHEDULER:-true}
+    ports:
+      - "${APP_PORT:-8000}:8000"
     volumes:
-      - ./:/var/www/html
-    depends_on:
-      - mysql
-    secrets:
-      - db_password
-    networks:
-      - proxy-network
-
-  migrations:
-    image: ${DOCKER_IMAGE}
+      - storage-data:/var/www/html/storage
     depends_on:
       mysql:
         condition: service_healthy
-    environment:
-      - DB_HOST=mysql
-      - DB_DATABASE=myapp
-      - DB_USERNAME=myapp
-      - DB_PASSWORD_FILE=/run/secrets/db_password
-    secrets:
-      - db_password
-    command: ["php", "artisan", "migrate", "--seed"]
+      redis:
+        condition: service_healthy
     networks:
-      - proxy-network
+      - app-network
+
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - CONTAINER_MODE=horizon
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-liberu}
+      - DB_USERNAME=${DB_USERNAME:-liberu}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    profiles:
+      - horizon
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - CONTAINER_MODE=scheduler
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-liberu}
+      - DB_USERNAME=${DB_USERNAME:-liberu}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    profiles:
+      - scheduler
+
+  mysql:
+    image: mariadb:11.2
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+      MYSQL_DATABASE: ${DB_DATABASE:-liberu}
+      MYSQL_USER: ${DB_USERNAME:-liberu}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    volumes:
+      - ./.docker/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.docker/config/conf.d:/etc/nginx/conf.d:ro
+      - storage-data:/var/www/html/storage:ro
+    depends_on:
+      - control-panel
+    networks:
+      - app-network
+    profiles:
+      - nginx
 
 volumes:
   mysql-data:
-  postgresql-data:
-  postfix_data:
-  postfix_config:
-  dovecot_data:
-  dovecot_config:
-
-secrets:
-  db_root_password:
-    file: ./secrets/db_root_password.txt
-  db_password:
-    file: ./secrets/db_password.txt
+  redis-data:
+  storage-data:
 
 networks:
-  proxy-network:
+  app-network:
     driver: bridge

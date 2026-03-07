@@ -49,7 +49,8 @@ class EmailAuthentication extends Model
     public function generateSpfRecord(): string
     {
         $domain = $this->domain;
-        return "v=spf1 mx a ip4:{$domain->server->ip_address ?? '0.0.0.0'} ~all";
+        $ipAddress = $domain->server->ip_address ?? '0.0.0.0';
+        return "v=spf1 mx a ip4:{$ipAddress} ~all";
     }
 
     /**
