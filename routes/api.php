@@ -54,7 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // DNS management
     Route::apiResource('dns', DnsController::class);
     Route::post('/dns/bulk', [DnsController::class, 'bulkStore']);
-    Route::post('/dns/validate', [DnsController::class, 'validate']);
+    Route::post('/dns/validate', [DnsController::class, 'validateRecord']);
     Route::get('/domains/{domain}/dns/test', [DnsController::class, 'testResolution']);
     Route::get('/domains/{domain}/dns/propagation', [DnsController::class, 'checkPropagation']);
 
