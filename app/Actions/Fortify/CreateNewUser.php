@@ -39,7 +39,7 @@ class CreateNewUser implements CreatesNewUsers
                     Rule::unique(User::class),
                 ],
                 'password' => $this->passwordRules(),
-                'role' => ['required', 'string', Rule::in(['tenant', 'buyer', 'seller', 'landlord', 'contractor'])],
+                'role' => ['nullable', 'string', Rule::in(['tenant', 'buyer', 'seller', 'landlord', 'contractor'])],
             ])->validate();
 
            
@@ -52,7 +52,9 @@ class CreateNewUser implements CreatesNewUsers
                     $team = $this->assignOrCreateTeam($user);
                     $user->switchTeam($team);
                     setPermissionsTeamId($team->id);
-                    $user->assignRole($input['role']);
+                    if (!empty($input['role'])) {
+                        $user->assignRole($input['role']);
+                    }
                 });
             });
             // $user = DB::transaction(function () use ($input) {
@@ -68,7 +70,7 @@ class CreateNewUser implements CreatesNewUsers
             Log::info('User created successfully', [
                 'user_id' => $user->id,
                 'email' => $user->email,
-                'role' => $input['role'],
+                'role' => $input['role'] ?? null,
             ]);
     
             return $user;
@@ -126,7 +128,17 @@ class CreateNewUser implements CreatesNewUsers
     protected function assignOrCreateTeam(User $user): Team
     {
         $team = Team::first();
-    
+
+        if ($team === null) {
+            // No teams exist yet - create a personal team for this user
+            $team = $user->ownedTeams()->create([
+                'name'          => $user->name . "'s Team",
+                'personal_team' => true,
+            ]);
+            $user->update(['current_team_id' => $team->id]);
+            return $team;
+        }
+
         $team->users()->attach($user);
         return $team;
     }

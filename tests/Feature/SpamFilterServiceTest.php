@@ -30,7 +30,7 @@ class SpamFilterServiceTest extends TestCase
             'domain_id'          => $this->domain->id,
             'spam_filter_enabled' => false,
             'spam_threshold'     => 5,
-            'spam_action'        => 'flag',
+            'spam_action'        => 'tag',
         ]);
     }
 
@@ -61,11 +61,11 @@ class SpamFilterServiceTest extends TestCase
 
         $service = new SpamFilterService($detection, $helper);
 
-        $service->updateSpamSettings($this->emailAccount, 8, 'folder');
+        $service->updateSpamSettings($this->emailAccount, 8, 'move_to_spam');
 
         $fresh = $this->emailAccount->fresh();
         $this->assertEquals(8, $fresh->spam_threshold);
-        $this->assertEquals('folder', $fresh->spam_action);
+        $this->assertEquals('move_to_spam', $fresh->spam_action);
     }
 
     protected function tearDown(): void
