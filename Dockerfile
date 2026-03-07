@@ -1,90 +1,161 @@
-FROM php:8.4-fpm
+# Supported PHP versions: 8.2, 8.3, 8.4
+ARG PHP_VERSION=8.4
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    netcat-openbsd \
-    libicu-dev \
-    libzip-dev
+###########################################
+# Composer dependencies stage
+###########################################
+FROM php:${PHP_VERSION}-cli-alpine AS composer-deps
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-# Install PHP extensions
-RUN docker-php-ext-configure intl && \
-    docker-php-ext-configure zip && \
-    docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip sockets
+# Install required extensions for composer install
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN install-php-extensions intl sockets zip
 
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create application user (non-root)
-RUN groupadd -g 1000 appuser && \
-    useradd -u 1000 -g appuser -m -s /bin/bash appuser
+# Copy composer files
+COPY composer.json composer.lock ./
 
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy composer files first for better caching
-COPY --chown=appuser:appuser composer.json composer.lock ./
-
-# Install application dependencies with cache mount
-# GitHub token can be provided via --secret id=github_token for better security
-RUN --mount=type=cache,target=/tmp/cache \
-    --mount=type=secret,id=github_token,required=false \
-    if [ -f /run/secrets/github_token ]; then \
-        export COMPOSER_AUTH="{\"github-oauth\": {\"github.com\": \"$(cat /run/secrets/github_token)\"}}"; \
-    fi && \
-    COMPOSER_CACHE_DIR=/tmp/cache composer install \
+# Install composer dependencies (no autoloader yet, will optimize in final stage)
+RUN composer install \
     --no-dev \
-    --optimize-autoloader \
     --no-interaction \
+    --no-autoloader \
+    --no-ansi \
     --no-scripts \
     --prefer-dist
 
-# Copy existing application directory contents
-COPY --chown=appuser:appuser . /var/www/html
+###########################################
+# Main application stage
+###########################################
+FROM php:${PHP_VERSION}-cli-alpine
 
-# Run post-install scripts
-RUN composer run-script post-install-cmd --no-interaction || true
+LABEL maintainer="Liberu Software <hello@liberu.co.uk>"
+LABEL org.opencontainers.image.title="Liberu Control Panel"
+LABEL org.opencontainers.image.description="Production-ready Dockerfile for Liberu Control Panel with Laravel Octane"
+LABEL org.opencontainers.image.source=https://github.com/liberu-control-panel/control-panel-laravel
+LABEL org.opencontainers.image.licenses=MIT
 
-# Create directories for secrets (Docker Swarm/K8s secrets mount point)
-RUN mkdir -p /run/secrets && \
-    chown -R appuser:appuser /run/secrets
+ARG WWWUSER=1000
+ARG WWWGROUP=1000
+ARG TZ=UTC
 
-# Set proper permissions for Laravel directories
-RUN mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache \
-    && chown -R appuser:appuser storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+ENV TERM=xterm-color \
+    WITH_HORIZON=false \
+    WITH_SCHEDULER=false \
+    OCTANE_SERVER=roadrunner \
+    USER=octane \
+    ROOT=/var/www/html \
+    COMPOSER_FUND=0 \
+    COMPOSER_MAX_PARALLEL_HTTP=24
 
-# Copy PHP-FPM configuration for non-root user
-COPY .docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
+WORKDIR ${ROOT}
 
-# Copy PHP configuration
-COPY .docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+SHELL ["/bin/sh", "-eou", "pipefail", "-c"]
 
-# Copy entrypoint script
-COPY --chown=appuser:appuser .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
+  && echo ${TZ} > /etc/timezone
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD php artisan schedule:run --verbose --no-interaction || exit 1
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-# Switch to non-root user
-USER appuser
+# Install system dependencies and PHP extensions in one layer
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+    curl \
+    wget \
+    nano \
+    ncdu \
+    procps \
+    ca-certificates \
+    supervisor \
+    libsodium-dev && \
+    install-php-extensions \
+    bz2 \
+    pcntl \
+    mbstring \
+    bcmath \
+    sockets \
+    pgsql \
+    pdo_pgsql \
+    opcache \
+    exif \
+    pdo_mysql \
+    zip \
+    intl \
+    gd \
+    redis \
+    igbinary && \
+    docker-php-source delete && \
+    rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
+RUN arch="$(apk --print-arch)" \
+    && case "$arch" in \
+    armhf) _cronic_fname='supercronic-linux-arm' ;; \
+    aarch64) _cronic_fname='supercronic-linux-arm64' ;; \
+    x86_64) _cronic_fname='supercronic-linux-amd64' ;; \
+    x86) _cronic_fname='supercronic-linux-386' ;; \
+    *) echo >&2 "error: unsupported architecture: $arch"; exit 1 ;; \
+    esac \
+    && wget -q "https://github.com/aptible/supercronic/releases/download/v0.2.29/${_cronic_fname}" \
+    -O /usr/bin/supercronic \
+    && chmod +x /usr/bin/supercronic \
+    && mkdir -p /etc/supercronic \
+    && echo "*/1 * * * * php ${ROOT}/artisan schedule:run --no-interaction" > /etc/supercronic/laravel
 
-# Use entrypoint to handle secrets and configuration
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["php-fpm"]
+RUN addgroup -g ${WWWGROUP} ${USER} \
+    && adduser -D -h ${ROOT} -G ${USER} -u ${WWWUSER} -s /bin/sh ${USER}
+
+RUN mkdir -p /var/log/supervisor /var/run/supervisor \
+    && chown -R ${USER}:${USER} ${ROOT} /var/log /var/run \
+    && chmod -R a+rw ${ROOT} /var/log /var/run
+
+RUN cp ${PHP_INI_DIR}/php.ini-production ${PHP_INI_DIR}/php.ini
+
+USER ${USER}
+
+# Install Composer from official image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy vendor from composer-deps stage for better caching
+COPY --chown=${USER}:${USER} --from=composer-deps /app/vendor ./vendor
+
+# Copy composer files (needed for autoloader generation)
+COPY --chown=${USER}:${USER} composer.json composer.lock ./
+
+# Generate optimized autoloader with vendor already in place
+RUN composer dump-autoload --classmap-authoritative --no-dev && \
+    composer clear-cache
+
+# Copy application code
+COPY --chown=${USER}:${USER} . .
+
+# Create necessary Laravel directories
+RUN mkdir -p \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/framework/testing \
+    storage/logs \
+    bootstrap/cache && \
+    chmod -R a+rw storage
+
+# Copy configuration files
+COPY --chown=${USER}:${USER} .docker/supervisord.conf /etc/supervisor/
+COPY --chown=${USER}:${USER} .docker/octane/RoadRunner/supervisord.roadrunner.conf /etc/supervisor/conf.d/
+COPY --chown=${USER}:${USER} .docker/supervisord.horizon.conf /etc/supervisor/conf.d/
+COPY --chown=${USER}:${USER} .docker/supervisord.scheduler.conf /etc/supervisor/conf.d/
+COPY --chown=${USER}:${USER} .docker/supervisord.worker.conf /etc/supervisor/conf.d/
+COPY --chown=${USER}:${USER} .docker/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
+COPY --chown=${USER}:${USER} .docker/start-container /usr/local/bin/start-container
+
+RUN chmod +x /usr/local/bin/start-container && \
+    cat .docker/utilities.sh >> ~/.bashrc
+
+EXPOSE 8000
+
+ENTRYPOINT ["start-container"]
+
+HEALTHCHECK --start-period=5s --interval=2s --timeout=5s --retries=8 CMD php artisan octane:status || exit 1
