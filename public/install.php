@@ -323,7 +323,7 @@ if ($action) {
             // try clearing config caches (works only if vendor installed)
             if (file_exists($projectRoot . '/vendor/autoload.php')) {
                 $php = getenv('PHP_BINARY') ?: 'php';
-                run_cmd(escapeshellcmd($php) . ' artisan config:clear', $o1);
+                run_cmd_array([$php, 'artisan', 'config:clear'], $o1);
             }
             echo json_encode(['ok' => true, 'message' => '.env updated']);
             exit;
@@ -461,9 +461,8 @@ PHP;
             $payload = ['users' => $users];
             $b64 = base64_encode(json_encode($payload));
             $php = getenv('PHP_BINARY') ?: 'php';
-            $cmd = escapeshellcmd($php) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($b64);
             $out = null;
-            $code = run_cmd($cmd, $out);
+            $code = run_cmd_array([$php, $scriptPath, $b64], $out);
             echo json_encode(['ok' => $code === 0, 'exit' => $code, 'output' => $out]);
             exit;
         }

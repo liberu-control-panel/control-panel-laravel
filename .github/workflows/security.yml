@@ -13,6 +13,9 @@ env:
   DB_USERNAME: liberu
   DB_PASSWORD: secret
 
+permissions:
+  contents: read
+
 jobs:
 
   phpcpd:
