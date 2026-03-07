@@ -381,7 +381,7 @@ class DnsController extends Controller
     /**
      * Validate DNS record before creation
      */
-    public function validate(Request $request): JsonResponse
+    public function validateRecord(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'record_type' => 'required|string|in:A,AAAA,CNAME,MX,TXT,NS,PTR,SRV',
