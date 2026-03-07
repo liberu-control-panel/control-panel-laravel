@@ -62,7 +62,7 @@ class BackupSchedule extends Model
      */
     public function toCronExpression(): string
     {
-        [$hour, $minute] = explode(':', $this->schedule_time ?? '02:00');
+        [$hour, $minute] = array_map('intval', explode(':', $this->schedule_time ?? '02:00'));
 
         return match ($this->frequency) {
             self::FREQUENCY_WEEKLY  => "{$minute} {$hour} * * 0",

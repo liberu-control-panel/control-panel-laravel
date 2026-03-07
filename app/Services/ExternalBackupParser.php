@@ -24,7 +24,7 @@ class ExternalBackupParser
             $tempDir = $this->createTempDirectory();
             
             // List archive contents
-            $process = new Process(['tar', '-tzf', $backupPath, '|', 'head', '-20']);
+            $process = new Process(['tar', '-tzf', $backupPath]);
             $process->run();
             $contents = $process->getOutput();
 

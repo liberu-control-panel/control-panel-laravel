@@ -11,9 +11,9 @@ use Exception;
 class GitDeploymentService
 {
     protected SshConnectionService $sshService;
-    protected OAuthRepositoryService $oauthService;
+    protected ?OAuthRepositoryService $oauthService;
 
-    public function __construct(SshConnectionService $sshService, OAuthRepositoryService $oauthService)
+    public function __construct(SshConnectionService $sshService, ?OAuthRepositoryService $oauthService = null)
     {
         $this->sshService = $sshService;
         $this->oauthService = $oauthService;
