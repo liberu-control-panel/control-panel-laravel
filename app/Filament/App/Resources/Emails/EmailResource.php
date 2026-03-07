@@ -17,9 +17,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
-use App\Filament\App\Resources\EmailResource\DovecotConfigGenerator;
-use App\Filament\App\Resources\EmailResource\PostfixConfigGenerator;
-use App\Filament\App\Resources\EmailResource\ContainerRestarter;
+use App\Filament\App\Resources\Domains\DovecotConfigGenerator;
+use App\Filament\App\Resources\Domains\PostfixConfigGenerator;
+use App\Filament\App\Resources\Domains\ContainerRestarter;
 use App\Models\EmailAccount;
 use Filament\Forms\Components\Repeater;
 
