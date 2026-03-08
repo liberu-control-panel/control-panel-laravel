@@ -51,7 +51,7 @@ class DnsController extends Controller
      */
     public function show(Request $request, DnsSetting $dnsSetting): JsonResponse
     {
-        if ($dnsSetting->domain->user_id !== $request->user()->id) {
+        if (!$dnsSetting->domain || $dnsSetting->domain->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to DNS record'
@@ -154,7 +154,7 @@ class DnsController extends Controller
      */
     public function update(Request $request, DnsSetting $dnsSetting): JsonResponse
     {
-        if ($dnsSetting->domain->user_id !== $request->user()->id) {
+        if (!$dnsSetting->domain || $dnsSetting->domain->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to DNS record'
@@ -230,7 +230,7 @@ class DnsController extends Controller
      */
     public function destroy(Request $request, DnsSetting $dnsSetting): JsonResponse
     {
-        if ($dnsSetting->domain->user_id !== $request->user()->id) {
+        if (!$dnsSetting->domain || $dnsSetting->domain->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to DNS record'
