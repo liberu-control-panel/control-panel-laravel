@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Domain;
 use App\Models\DnsSetting;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -35,9 +36,7 @@ class DnsSettingFactory extends Factory
         $name = $this->faker->randomElement(['@', 'www', 'mail', 'ftp']);
 
         return [
-            'domain_id' => function () {
-                return \App\Models\Domain::factory()->create()->id;
-            },
+            'domain_id' => Domain::factory(),
             'record_type' => $recordType,
             'name' => $name,
             'value' => $value,
