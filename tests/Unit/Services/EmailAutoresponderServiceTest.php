@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\EmailAutoresponderService;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class EmailAutoresponderServiceTest extends TestCase
 {
@@ -37,7 +38,7 @@ class EmailAutoresponderServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_setup_autoresponder()
     {
         $data = [
@@ -55,7 +56,7 @@ class EmailAutoresponderServiceTest extends TestCase
         $this->assertEquals('I am currently out of office.', $result->autoresponder_message);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_disable_autoresponder()
     {
         $this->emailAccount->update([
@@ -69,7 +70,7 @@ class EmailAutoresponderServiceTest extends TestCase
         $this->assertFalse($result->autoresponder_enabled);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_if_autoresponder_is_active_based_on_dates()
     {
         // Future start date

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Modules\ModuleManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ModuleSystemTest extends TestCase
 {
@@ -18,7 +19,7 @@ class ModuleSystemTest extends TestCase
         $this->moduleManager = app(ModuleManager::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_list_all_modules()
     {
         $this->markTestSkipped('Module system tests require actual modules to be present. Manual verification needed.');
@@ -27,7 +28,7 @@ class ModuleSystemTest extends TestCase
         $this->assertNotEmpty($modules);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_module_by_name()
     {
         $this->markTestSkipped('Module system tests require actual modules like BlogModule to be present. Manual verification needed.');
@@ -37,7 +38,7 @@ class ModuleSystemTest extends TestCase
         $this->assertEquals('BlogModule', $module->getName());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_enable_and_disable_modules()
     {
         $this->markTestSkipped('Module system tests require actual modules like BlogModule to be present. Manual verification needed.');
@@ -59,7 +60,7 @@ class ModuleSystemTest extends TestCase
         $this->assertFalse($module->isEnabled());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_module_info()
     {
         $this->markTestSkipped('Module system tests require actual modules like BlogModule to be present. Manual verification needed.');
@@ -72,7 +73,7 @@ class ModuleSystemTest extends TestCase
         $this->assertEquals('BlogModule', $info['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_install_and_uninstall_modules()
     {
         $this->markTestSkipped('Module system tests require actual modules like BlogModule to be present. Manual verification needed.');
@@ -94,7 +95,7 @@ class ModuleSystemTest extends TestCase
         $this->assertFalse($module->isEnabled());
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_for_non_existent_modules()
     {
         $result = $this->moduleManager->enable('NonExistentModule');

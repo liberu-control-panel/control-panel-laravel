@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\EmailAuthenticationService;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class EmailAuthenticationServiceTest extends TestCase
 {
@@ -30,7 +31,7 @@ class EmailAuthenticationServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_generate_dkim_keys()
     {
         $keys = $this->service->generateDkimKeys($this->domain);
@@ -45,7 +46,7 @@ class EmailAuthenticationServiceTest extends TestCase
         $this->assertStringContainsString('v=DKIM1', $keys['dns_record']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_setup_email_authentication()
     {
         $options = [
@@ -66,7 +67,7 @@ class EmailAuthenticationServiceTest extends TestCase
         $this->assertNotNull($auth->dkim_public_key);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_spf_record_correctly()
     {
         $auth = $this->service->setupEmailAuthentication($this->domain);
@@ -76,7 +77,7 @@ class EmailAuthenticationServiceTest extends TestCase
         $this->assertStringContainsString('~all', $auth->spf_record);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_dmarc_record_correctly()
     {
         $options = [
@@ -93,7 +94,7 @@ class EmailAuthenticationServiceTest extends TestCase
         $this->assertStringContainsString('dmarc@example.com', $auth->dmarc_record);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_dns_records()
     {
         $auth = $this->service->setupEmailAuthentication($this->domain);

@@ -166,7 +166,8 @@ class JailkitService
     public function removeJail(string $jailPath): bool
     {
         // Guard against accidentally removing critical system paths.
-        if (in_array(rtrim($jailPath, '/'), ['/', '/home', '/etc', '/var', '/usr', '/bin', '/sbin', '/tmp'], true)) {
+        // rtrim('/','/')  would return '' so use the ?: fallback to preserve '/'.
+        if (in_array(rtrim($jailPath, '/') ?: '/', ['/', '/home', '/etc', '/var', '/usr', '/bin', '/sbin', '/tmp'], true)) {
             Log::error("JailkitService: refusing to remove protected path: {$jailPath}");
             return false;
         }

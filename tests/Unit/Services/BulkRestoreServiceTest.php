@@ -8,6 +8,8 @@ use App\Models\Domain;
 use App\Models\User;
 use App\Services\BulkRestoreService;
 use App\Services\BackupService;
+use App\Services\DatabaseService;
+use App\Services\DeploymentDetectionService;
 use App\Services\ExternalBackupParser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -76,17 +78,31 @@ class BulkRestoreServiceTest extends TestCase
         $archivePath = storage_path('app/temp/external_backup.tar.gz');
         exec("tar -czf {$archivePath} -C " . dirname($tempDir) . " " . basename($tempDir));
 
-        // Mock the parser to avoid actual restoration
+        // Mock the parser to verify detectBackupType is called, then return empty
+        // parsed data so restoreParsedBackup fails early without touching the DB.
         $parser = $this->createMock(ExternalBackupParser::class);
         $parser->expects($this->once())
             ->method('detectBackupType')
             ->with($archivePath)
             ->willReturn(ExternalBackupParser::TYPE_LIBERU);
+        $parser->expects($this->once())
+            ->method('parseLiberuBackup')
+            ->with($archivePath)
+            ->willReturn([]);
 
-        $this->app->instance(ExternalBackupParser::class, $parser);
+        // Inject the mock directly so the service uses it from construction.
+        $service = new BulkRestoreService(
+            app(BackupService::class),
+            $parser,
+            app(DatabaseService::class),
+            app(DeploymentDetectionService::class)
+        );
+
+        // Exercise the code path – detectBackupType must be called exactly once.
+        $service->restoreExternalBackup($archivePath);
 
         // Cleanup
-        unlink($archivePath);
+        @unlink($archivePath);
         exec("rm -rf {$tempDir}");
     }
 }

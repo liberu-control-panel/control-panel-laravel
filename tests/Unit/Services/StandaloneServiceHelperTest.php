@@ -6,6 +6,7 @@ use App\Services\StandaloneServiceHelper;
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class StandaloneServiceHelperTest extends TestCase
 {
@@ -26,7 +27,7 @@ class StandaloneServiceHelperTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_standalone_mode_correctly()
     {
         $this->detectionService->shouldReceive('isStandalone')
@@ -37,7 +38,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_if_service_is_installed()
     {
         // This test would need to mock command execution
@@ -45,14 +46,14 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue(method_exists($this->helper, 'isServiceInstalled'));
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_systemd_service_status()
     {
         // This test would need to mock command execution
         $this->assertTrue(method_exists($this->helper, 'isSystemdServiceRunning'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_nginx_config_management_methods()
     {
         $this->assertTrue(method_exists($this->helper, 'deployNginxConfig'));
@@ -60,7 +61,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue(method_exists($this->helper, 'nginxConfigExists'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_mysql_command_execution_methods()
     {
         $this->assertTrue(method_exists($this->helper, 'executeMysqlCommand'));
@@ -68,7 +69,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue(method_exists($this->helper, 'dropMysqlDatabase'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_postgres_command_execution_methods()
     {
         $this->assertTrue(method_exists($this->helper, 'executePostgresCommand'));
@@ -76,7 +77,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue(method_exists($this->helper, 'dropPostgresDatabase'));
     }
 
-    /** @test */
+    #[Test]
     public function it_has_certbot_methods()
     {
         $this->assertTrue(method_exists($this->helper, 'executeCertbot'));
@@ -85,7 +86,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertTrue(method_exists($this->helper, 'certificateExists'));
     }
 
-    /** @test */
+    #[Test]
     public function it_provides_certificate_paths()
     {
         $paths = $this->helper->getCertificatePath('example.com');
@@ -99,7 +100,7 @@ class StandaloneServiceHelperTest extends TestCase
         $this->assertStringContainsString('example.com', $paths['fullchain']);
     }
 
-    /** @test */
+    #[Test]
     public function it_formats_execute_command_result_correctly()
     {
         // Test that executeCommand returns proper structure
@@ -116,27 +117,27 @@ class StandaloneServiceHelperTest extends TestCase
     // Home directory helpers
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function get_home_directory_returns_correct_path()
     {
         $this->assertSame('/home/cp-user-alice', $this->helper->getHomeDirectory('cp-user-alice'));
     }
 
-    /** @test */
+    #[Test]
     public function get_public_html_directory_without_hostname_returns_default()
     {
         $path = $this->helper->getPublicHtmlDirectory('cp-user-alice');
         $this->assertSame('/home/cp-user-alice/public_html', $path);
     }
 
-    /** @test */
+    #[Test]
     public function get_public_html_directory_with_hostname_returns_per_vhost_path()
     {
         $path = $this->helper->getPublicHtmlDirectory('cp-user-alice', 'example.com');
         $this->assertSame('/home/cp-user-alice/example.com/public_html', $path);
     }
 
-    /** @test */
+    #[Test]
     public function home_directory_is_always_under_slash_home()
     {
         foreach (['user1', 'cp-user-alice', 'cp-user-bob'] as $username) {

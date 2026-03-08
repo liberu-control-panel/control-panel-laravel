@@ -7,6 +7,7 @@ use App\Services\SshConnectionService;
 use Tests\TestCase;
 use Mockery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class SshControllerTest extends TestCase
 {
@@ -29,7 +30,7 @@ class SshControllerTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_generate_ssh_key_pair()
     {
         $this->sshService->shouldReceive('generateKeyPair')
@@ -49,7 +50,7 @@ class SshControllerTest extends TestCase
         $this->assertArrayHasKey('private_key', $data);
     }
 
-    /** @test */
+    #[Test]
     public function it_has_required_controller_methods()
     {
         $methods = [
