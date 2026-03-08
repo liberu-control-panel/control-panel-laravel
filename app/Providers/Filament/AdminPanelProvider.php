@@ -22,9 +22,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Laravel\Fortify\Fortify;
 use Laravel\Jetstream\Features;
-use Laravel\Jetstream\Jetstream;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -99,15 +97,6 @@ class AdminPanelProvider extends PanelProvider
 
     public function boot()
     {
-        /**
-         * Disable Fortify routes.
-         */
-        Fortify::$registersRoutes = false;
-
-        /**
-         * Disable Jetstream routes.
-         */
-        Jetstream::$registersRoutes = false;
     }
 
     public function shouldRegisterMenuItem(): bool
