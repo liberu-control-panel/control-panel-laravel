@@ -10,6 +10,7 @@ use App\Services\StandaloneServiceHelper;
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class WebServerServiceStandaloneTest extends TestCase
 {
@@ -39,18 +40,23 @@ class WebServerServiceStandaloneTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_nginx_config_with_standalone_ssl_paths()
     {
         $user = User::factory()->make(['id' => 1]);
         $domain = Domain::factory()->make([
             'id' => 1,
             'domain_name' => 'example.com',
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
             ->andReturn(true);
+
+        $this->standaloneHelper->shouldReceive('getPublicHtmlDirectory')
+            ->once()
+            ->andReturn('/home/www-data/example.com/public_html');
 
         $this->standaloneHelper->shouldReceive('deployNginxConfig')
             ->once()
@@ -69,14 +75,15 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertStringContainsString('unix:/var/run/php/php8.2-fpm.sock', $config);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_nginx_config_with_docker_paths()
     {
         $user = User::factory()->make(['id' => 1]);
         $domain = Domain::factory()->make([
             'id' => 1,
             'domain_name' => 'example.com',
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
@@ -95,12 +102,14 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertStringContainsString('example.com_php:9000', $config);
     }
 
-    /** @test */
+    #[Test]
     public function it_reloads_nginx_in_standalone_mode()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'example.com'
+            'domain_name' => 'example.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
@@ -116,12 +125,14 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_tests_nginx_config_in_standalone_mode()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'example.com'
+            'domain_name' => 'example.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
@@ -142,12 +153,14 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertStringContainsString('successful', $result['output']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_nginx_config_test_failure_in_standalone_mode()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'example.com'
+            'domain_name' => 'example.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
@@ -168,18 +181,23 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertStringContainsString('invalid parameter', $result['error']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_config_without_ssl_in_standalone_mode()
     {
         $user = User::factory()->make(['id' => 1]);
         $domain = Domain::factory()->make([
             'id' => 1,
             'domain_name' => 'example.com',
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
             ->andReturn(true);
+
+        $this->standaloneHelper->shouldReceive('getPublicHtmlDirectory')
+            ->once()
+            ->andReturn('/home/www-data/example.com/public_html');
 
         $this->standaloneHelper->shouldReceive('deployNginxConfig')
             ->once()
@@ -196,19 +214,23 @@ class WebServerServiceStandaloneTest extends TestCase
         $this->assertStringContainsString('listen 80', $config);
     }
 
-    /** @test */
+    #[Test]
     public function it_deploys_nginx_config_to_system_directory_in_standalone_mode()
     {
         $user = User::factory()->make(['id' => 1]);
         $domain = Domain::factory()->make([
             'id' => 1,
             'domain_name' => 'example.com',
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'server_id' => 1,
         ]);
 
         $this->detectionService->shouldReceive('isStandalone')
-            ->once()
             ->andReturn(true);
+
+        $this->standaloneHelper->shouldReceive('getPublicHtmlDirectory')
+            ->once()
+            ->andReturn('/home/www-data/example.com/public_html');
 
         // Expect deployment to /etc/nginx/sites-available and sites-enabled
         $this->standaloneHelper->shouldReceive('deployNginxConfig')

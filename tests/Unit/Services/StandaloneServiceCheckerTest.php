@@ -7,6 +7,7 @@ use App\Services\StandaloneServiceHelper;
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class StandaloneServiceCheckerTest extends TestCase
 {
@@ -29,7 +30,7 @@ class StandaloneServiceCheckerTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_standalone_mode()
     {
         $this->detectionService->shouldReceive('isStandalone')
@@ -40,7 +41,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_not_standalone_mode_when_not_standalone()
     {
         $this->detectionService->shouldReceive('isStandalone')
@@ -53,7 +54,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertFalse($result['standalone_mode']);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_all_services_in_standalone_mode()
     {
         $this->detectionService->shouldReceive('isStandalone')
@@ -72,7 +73,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertArrayHasKey('all_services_ready', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_nginx_service()
     {
         $this->helper->shouldReceive('isServiceInstalled')
@@ -94,7 +95,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertEquals('ready', $result['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_php_fpm_service()
     {
         $this->helper->shouldReceive('isSystemdServiceRunning')
@@ -108,7 +109,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertArrayHasKey('available_versions', $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_mysql_service()
     {
         $this->helper->shouldReceive('isServiceInstalled')
@@ -125,7 +126,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertEquals('ready', $result['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_not_installed_status_when_service_not_installed()
     {
         $this->helper->shouldReceive('isServiceInstalled')
@@ -140,7 +141,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertEquals('not_installed', $result['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_not_running_status_when_service_not_running()
     {
         $this->helper->shouldReceive('isServiceInstalled')
@@ -160,7 +161,7 @@ class StandaloneServiceCheckerTest extends TestCase
         $this->assertEquals('not_running', $result['status']);
     }
 
-    /** @test */
+    #[Test]
     public function it_has_check_methods_for_all_services()
     {
         $methods = [
@@ -182,7 +183,7 @@ class StandaloneServiceCheckerTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_provides_installation_commands()
     {
         $this->detectionService->shouldReceive('isStandalone')

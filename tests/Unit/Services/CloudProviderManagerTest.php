@@ -6,10 +6,11 @@ use App\Services\CloudProviderManager;
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class CloudProviderManagerTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_can_register_providers()
     {
         $detectionService = Mockery::mock(DeploymentDetectionService::class);
@@ -18,7 +19,7 @@ class CloudProviderManagerTest extends TestCase
         $this->assertIsArray($manager->getProviders());
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_auto_scaling_availability()
     {
         $detectionService = Mockery::mock(DeploymentDetectionService::class);
@@ -30,7 +31,7 @@ class CloudProviderManagerTest extends TestCase
         $this->assertTrue($manager->isAutoScalingAvailable());
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_current_provider_name()
     {
         $detectionService = Mockery::mock(DeploymentDetectionService::class);
