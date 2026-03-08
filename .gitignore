@@ -35,3 +35,5 @@ rr
 k8s/overlays/*/ingress-patch.yaml
 *.tgz
 helm/control-panel/charts/
+auth.json
+test_output.log

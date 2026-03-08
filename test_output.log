@@ -1,0 +1,7 @@
+PHP Warning:  require(/home/runner/work/control-panel-laravel/control-panel-laravel/vendor/autoload.php): Failed to open stream: No such file or directory in /home/runner/work/control-panel-laravel/control-panel-laravel/artisan on line 18
+PHP Stack trace:
+PHP   1. {main}() /home/runner/work/control-panel-laravel/control-panel-laravel/artisan:0
+PHP Fatal error:  Uncaught Error: Failed opening required '/home/runner/work/control-panel-laravel/control-panel-laravel/vendor/autoload.php' (include_path='.:/usr/share/php') in /home/runner/work/control-panel-laravel/control-panel-laravel/artisan:18
+Stack trace:
+#0 {main}
+  thrown in /home/runner/work/control-panel-laravel/control-panel-laravel/artisan on line 18

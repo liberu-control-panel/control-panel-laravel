@@ -7,6 +7,7 @@ use App\Services\StandaloneServiceHelper;
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class JailkitServiceTest extends TestCase
 {
@@ -31,7 +32,7 @@ class JailkitServiceTest extends TestCase
     // isInstalled
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_returns_true_when_jailkit_is_installed()
     {
         $this->helper->shouldReceive('executeCommand')
@@ -42,7 +43,7 @@ class JailkitServiceTest extends TestCase
         $this->assertTrue($this->service->isInstalled());
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_jailkit_is_not_installed()
     {
         $this->helper->shouldReceive('executeCommand')
@@ -57,7 +58,7 @@ class JailkitServiceTest extends TestCase
     // initJail
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_jailkit_not_installed_on_init()
     {
         $this->helper->shouldReceive('executeCommand')
@@ -70,7 +71,7 @@ class JailkitServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_calls_jk_init_with_correct_arguments()
     {
         $jailPath = '/home/alice/jail';
@@ -97,7 +98,7 @@ class JailkitServiceTest extends TestCase
     // jailUser
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_calls_jk_jailuser_with_correct_arguments()
     {
         $username = 'cp-user-alice';
@@ -122,7 +123,7 @@ class JailkitServiceTest extends TestCase
     // removeJail – safety checks
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_refuses_to_remove_protected_paths()
     {
         foreach (['/', '/home', '/etc', '/var', '/usr', '/bin', '/sbin', '/tmp'] as $path) {
@@ -130,7 +131,7 @@ class JailkitServiceTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_removes_a_valid_jail_path()
     {
         $jailPath = '/home/cp-user-alice/jail';
@@ -147,7 +148,7 @@ class JailkitServiceTest extends TestCase
     // setupUserJail – convenience method
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function setup_user_jail_returns_failure_when_jailkit_not_installed()
     {
         $this->helper->shouldReceive('executeCommand')
@@ -161,7 +162,7 @@ class JailkitServiceTest extends TestCase
         $this->assertStringContainsString('not installed', $result['message']);
     }
 
-    /** @test */
+    #[Test]
     public function setup_user_jail_returns_correct_jail_path()
     {
         $username = 'cp-user-alice';
@@ -195,7 +196,7 @@ class JailkitServiceTest extends TestCase
     // DEFAULT_SECTIONS constant
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function default_sections_include_sftp()
     {
         $this->assertContains('sftp', JailkitService::DEFAULT_SECTIONS);

@@ -15,11 +15,15 @@ class KubernetesServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(KubernetesService::class, function ($app) {
-            return new KubernetesService();
+            return new KubernetesService(
+                $app->make(\App\Services\SshConnectionService::class)
+            );
         });
 
         $this->app->singleton(KubernetesSecurityService::class, function ($app) {
-            return new KubernetesSecurityService();
+            return new KubernetesSecurityService(
+                $app->make(\App\Services\SshConnectionService::class)
+            );
         });
 
         $this->app->singleton(ContainerManagerService::class, function ($app) {

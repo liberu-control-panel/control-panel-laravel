@@ -28,9 +28,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Event;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Laravel\Fortify\Fortify;
 use Laravel\Jetstream\Features;
-use Laravel\Jetstream\Jetstream;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -116,16 +114,6 @@ class AppPanelProvider extends PanelProvider
 
     public function boot()
     {
-        /**
-         * Disable Fortify routes.
-         */
-        Fortify::$registersRoutes = false;
-
-        /**
-         * Disable Jetstream routes.
-         */
-        Jetstream::$registersRoutes = false;
-
         /**
          * Listen and create personal team for new accounts.
          */

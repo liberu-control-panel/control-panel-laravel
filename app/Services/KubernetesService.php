@@ -543,7 +543,7 @@ EOT;
     /**
      * Create namespace on Kubernetes cluster
      */
-    protected function createNamespace(Server $server, string $namespace): void
+    public function createNamespace(Server $server, string $namespace): void
     {
         $manifest = [
             'apiVersion' => 'v1',
@@ -559,7 +559,7 @@ EOT;
     /**
      * Apply a manifest to Kubernetes cluster via SSH
      */
-    protected function applyManifest(Server $server, string $namespace, array $manifest, string $name, bool $clusterScoped = false): void
+    public function applyManifest(Server $server, string $namespace, array $manifest, string $name, bool $clusterScoped = false): void
     {
         // Convert manifest to YAML
         $yaml = yaml_emit($manifest);

@@ -11,9 +11,9 @@ use Exception;
 class GitDeploymentService
 {
     protected SshConnectionService $sshService;
-    protected OAuthRepositoryService $oauthService;
+    protected ?OAuthRepositoryService $oauthService;
 
-    public function __construct(SshConnectionService $sshService, OAuthRepositoryService $oauthService)
+    public function __construct(SshConnectionService $sshService, ?OAuthRepositoryService $oauthService = null)
     {
         $this->sshService = $sshService;
         $this->oauthService = $oauthService;
@@ -154,8 +154,12 @@ class GitDeploymentService
         if ($deployment->usesOAuth()) {
             // Use OAuth token for authentication
             $account = $deployment->connectedAccount;
-            $this->oauthService->refreshTokenIfNeeded($account);
-            $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            if ($this->oauthService) {
+                $this->oauthService->refreshTokenIfNeeded($account);
+                $cloneUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+            } else {
+                throw new \RuntimeException('OAuthRepositoryService is required for OAuth deployments but was not provided.');
+            }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);
@@ -186,17 +190,21 @@ class GitDeploymentService
         if ($deployment->usesOAuth()) {
             // Refresh OAuth token if needed
             $account = $deployment->connectedAccount;
-            $this->oauthService->refreshTokenIfNeeded($account);
-            
-            // Update remote URL to use OAuth token
-            $oauthUrl = $this->oauthService->setupOAuthDeployKey($deployment);
-            $this->sshService->executeCommand(
-                $connection,
-                sprintf("cd %s && git remote set-url origin %s", 
-                    escapeshellarg($deployPath),
-                    escapeshellarg($oauthUrl)
-                )
-            );
+            if ($this->oauthService) {
+                $this->oauthService->refreshTokenIfNeeded($account);
+
+                // Update remote URL to use OAuth token
+                $oauthUrl = $this->oauthService->setupOAuthDeployKey($deployment);
+                $this->sshService->executeCommand(
+                    $connection,
+                    sprintf("cd %s && git remote set-url origin %s",
+                        escapeshellarg($deployPath),
+                        escapeshellarg($oauthUrl)
+                    )
+                );
+            } else {
+                throw new \RuntimeException('OAuthRepositoryService is required for OAuth deployments but was not provided.');
+            }
         } elseif ($deployment->isPrivate()) {
             // Setup SSH key if private repository
             $this->setupDeployKey($connection, $deployment);

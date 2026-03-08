@@ -10,6 +10,8 @@ class WordPressApplication extends Model
 {
     use HasFactory;
 
+    protected $table = 'wordpress_applications';
+
     protected $fillable = [
         'domain_id',
         'database_id',

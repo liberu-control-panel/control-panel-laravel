@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Filament\Admin\Resources\EmailResource\ContainerRestarter;
+use App\Filament\App\Resources\Domains\ContainerRestarter;
 use Illuminate\Console\Command;
 
 class UpdateEmailServersCommand extends Command

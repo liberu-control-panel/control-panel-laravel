@@ -9,6 +9,7 @@ use App\Services\StandaloneServiceHelper;
 use App\Services\VirtualHostService;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class VirtualHostServiceTest extends TestCase
 {
@@ -39,7 +40,7 @@ class VirtualHostServiceTest extends TestCase
     // getSystemUsername tests
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_derives_system_username_with_cp_user_prefix()
     {
         $user = User::factory()->make(['id' => 1, 'username' => 'alice']);
@@ -52,7 +53,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertStringContainsString('alice', $username);
     }
 
-    /** @test */
+    #[Test]
     public function it_sanitises_uppercase_and_special_chars_in_username()
     {
         $user = User::factory()->make(['id' => 2, 'username' => 'Bob.Smith!@#']);
@@ -67,7 +68,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertStringStartsWith('cp-user-', $username);
     }
 
-    /** @test */
+    #[Test]
     public function it_falls_back_to_cp_user_id_when_username_is_null()
     {
         $user = User::factory()->make(['id' => 5, 'username' => null]);
@@ -79,7 +80,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertSame('cp-user-5', $username);
     }
 
-    /** @test */
+    #[Test]
     public function it_prepends_u_when_sanitised_username_starts_with_digit()
     {
         $user = User::factory()->make(['id' => 3, 'username' => '123user']);
@@ -90,10 +91,10 @@ class VirtualHostServiceTest extends TestCase
 
         // After sanitisation '123user' → 'u123user', then prefixed as 'cp-user-u123user'
         $this->assertStringStartsWith('cp-user-', $username);
-        $this->assertMatchesRegularExpression('/^[a-z_]/', ltrim($username, 'cp-user-'));
+        $this->assertMatchesRegularExpression('/^[a-z_]/', substr($username, strlen('cp-user-')));
     }
 
-    /** @test */
+    #[Test]
     public function it_truncates_combined_username_to_32_characters()
     {
         $longName = str_repeat('a', 50);
@@ -111,7 +112,7 @@ class VirtualHostServiceTest extends TestCase
     // generateNginxConfig per-user PHP-FPM socket tests
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_uses_per_user_php_fpm_socket_in_standalone_mode()
     {
         $user = User::factory()->make(['id' => 1, 'username' => 'alice']);
@@ -138,7 +139,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertStringNotContainsString('php8.3-fpm.sock;', $config);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_container_network_socket_in_non_standalone_mode()
     {
         $user = User::factory()->make(['id' => 1, 'username' => 'alice']);
@@ -164,7 +165,7 @@ class VirtualHostServiceTest extends TestCase
     // StandaloneServiceHelper PHP-FPM pool methods exist
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function standalone_helper_has_php_fpm_pool_management_methods()
     {
         $helper = new StandaloneServiceHelper(
@@ -177,7 +178,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertTrue(method_exists($helper, 'removePhpFpmPool'));
     }
 
-    /** @test */
+    #[Test]
     public function get_php_fpm_socket_path_returns_correct_format()
     {
         $helper = new StandaloneServiceHelper(
@@ -193,7 +194,7 @@ class VirtualHostServiceTest extends TestCase
     // Home directory document root defaults
     // ------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function derive_system_username_is_consistent_with_get_system_username()
     {
         $user = User::factory()->make(['id' => 10, 'username' => 'testuser']);
@@ -206,14 +207,14 @@ class VirtualHostServiceTest extends TestCase
         $this->assertSame($viaVirtualHost, $viaDirect);
     }
 
-    /** @test */
+    #[Test]
     public function derive_system_username_handles_null_username()
     {
         $result = $this->callProtected('deriveSystemUsername', null, 42);
         $this->assertSame('cp-user-42', $result);
     }
 
-    /** @test */
+    #[Test]
     public function standalone_helper_has_home_directory_helpers()
     {
         $helper = new StandaloneServiceHelper(
@@ -224,7 +225,7 @@ class VirtualHostServiceTest extends TestCase
         $this->assertTrue(method_exists($helper, 'getPublicHtmlDirectory'));
     }
 
-    /** @test */
+    #[Test]
     public function get_public_html_directory_uses_home_based_path()
     {
         $helper = new StandaloneServiceHelper(

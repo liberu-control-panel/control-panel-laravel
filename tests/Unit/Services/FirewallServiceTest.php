@@ -9,6 +9,7 @@ use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class FirewallServiceTest extends TestCase
 {
@@ -28,7 +29,7 @@ class FirewallServiceTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_firewall_rule()
     {
         $this->detectionService->shouldReceive('isKubernetes')->andReturn(false);
@@ -52,7 +53,7 @@ class FirewallServiceTest extends TestCase
         $this->assertEquals('192.168.1.100', $rule->ip_address);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_ip_address_format()
     {
         $this->detectionService->shouldReceive('isKubernetes')->andReturn(false);
@@ -72,7 +73,7 @@ class FirewallServiceTest extends TestCase
         $this->service->createRule($data);
     }
 
-    /** @test */
+    #[Test]
     public function it_accepts_cidr_notation()
     {
         $this->detectionService->shouldReceive('isKubernetes')->andReturn(false);
@@ -91,7 +92,7 @@ class FirewallServiceTest extends TestCase
         $this->assertEquals('192.168.1.0/24', $rule->ip_address);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_active_rules_for_user()
     {
         // Create some rules

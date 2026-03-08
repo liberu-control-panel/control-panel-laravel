@@ -15,6 +15,7 @@ use App\Services\DatabaseService;
 use App\Services\StandaloneServiceHelper;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class DeploymentAwareServiceTest extends TestCase
 {
@@ -56,7 +57,7 @@ class DeploymentAwareServiceTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_deploys_to_kubernetes_when_server_type_is_kubernetes()
     {
         $user = User::factory()->make(['id' => 1]);
@@ -83,7 +84,7 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_deploys_to_docker_when_server_type_is_docker()
     {
         $user = User::factory()->make(['id' => 1]);
@@ -114,7 +115,7 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_deploys_to_standalone_when_server_type_is_standalone()
     {
         $user = User::factory()->make([
@@ -163,12 +164,14 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_deletes_standalone_deployment_correctly()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'test.com'
+            'domain_name' => 'test.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
         $server = Server::factory()->make([
             'id' => 1,
@@ -190,12 +193,14 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_standalone_deployment_status()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'test.com'
+            'domain_name' => 'test.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
         $server = Server::factory()->make([
             'id' => 1,
@@ -227,12 +232,14 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($status['details']['ssl_enabled']);
     }
 
-    /** @test */
+    #[Test]
     public function it_restarts_standalone_deployment_with_validation()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'test.com'
+            'domain_name' => 'test.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
         $server = Server::factory()->make([
             'id' => 1,
@@ -253,12 +260,14 @@ class DeploymentAwareServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_does_not_restart_if_nginx_config_test_fails()
     {
         $domain = Domain::factory()->make([
             'id' => 1,
-            'domain_name' => 'test.com'
+            'domain_name' => 'test.com',
+            'user_id' => 1,
+            'server_id' => 1,
         ]);
         $server = Server::factory()->make([
             'id' => 1,

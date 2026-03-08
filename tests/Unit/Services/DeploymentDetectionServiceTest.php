@@ -4,6 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Services\DeploymentDetectionService;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DeploymentDetectionServiceTest extends TestCase
 {
@@ -15,7 +16,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->service = new DeploymentDetectionService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_detect_deployment_mode()
     {
         $mode = $this->service->detectDeploymentMode();
@@ -27,7 +28,7 @@ class DeploymentDetectionServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_provides_deployment_mode_labels()
     {
         $label = $this->service->getDeploymentModeLabel(DeploymentDetectionService::MODE_KUBERNETES);
@@ -40,7 +41,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertEquals('Standalone', $label);
     }
 
-    /** @test */
+    #[Test]
     public function it_provides_cloud_provider_labels()
     {
         $label = $this->service->getCloudProviderLabel(DeploymentDetectionService::PROVIDER_AWS);
@@ -56,7 +57,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertEquals('DigitalOcean', $label);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_deployment_info_array()
     {
         $info = $this->service->getDeploymentInfo();
@@ -70,7 +71,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertArrayHasKey('supports_auto_scaling', $info);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_docker_environment_correctly()
     {
         // In test environment, should not be Docker unless explicitly set
@@ -80,7 +81,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertIsBool($isDocker);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_kubernetes_environment_correctly()
     {
         $isKubernetes = $this->service->isKubernetes();
@@ -89,7 +90,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertIsBool($isKubernetes);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_standalone_environment_correctly()
     {
         $isStandalone = $this->service->isStandalone();
@@ -98,7 +99,7 @@ class DeploymentDetectionServiceTest extends TestCase
         $this->assertIsBool($isStandalone);
     }
 
-    /** @test */
+    #[Test]
     public function auto_scaling_support_depends_on_kubernetes_and_cloud_provider()
     {
         $supportsAutoScaling = $this->service->supportsAutoScaling();

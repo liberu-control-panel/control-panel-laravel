@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Install required extensions for composer install
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN install-php-extensions intl sockets zip
+RUN install-php-extensions intl sockets zip ftp
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -87,6 +87,7 @@ RUN apk update && \
     zip \
     intl \
     gd \
+    ftp \
     redis \
     igbinary && \
     docker-php-source delete && \
