@@ -1,5 +1,6 @@
-# Supported PHP versions: 8.2, 8.3, 8.4
-ARG PHP_VERSION=8.4
+# Supported PHP versions: 8.2, 8.3
+# Note: PHP 8.5 is not yet fully supported by all extensions
+ARG PHP_VERSION=8.3
 
 ###########################################
 # Composer dependencies stage
@@ -32,10 +33,10 @@ RUN composer install \
 ###########################################
 FROM php:${PHP_VERSION}-cli-alpine
 
-LABEL maintainer="Liberu Software <hello@liberu.co.uk>"
-LABEL org.opencontainers.image.title="Liberu Control Panel"
-LABEL org.opencontainers.image.description="Production-ready Dockerfile for Liberu Control Panel with Laravel Octane"
-LABEL org.opencontainers.image.source=https://github.com/liberu-control-panel/control-panel-laravel
+LABEL maintainer="SMortexa <seyed.me720@gmail.com>"
+LABEL org.opencontainers.image.title="Laravel Octane Dockerfile"
+LABEL org.opencontainers.image.description="Production-ready Dockerfile for Laravel Octane"
+LABEL org.opencontainers.image.source=https://github.com/exaco/laravel-octane-dockerfile
 LABEL org.opencontainers.image.licenses=MIT
 
 ARG WWWUSER=1000
@@ -125,12 +126,12 @@ COPY --chown=${USER}:${USER} --from=composer-deps /app/vendor ./vendor
 # Copy composer files (needed for autoloader generation)
 COPY --chown=${USER}:${USER} composer.json composer.lock ./
 
-# Generate optimized autoloader with vendor already in place
+# Copy application code first so autoloader can resolve all files
+COPY --chown=${USER}:${USER} . .
+
+# Generate optimized autoloader now that all app files are present
 RUN composer dump-autoload --classmap-authoritative --no-dev && \
     composer clear-cache
-
-# Copy application code
-COPY --chown=${USER}:${USER} . .
 
 # Create necessary Laravel directories
 RUN mkdir -p \
@@ -151,6 +152,9 @@ COPY --chown=${USER}:${USER} .docker/supervisord.worker.conf /etc/supervisor/con
 COPY --chown=${USER}:${USER} .docker/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
 COPY --chown=${USER}:${USER} .docker/start-container /usr/local/bin/start-container
 
+# Copy environment file
+COPY --chown=${USER}:${USER} .env.example ./.env
+
 RUN chmod +x /usr/local/bin/start-container && \
     cat .docker/utilities.sh >> ~/.bashrc
 
@@ -159,3 +163,4 @@ EXPOSE 8000
 ENTRYPOINT ["start-container"]
 
 HEALTHCHECK --start-period=5s --interval=2s --timeout=5s --retries=8 CMD php artisan octane:status || exit 1
+
