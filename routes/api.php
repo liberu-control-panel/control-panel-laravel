@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('emails', EmailController::class);
 
     // DNS management
-    Route::apiResource('dns', DnsController::class);
+    Route::apiResource('dns', DnsController::class)->parameters(['dns' => 'dnsSetting']);
     Route::post('/dns/bulk', [DnsController::class, 'bulkStore']);
     Route::post('/dns/validate', [DnsController::class, 'validateRecord']);
     Route::get('/domains/{domain}/dns/test', [DnsController::class, 'testResolution']);
