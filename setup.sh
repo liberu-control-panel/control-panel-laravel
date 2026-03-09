@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup script for the control-panel-laravel project.
+# Setup script for the liberu control-panel project.
 #
 # This script provides installation options for Standalone, Docker, or Kubernetes deployments.
 # It handles composer and npm installations with fallback logic and error checking.
