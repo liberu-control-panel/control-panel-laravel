@@ -1,6 +1,6 @@
 # Supported PHP versions: 8.2, 8.3
 # Note: PHP 8.5 is not yet fully supported by all extensions
-ARG PHP_VERSION=8.3
+ARG PHP_VERSION=8.5
 
 ###########################################
 # Composer dependencies stage
@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Install required extensions for composer install
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN install-php-extensions intl sockets zip ftp
+RUN install-php-extensions intl sockets zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -87,7 +87,6 @@ RUN apk update && \
     zip \
     intl \
     gd \
-    ftp \
     redis \
     igbinary && \
     docker-php-source delete && \
