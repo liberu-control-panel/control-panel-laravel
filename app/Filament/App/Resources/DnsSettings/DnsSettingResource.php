@@ -2,16 +2,19 @@
 
 namespace App\Filament\App\Resources\DnsSettings;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
+use Filament\Schemas\Components\Placeholder as SchemaPlaceholder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use App\Filament\App\Resources\DnsSettings\Pages\ListDnsSettings;
 use App\Filament\App\Resources\DnsSettings\Pages\CreateDnsSetting;
@@ -307,7 +310,7 @@ class DnsSettingResource extends Resource {
             ])
             ->recordActions([
                 EditAction::make(),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->requiresConfirmation(),
             ])
             ->toolbarActions([
@@ -315,7 +318,7 @@ class DnsSettingResource extends Resource {
                     DeleteBulkAction::make()
                         ->requiresConfirmation(),
                     
-                    Tables\Actions\BulkAction::make('update_ttl')
+                    BulkAction::make('update_ttl')
                         ->label('Update TTL')
                         ->icon('heroicon-o-clock')
                         ->form([

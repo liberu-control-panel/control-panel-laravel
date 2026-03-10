@@ -8,6 +8,9 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ViewKubernetesNode extends ViewRecord
 {
@@ -26,11 +29,11 @@ class ViewKubernetesNode extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Components\Section::make('Node Information')
+        return $schema
+            ->components([
+                Section::make('Node Information')
                     ->schema([
                         Components\TextEntry::make('name'),
                         Components\TextEntry::make('uid')->label('UID'),
@@ -51,7 +54,7 @@ class ViewKubernetesNode extends ViewRecord
                             ->badge(),
                     ])->columns(3),
 
-                Components\Section::make('System Information')
+                Section::make('System Information')
                     ->schema([
                         Components\TextEntry::make('kubernetes_version'),
                         Components\TextEntry::make('container_runtime'),
@@ -60,9 +63,9 @@ class ViewKubernetesNode extends ViewRecord
                         Components\TextEntry::make('architecture'),
                     ])->columns(2),
 
-                Components\Section::make('Resources')
+                Section::make('Resources')
                     ->schema([
-                        Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('cpu_capacity')
                                     ->label('CPU Capacity')
@@ -79,7 +82,7 @@ class ViewKubernetesNode extends ViewRecord
                                             : 'N/A'
                                     ),
                             ]),
-                        Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('memory_capacity')
                                     ->label('Memory Capacity')
@@ -98,25 +101,25 @@ class ViewKubernetesNode extends ViewRecord
                             ]),
                     ]),
 
-                Components\Section::make('Labels')
+                Section::make('Labels')
                     ->schema([
                         Components\KeyValueEntry::make('labels')
                             ->columnSpanFull(),
                     ]),
 
-                Components\Section::make('Taints')
+                Section::make('Taints')
                     ->schema([
                         Components\KeyValueEntry::make('taints')
                             ->columnSpanFull(),
                     ]),
 
-                Components\Section::make('Addresses')
+                Section::make('Addresses')
                     ->schema([
                         Components\KeyValueEntry::make('addresses')
                             ->columnSpanFull(),
                     ]),
 
-                Components\Section::make('Conditions')
+                Section::make('Conditions')
                     ->schema([
                         Components\KeyValueEntry::make('conditions')
                             ->columnSpanFull(),

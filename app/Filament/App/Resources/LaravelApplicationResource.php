@@ -7,7 +7,13 @@ use App\Models\LaravelApplication;
 use App\Models\Domain;
 use App\Models\Database;
 use App\Services\LaravelApplicationService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -39,7 +45,7 @@ class LaravelApplicationResource extends Resource
 
         return $schema
             ->components([
-                Forms\Components\Section::make('Application Type')
+                Section::make('Application Type')
                     ->schema([
                         Forms\Components\Select::make('repository_slug')
                             ->label('Application Type')
@@ -59,7 +65,7 @@ class LaravelApplicationResource extends Resource
                             ->helperText('Select the type of Laravel application to install'),
                     ]),
 
-                Forms\Components\Section::make('Domain & Database')
+                Section::make('Domain & Database')
                     ->schema([
                         Forms\Components\Select::make('domain_id')
                             ->label('Domain')
@@ -78,7 +84,7 @@ class LaravelApplicationResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Configuration')
+                Section::make('Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('app_url')
                             ->label('Application URL')
@@ -179,7 +185,7 @@ class LaravelApplicationResource extends Resource
                     ->options(config('repositories.php_versions')),
             ])
             ->actions([
-                Tables\Actions\Action::make('install')
+                Action::make('install')
                     ->label('Install')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
@@ -201,7 +207,7 @@ class LaravelApplicationResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('update')
+                Action::make('update')
                     ->label('Update')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
@@ -223,7 +229,7 @@ class LaravelApplicationResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('viewLogs')
+                Action::make('viewLogs')
                     ->label('View Logs')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
@@ -233,19 +239,19 @@ class LaravelApplicationResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
 
-                Tables\Actions\Action::make('viewRepository')
+                Action::make('viewRepository')
                     ->label('GitHub')
                     ->icon('heroicon-o-code-bracket-square')
                     ->color('gray')
                     ->url(fn (LaravelApplication $record) => $record->github_url, true),
 
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
                 
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

@@ -6,7 +6,13 @@ use App\Filament\Admin\Resources\HelmReleaseResource\Pages;
 use App\Models\HelmRelease;
 use App\Models\Server;
 use App\Services\HelmChartService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -18,11 +24,11 @@ class HelmReleaseResource extends Resource
 {
     protected static ?string $model = HelmRelease::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
     protected static ?string $navigationLabel = 'Helm Charts';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Kubernetes';
+    protected static string|\UnitEnum|null $navigationGroup = 'Kubernetes';
 
     protected static ?int $navigationSort = 2;
 
@@ -33,7 +39,7 @@ class HelmReleaseResource extends Resource
 
         return $schema
             ->components([
-                Forms\Components\Section::make('Release Information')
+                Section::make('Release Information')
                     ->schema([
                         Forms\Components\Select::make('server_id')
                             ->label('Server')
@@ -71,7 +77,7 @@ class HelmReleaseResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Configuration')
+                Section::make('Configuration')
                     ->schema([
                         Forms\Components\KeyValue::make('values')
                             ->label('Helm Values')
@@ -115,7 +121,7 @@ class HelmReleaseResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'deployed' => 'success',
                         'failed' => 'danger',
                         'pending' => 'warning',
@@ -153,18 +159,18 @@ class HelmReleaseResource extends Resource
                         'uninstalled' => 'Uninstalled',
                     ]),
 
-                Tables\Filters\SelectFilter::make('chart_name')
-                    ->label('Chart Type')
-                    ->options(function () {
-                        $helmService = app(HelmChartService::class);
-                        $charts = $helmService->getAvailableCharts();
-                        return collect($charts)->mapWithKeys(function ($chart, $key) {
-                            return [$key => $chart['name']];
-                        })->toArray();
-                    }),
+                // Tables\Filters\SelectFilter::make('chart_name')
+                //     ->label('Chart Type')
+                //     ->options(function () {
+                //         $helmService = app(HelmChartService::class);
+                //         $charts = $helmService->getAvailableCharts();
+                //         return collect($charts)->mapWithKeys(function ($chart, $key) {
+                //             return [$key => $chart['name']];
+                //         })->toArray();
+                //     }),
             ])
-            ->actions([
-                Tables\Actions\Action::make('sync')
+            ->recordActions([
+                Action::make('sync')
                     ->label('Sync Status')
                     ->icon('heroicon-o-arrow-path')
                     ->action(function (HelmRelease $record) {
@@ -177,15 +183,15 @@ class HelmReleaseResource extends Resource
 
                         if ($status && isset($status['info'])) {
                             $updateData = [];
-                            
+
                             if (isset($status['info']['status'])) {
                                 $updateData['status'] = $status['info']['status'];
                             }
-                            
+
                             if (isset($status['chart']['metadata']['version'])) {
                                 $updateData['chart_version'] = $status['chart']['metadata']['version'];
                             }
-                            
+
                             if (!empty($updateData)) {
                                 $record->update($updateData);
 
@@ -208,9 +214,9 @@ class HelmReleaseResource extends Resource
                         }
                     }),
 
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
 
-                Tables\Actions\Action::make('upgrade')
+                Action::make('upgrade')
                     ->label('Upgrade')
                     ->icon('heroicon-o-arrow-up-circle')
                     ->color('warning')
@@ -244,7 +250,7 @@ class HelmReleaseResource extends Resource
                         }
                     }),
 
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->label('Uninstall')
                     ->requiresConfirmation()
                     ->action(function (HelmRelease $record) {
@@ -272,8 +278,8 @@ class HelmReleaseResource extends Resource
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

@@ -6,7 +6,10 @@ use App\Models\Domain;
 use App\Services\CloudProviderManager;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 
 class ManageScalingAction extends Action
 {
@@ -52,7 +55,7 @@ class ManageScalingAction extends Action
         $currentReplicas = $provider->getCurrentReplicas($record);
 
         return [
-            Forms\Components\Section::make('Current Status')
+            Section::make('Current Status')
                 ->schema([
                     Forms\Components\Placeholder::make('current_replicas')
                         ->label('Current Replicas')
@@ -72,7 +75,7 @@ class ManageScalingAction extends Action
                             : 'Disabled'),
                 ]),
 
-            Forms\Components\Section::make('Horizontal Scaling (HPA)')
+            Section::make('Horizontal Scaling (HPA)')
                 ->description('Automatically scale pods based on CPU/memory usage')
                 ->collapsible()
                 ->schema([
@@ -81,21 +84,21 @@ class ManageScalingAction extends Action
                         ->default(!empty($scalingConfig['horizontal']))
                         ->reactive(),
                     
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('min_replicas')
                                 ->label('Minimum Replicas')
                                 ->numeric()
                                 ->default($scalingConfig['horizontal']['min_replicas'] ?? 1)
                                 ->minValue(1)
-                                ->required(fn (Forms\Get $get) => $get('enable_horizontal')),
+                                ->required(fn (Get $get) => $get('enable_horizontal')),
                             
                             Forms\Components\TextInput::make('max_replicas')
                                 ->label('Maximum Replicas')
                                 ->numeric()
                                 ->default($scalingConfig['horizontal']['max_replicas'] ?? 10)
                                 ->minValue(1)
-                                ->required(fn (Forms\Get $get) => $get('enable_horizontal')),
+                                ->required(fn (Get $get) => $get('enable_horizontal')),
                             
                             Forms\Components\TextInput::make('target_cpu')
                                 ->label('Target CPU %')
@@ -104,12 +107,12 @@ class ManageScalingAction extends Action
                                 ->suffix('%')
                                 ->minValue(1)
                                 ->maxValue(100)
-                                ->required(fn (Forms\Get $get) => $get('enable_horizontal')),
+                                ->required(fn (Get $get) => $get('enable_horizontal')),
                         ])
-                        ->visible(fn (Forms\Get $get) => $get('enable_horizontal')),
+                        ->visible(fn (Get $get) => $get('enable_horizontal')),
                 ]),
 
-            Forms\Components\Section::make('Vertical Scaling (VPA)')
+            Section::make('Vertical Scaling (VPA)')
                 ->description('Automatically adjust CPU and memory limits')
                 ->collapsible()
                 ->visible(fn () => $provider->supportsVerticalScaling())
@@ -128,11 +131,11 @@ class ManageScalingAction extends Action
                             'Auto' => 'Auto - Update pods automatically',
                         ])
                         ->default($scalingConfig['vertical']['update_mode'] ?? 'Auto')
-                        ->required(fn (Forms\Get $get) => $get('enable_vertical'))
-                        ->visible(fn (Forms\Get $get) => $get('enable_vertical')),
+                        ->required(fn (Get $get) => $get('enable_vertical'))
+                        ->visible(fn (Get $get) => $get('enable_vertical')),
                 ]),
 
-            Forms\Components\Section::make('Manual Scaling')
+            Section::make('Manual Scaling')
                 ->description('Manually set the number of replicas')
                 ->collapsible()
                 ->schema([

@@ -7,7 +7,13 @@ use App\Filament\App\Resources\Databases\Pages\CreateResource;
 use App\Filament\App\Resources\Databases\Pages\EditResource;
 use App\Models\Database;
 use App\Services\MySqlDatabaseService;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -30,7 +36,7 @@ class DatabaseResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Database Information')
+                Section::make('Database Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Database Name')
@@ -65,34 +71,34 @@ class DatabaseResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Managed Database Configuration')
+                Section::make('Managed Database Configuration')
                     ->schema([
                         Forms\Components\Select::make('provider')
                             ->label('Cloud Provider')
                             ->options(Database::getProviders())
-                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->required(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
                             ->live()
                             ->helperText('Select your managed database provider'),
 
                         Forms\Components\TextInput::make('external_host')
                             ->label('Database Host')
-                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->required(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
                             ->placeholder('database.example.com'),
 
                         Forms\Components\TextInput::make('external_port')
                             ->label('Port')
                             ->numeric()
-                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->required(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
                             ->default(3306),
 
                         Forms\Components\TextInput::make('external_username')
                             ->label('Username')
-                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED),
+                            ->required(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED),
 
                         Forms\Components\TextInput::make('external_password')
                             ->label('Password')
                             ->password()
-                            ->required(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                            ->required(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
                             ->revealable(),
 
                         Forms\Components\TextInput::make('instance_identifier')
@@ -114,28 +120,28 @@ class DatabaseResource extends Resource
                             ->helperText('Optional: SSL Certificate Authority certificate'),
                     ])
                     ->columns(2)
-                    ->visible(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
+                    ->visible(fn (Get $get) => $get('connection_type') === Database::CONNECTION_MANAGED)
                     ->collapsible(),
 
-                Forms\Components\Section::make('Self-Hosted Configuration')
+                Section::make('Self-Hosted Configuration')
                     ->schema([
                         Forms\Components\Select::make('charset')
                             ->label('Character Set')
-                            ->options(fn (Forms\Get $get) => [
+                            ->options(fn (Get $get) => [
                                 Database::getDefaultCharset($get('engine') ?? Database::ENGINE_MARIADB) => 
                                     Database::getDefaultCharset($get('engine') ?? Database::ENGINE_MARIADB),
                                 'utf8mb4' => 'UTF-8 Unicode (utf8mb4)',
                                 'utf8' => 'UTF-8 (utf8)',
                                 'latin1' => 'Latin1',
                             ])
-                            ->default(fn (Forms\Get $get) => 
+                            ->default(fn (Get $get) => 
                                 Database::getDefaultCharset($get('engine') ?? Database::ENGINE_MARIADB)
                             )
                             ->required(),
 
                         Forms\Components\Select::make('collation')
                             ->label('Collation')
-                            ->options(fn (Forms\Get $get) => [
+                            ->options(fn (Get $get) => [
                                 Database::getDefaultCollation($get('engine') ?? Database::ENGINE_MARIADB) => 
                                     Database::getDefaultCollation($get('engine') ?? Database::ENGINE_MARIADB),
                                 'utf8mb4_unicode_ci' => 'UTF-8 Unicode CI',
@@ -143,7 +149,7 @@ class DatabaseResource extends Resource
                                 'utf8_general_ci' => 'UTF-8 General CI',
                                 'latin1_swedish_ci' => 'Latin1 Swedish CI',
                             ])
-                            ->default(fn (Forms\Get $get) => 
+                            ->default(fn (Get $get) => 
                                 Database::getDefaultCollation($get('engine') ?? Database::ENGINE_MARIADB)
                             )
                             ->required(),
@@ -153,10 +159,10 @@ class DatabaseResource extends Resource
                             ->default(true),
                     ])
                     ->columns(2)
-                    ->visible(fn (Forms\Get $get) => $get('connection_type') === Database::CONNECTION_SELF_HOSTED)
+                    ->visible(fn (Get $get) => $get('connection_type') === Database::CONNECTION_SELF_HOSTED)
                     ->collapsible(),
 
-                Forms\Components\Section::make('Auto-Provisioning')
+                Section::make('Auto-Provisioning')
                     ->schema([
                         Forms\Components\Placeholder::make('auto_provision_info')
                             ->label('Automatic User Creation')
@@ -250,16 +256,16 @@ class DatabaseResource extends Resource
                     ->label('Active Only'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
+                EditAction::make(),
+                DeleteAction::make()
                     ->before(function (Database $record) {
                         $service = app(MySqlDatabaseService::class);
                         $service->dropDatabase($record->name);
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->before(function ($records) {
                             $service = app(MySqlDatabaseService::class);
                             foreach ($records as $record) {
