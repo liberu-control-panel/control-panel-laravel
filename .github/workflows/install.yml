@@ -35,7 +35,7 @@ jobs:
         extensions: mbstring, bcmath, pdo, pdo_mysql, dom, curl, intl, zip, gd
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: 'npm'
