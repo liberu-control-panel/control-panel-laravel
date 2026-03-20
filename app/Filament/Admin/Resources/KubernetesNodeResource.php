@@ -5,7 +5,12 @@ namespace App\Filament\Admin\Resources;
 use App\Filament\Admin\Resources\KubernetesNodeResource\Pages;
 use App\Models\KubernetesNode;
 use App\Services\KubernetesNodeService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -28,7 +33,7 @@ class KubernetesNodeResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Node Information')
+                Section::make('Node Information')
                     ->schema([
                         Forms\Components\Select::make('server_id')
                             ->relationship('server', 'name')
@@ -47,7 +52,7 @@ class KubernetesNodeResource extends Resource
                             ->disabled(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('System Information')
+                Section::make('System Information')
                     ->schema([
                         Forms\Components\TextInput::make('kubernetes_version')
                             ->disabled(),
@@ -61,7 +66,7 @@ class KubernetesNodeResource extends Resource
                             ->disabled(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Resources')
+                Section::make('Resources')
                     ->schema([
                         Forms\Components\KeyValue::make('capacity')
                             ->disabled(),
@@ -69,7 +74,7 @@ class KubernetesNodeResource extends Resource
                             ->disabled(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Labels & Taints')
+                Section::make('Labels & Taints')
                     ->schema([
                         Forms\Components\KeyValue::make('labels')
                             ->disabled(),
@@ -138,8 +143,8 @@ class KubernetesNodeResource extends Resource
                     ->label('Schedulable'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\Action::make('cordon')
+                ViewAction::make(),
+                Action::make('cordon')
                     ->icon('heroicon-o-no-symbol')
                     ->color('warning')
                     ->requiresConfirmation()
@@ -158,7 +163,7 @@ class KubernetesNodeResource extends Resource
                                 ->send();
                         }
                     }),
-                Tables\Actions\Action::make('uncordon')
+                Action::make('uncordon')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
@@ -177,7 +182,7 @@ class KubernetesNodeResource extends Resource
                                 ->send();
                         }
                     }),
-                Tables\Actions\Action::make('drain')
+                Action::make('drain')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -198,12 +203,12 @@ class KubernetesNodeResource extends Resource
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('sync')
+                Action::make('sync')
                     ->icon('heroicon-o-arrow-path')
                     ->color('primary')
                     ->action(function () {

@@ -2,14 +2,15 @@
 
 namespace App\Filament\App\Resources\Domains;
 
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -280,7 +281,7 @@ class DomainResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                Tables\Actions\Action::make('manage_dns')
+                Action::make('manage_dns')
                     ->label('Manage DNS')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->url(fn (Domain $record) => route('filament.app.resources.dns-settings.index', [

@@ -6,7 +6,12 @@ use App\Filament\App\Resources\PhpConfigResource\Pages;
 use App\Models\Domain;
 use App\Models\PhpConfig;
 use App\Services\PhpConfigService;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,7 +34,7 @@ class PhpConfigResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Domain & PHP Version')
+                Section::make('Domain & PHP Version')
                     ->schema([
                         Forms\Components\Select::make('domain_id')
                             ->label('Domain')
@@ -52,7 +57,7 @@ class PhpConfigResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Resource Limits')
+                Section::make('Resource Limits')
                     ->description('These values are written to a per-domain php.ini override file.')
                     ->schema([
                         Forms\Components\TextInput::make('memory_limit')
@@ -110,7 +115,7 @@ class PhpConfigResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Error Handling & Miscellaneous')
+                Section::make('Error Handling & Miscellaneous')
                     ->schema([
                         Forms\Components\Toggle::make('display_errors')
                             ->label('Display Errors')
@@ -134,7 +139,7 @@ class PhpConfigResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Custom php.ini Directives')
+                Section::make('Custom php.ini Directives')
                     ->description('Advanced: add additional key=value pairs that will be appended to the ini file.')
                     ->schema([
                         Forms\Components\KeyValue::make('custom_settings')
@@ -188,15 +193,15 @@ class PhpConfigResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->after(function (PhpConfig $record) {
                         app(PhpConfigService::class)->deploy($record->domain, $record);
                     }),
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('updated_at', 'desc');

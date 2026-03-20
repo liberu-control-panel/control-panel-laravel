@@ -7,6 +7,8 @@ use App\Services\CloudProviderManager;
 use App\Models\InstallationMetadata;
 use Filament\Pages\Page;
 use Filament\Forms;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
@@ -49,7 +51,7 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
         
         return $schema
             ->components([
-                Forms\Components\Section::make('Deployment Information')
+                Section::make('Deployment Information')
                     ->description('Current deployment environment and configuration')
                     ->schema([
                         Forms\Components\Placeholder::make('deployment_mode')
@@ -60,7 +62,7 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
                             ->label('Cloud Provider')
                             ->content(fn ($state) => $detectionService->getCloudProviderLabel($state)),
                         
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
                                 Forms\Components\Placeholder::make('is_kubernetes')
                                     ->label('Kubernetes')
@@ -76,7 +78,7 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
                             ]),
                     ]),
 
-                Forms\Components\Section::make('Auto-Scaling Configuration')
+                Section::make('Auto-Scaling Configuration')
                     ->description('Configure automatic horizontal and vertical scaling')
                     ->schema([
                         Forms\Components\Placeholder::make('supports_auto_scaling')
@@ -91,10 +93,10 @@ class DeploymentSettings extends Page implements Forms\Contracts\HasForms
                             ->disabled(fn () => !$this->data['supports_auto_scaling'] ?? true),
                     ]),
 
-                Forms\Components\Section::make('System Capabilities')
+                Section::make('System Capabilities')
                     ->description('Available features based on current deployment')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
                                 Forms\Components\Placeholder::make('horizontal_scaling')
                                     ->label('Horizontal Pod Autoscaling (HPA)')

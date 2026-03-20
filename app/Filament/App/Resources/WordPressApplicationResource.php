@@ -7,7 +7,13 @@ use App\Models\WordPressApplication;
 use App\Models\Domain;
 use App\Models\Database;
 use App\Services\WordPressService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -31,7 +37,7 @@ class WordPressApplicationResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Domain & Database')
+                Section::make('Domain & Database')
                     ->schema([
                         Forms\Components\Select::make('domain_id')
                             ->label('Domain')
@@ -51,7 +57,7 @@ class WordPressApplicationResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('WordPress Configuration')
+                Section::make('WordPress Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('site_title')
                             ->label('Site Title')
@@ -86,7 +92,7 @@ class WordPressApplicationResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Administrator Account')
+                Section::make('Administrator Account')
                     ->schema([
                         Forms\Components\TextInput::make('admin_username')
                             ->label('Admin Username')
@@ -172,7 +178,7 @@ class WordPressApplicationResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('install')
+                Action::make('install')
                     ->label('Install')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
@@ -194,7 +200,7 @@ class WordPressApplicationResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('update')
+                Action::make('update')
                     ->label('Update')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
@@ -216,7 +222,7 @@ class WordPressApplicationResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('viewLogs')
+                Action::make('viewLogs')
                     ->label('View Logs')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
@@ -226,13 +232,13 @@ class WordPressApplicationResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
 
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
                 
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

@@ -6,7 +6,12 @@ use App\Filament\Admin\Resources\BackupResource\Pages\CreateBackup;
 use App\Filament\Admin\Resources\BackupResource\Pages\EditBackup;
 use App\Filament\Admin\Resources\BackupResource\Pages\ListBackups;
 use App\Models\BackupSchedule;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,7 +31,8 @@ class BackupResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Schedule Details')
+                Section::make('Schedule Details')
+                    ->columnSpanFull()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -79,7 +85,7 @@ class BackupResource extends Resource
     }
 
     public static function table(Table $table): Table
-    {
+    { 
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
@@ -92,12 +98,12 @@ class BackupResource extends Resource
                 Tables\Columns\TextColumn::make('last_run_at')->label('Last Run')->dateTime()->sortable(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

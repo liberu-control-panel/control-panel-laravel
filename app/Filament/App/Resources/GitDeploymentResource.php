@@ -5,7 +5,13 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\GitDeploymentResource\Pages;
 use App\Models\GitDeployment;
 use App\Services\GitDeploymentService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,7 +35,7 @@ class GitDeploymentResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Domain Configuration')
+                Section::make('Domain Configuration')
                     ->schema([
                         Forms\Components\Select::make('domain_id')
                             ->label('Domain')
@@ -47,7 +53,7 @@ class GitDeploymentResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Repository Configuration')
+                Section::make('Repository Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('repository_url')
                             ->label('Repository URL')
@@ -89,7 +95,7 @@ class GitDeploymentResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Build & Deploy Commands')
+                Section::make('Build & Deploy Commands')
                     ->schema([
                         Forms\Components\Textarea::make('build_command')
                             ->label('Build Command')
@@ -105,7 +111,7 @@ class GitDeploymentResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Automation')
+                Section::make('Automation')
                     ->schema([
                         Forms\Components\Toggle::make('auto_deploy')
                             ->label('Enable Auto-Deploy')
@@ -204,7 +210,7 @@ class GitDeploymentResource extends Resource
                     ->label('Auto Deploy Enabled'),
             ])
             ->actions([
-                Tables\Actions\Action::make('deploy')
+                Action::make('deploy')
                     ->label('Deploy')
                     ->icon('heroicon-o-rocket-launch')
                     ->color('success')
@@ -225,7 +231,7 @@ class GitDeploymentResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('viewInfo')
+                Action::make('viewInfo')
                     ->label('Repository Info')
                     ->icon('heroicon-o-information-circle')
                     ->color('gray')
@@ -248,7 +254,7 @@ class GitDeploymentResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('viewLogs')
+                Action::make('viewLogs')
                     ->label('View Logs')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
@@ -258,13 +264,13 @@ class GitDeploymentResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
 
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
                 
-                Tables\Actions\DeleteAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

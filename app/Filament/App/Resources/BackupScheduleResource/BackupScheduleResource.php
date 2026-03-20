@@ -4,7 +4,12 @@ namespace App\Filament\App\Resources\BackupScheduleResource;
 
 use App\Filament\App\Resources\BackupScheduleResource\Pages;
 use App\Models\BackupSchedule;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -27,7 +32,8 @@ class BackupScheduleResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Schedule Configuration')
+                Section::make('Schedule Configuration')
+                    ->columnSpanFull()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -124,12 +130,12 @@ class BackupScheduleResource extends Resource
                     ->sortable(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

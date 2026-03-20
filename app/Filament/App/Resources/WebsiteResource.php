@@ -5,7 +5,14 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\WebsiteResource\Pages;
 use App\Filament\App\Resources\WebsiteResource\Widgets\WebsiteStatsWidget;
 use App\Models\Website;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -28,7 +35,7 @@ class WebsiteResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Basic Information')
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Website Name')
@@ -51,7 +58,7 @@ class WebsiteResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Platform Configuration')
+                Section::make('Platform Configuration')
                     ->schema([
                         Forms\Components\Select::make('platform')
                             ->label('Platform')
@@ -64,7 +71,7 @@ class WebsiteResource extends Resource
                             ->options(Website::getPhpVersions())
                             ->default('8.3')
                             ->required()
-                            ->visible(fn (Forms\Get $get) => in_array($get('platform'), ['wordpress', 'laravel', 'custom'])),
+                            ->visible(fn (Get $get) => in_array($get('platform'), ['wordpress', 'laravel', 'custom'])),
 
                         Forms\Components\Select::make('database_type')
                             ->label('Database Type')
@@ -93,7 +100,7 @@ class WebsiteResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('SSL/TLS Configuration')
+                Section::make('SSL/TLS Configuration')
                     ->schema([
                         Forms\Components\Toggle::make('ssl_enabled')
                             ->label('Enable SSL/TLS')
@@ -103,11 +110,11 @@ class WebsiteResource extends Resource
                         Forms\Components\Toggle::make('auto_ssl')
                             ->label('Auto SSL (Let\'s Encrypt)')
                             ->default(true)
-                            ->visible(fn (Forms\Get $get) => $get('ssl_enabled')),
+                            ->visible(fn (Get $get) => $get('ssl_enabled')),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Performance Metrics')
+                Section::make('Performance Metrics')
                     ->schema([
                         Forms\Components\TextInput::make('uptime_percentage')
                             ->label('Uptime %')
@@ -221,13 +228,13 @@ class WebsiteResource extends Resource
                     ->label('Active Only'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

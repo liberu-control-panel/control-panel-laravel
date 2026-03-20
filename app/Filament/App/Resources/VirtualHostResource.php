@@ -4,7 +4,14 @@ namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\VirtualHostResource\Pages;
 use App\Models\VirtualHost;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -27,7 +34,7 @@ class VirtualHostResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Basic Information')
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('hostname')
                             ->label('Hostname')
@@ -58,7 +65,7 @@ class VirtualHostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Configuration')
+                Section::make('Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('document_root')
                             ->label('Document Root')
@@ -87,7 +94,7 @@ class VirtualHostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('SSL/TLS Configuration')
+                Section::make('SSL/TLS Configuration')
                     ->schema([
                         Forms\Components\Toggle::make('ssl_enabled')
                             ->label('Enable SSL/TLS')
@@ -97,7 +104,7 @@ class VirtualHostResource extends Resource
                         Forms\Components\Toggle::make('letsencrypt_enabled')
                             ->label('Use Let\'s Encrypt')
                             ->default(true)
-                            ->visible(fn (Forms\Get $get) => $get('ssl_enabled')),
+                            ->visible(condition: fn (Get $get) => $get('ssl_enabled')),
 
                         Forms\Components\Select::make('ssl_certificate_id')
                             ->label('SSL Certificate')
@@ -106,11 +113,11 @@ class VirtualHostResource extends Resource
                             )
                             ->searchable()
                             ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('ssl_enabled') && !$get('letsencrypt_enabled')),
+                            ->visible(fn (Get $get) => $get('ssl_enabled') && !$get('letsencrypt_enabled')),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Advanced')
+                Section::make('Advanced')
                     ->schema([
                         Forms\Components\Textarea::make('nginx_config')
                             ->label('Custom NGINX Configuration')
@@ -189,13 +196,13 @@ class VirtualHostResource extends Resource
                     ->label('Let\'s Encrypt Enabled'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
