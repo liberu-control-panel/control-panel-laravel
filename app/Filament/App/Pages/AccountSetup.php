@@ -48,12 +48,12 @@ final class AccountSetup extends Page
         $team = $this->currentTeam($resolver);
         $stored = $settings->resolve('team.setup', ['team' => $team->getKey()], [
             'completed_steps' => [],
-            'team_name' => $team->name,
+            'team_name' => (string) $team->getAttribute('name'),
             'timezone' => 'UTC',
             'integrations' => [],
         ]);
 
-        $this->teamName = (string) ($stored['team_name'] ?? $team->name);
+        $this->teamName = (string) ($stored['team_name'] ?? $team->getAttribute('name'));
         $this->timezone = (string) ($stored['timezone'] ?? 'UTC');
         $integrations = (array) ($stored['integrations'] ?? []);
         $this->githubClientId = (string) ($integrations['github_client_id'] ?? '');
@@ -70,10 +70,10 @@ final class AccountSetup extends Page
         ]);
 
         $team = $this->currentTeam($resolver);
-        abort_unless((string) $team->user_id === (string) auth()->id(), 403, 'Only the team owner can change team settings.');
+        abort_unless((string) $team->getAttribute('user_id') === (string) auth()->id(), 403, 'Only the team owner can change team settings.');
         $team->forceFill(['name' => trim($this->teamName)])->save();
-        $this->teamName = $team->name;
-        $this->persist($settings, $team, 1, ['team_name' => $team->name, 'timezone' => $this->timezone]);
+        $this->teamName = (string) $team->getAttribute('name');
+        $this->persist($settings, $team, 1, ['team_name' => $team->getAttribute('name'), 'timezone' => $this->timezone]);
         $this->step = 2;
     }
 
@@ -88,7 +88,7 @@ final class AccountSetup extends Page
         ]);
 
         $team = $this->currentTeam($resolver);
-        abort_unless((string) $team->user_id === (string) auth()->id(), 403, 'Only the team owner can change team settings.');
+        abort_unless((string) $team->getAttribute('user_id') === (string) auth()->id(), 403, 'Only the team owner can change team settings.');
         $stored = $settings->resolve('team.setup', ['team' => $team->getKey()], ['integrations' => []]);
         $integrations = (array) ($stored['integrations'] ?? []);
         $values = [
@@ -174,7 +174,7 @@ final class AccountSetup extends Page
     {
         $existing = $settings->resolve('team.setup', ['team' => $team->getKey()], [
             'completed_steps' => [],
-            'team_name' => $team->name,
+            'team_name' => (string) $team->getAttribute('name'),
             'timezone' => $this->timezone,
             'integrations' => [],
         ]);
