@@ -10,6 +10,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -39,9 +40,26 @@ class AppPanelProvider extends PanelProvider
                 AccountSetup::class,
             ])
             ->navigationGroups([
-                'Account',
-                'Workspace',
-                'Settings',
+                NavigationGroup::make('Getting started'),
+                NavigationGroup::make('Workspace'),
+                NavigationGroup::make('Account & Security'),
+                NavigationGroup::make('Preferences'),
+                NavigationGroup::make('Accounts & Hosting')->collapsed(),
+                NavigationGroup::make('Web Hosting')->collapsed(),
+                NavigationGroup::make('Files & Access')->collapsed(),
+                NavigationGroup::make('Databases')->collapsed(),
+                NavigationGroup::make('DNS')->collapsed(),
+                NavigationGroup::make('Email & Messaging')->collapsed(),
+                NavigationGroup::make('Certificates')->collapsed(),
+                NavigationGroup::make('Backups')->collapsed(),
+                NavigationGroup::make('Monitoring')->collapsed(),
+                NavigationGroup::make('Automation & Integrations')->collapsed(),
+                NavigationGroup::make('Containers')->collapsed(),
+                NavigationGroup::make('Kubernetes')->collapsed(),
+                NavigationGroup::make('Server Management')->collapsed(),
+                NavigationGroup::make('Operations')->collapsed(),
+                NavigationGroup::make('Security & Compliance')->collapsed(),
+                NavigationGroup::make('Administration')->collapsed(),
             ])
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\Filament\App\Widgets')
             ->widgets([

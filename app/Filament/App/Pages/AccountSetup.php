@@ -9,6 +9,7 @@ use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
 use Liberu\Foundation\Organizations\Models\Team;
 use Liberu\Foundation\Organizations\Services\CurrentTeamResolver;
+use Liberu\Foundation\SessionsDevicesFilament\Pages\AccountSecurity;
 use Liberu\Foundation\Settings\Services\ScopedSettings;
 
 final class AccountSetup extends Page
@@ -17,7 +18,7 @@ final class AccountSetup extends Page
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Account';
+    protected static string|\UnitEnum|null $navigationGroup = 'Getting started';
 
     protected static ?string $navigationLabel = 'Setup guide';
 
@@ -54,6 +55,9 @@ final class AccountSetup extends Page
 
         $this->teamName = (string) ($stored['team_name'] ?? $team->name);
         $this->timezone = (string) ($stored['timezone'] ?? 'UTC');
+        $integrations = (array) ($stored['integrations'] ?? []);
+        $this->githubClientId = (string) ($integrations['github_client_id'] ?? '');
+        $this->googleClientId = (string) ($integrations['google_client_id'] ?? '');
         $this->completedSteps = array_values(array_map('intval', $stored['completed_steps'] ?? []));
         $this->step = min(max((int) request()->integer('step', 1), 1), 3);
     }
@@ -84,6 +88,7 @@ final class AccountSetup extends Page
         ]);
 
         $team = $this->currentTeam($resolver);
+        abort_unless((string) $team->user_id === (string) auth()->id(), 403, 'Only the team owner can change team settings.');
         $stored = $settings->resolve('team.setup', ['team' => $team->getKey()], ['integrations' => []]);
         $integrations = (array) ($stored['integrations'] ?? []);
         $values = [
@@ -123,6 +128,11 @@ final class AccountSetup extends Page
         $this->step = $step;
     }
 
+    public function securityUrl(): string
+    {
+        return AccountSecurity::getUrl(panel: 'app');
+    }
+
     /** @return array<string, mixed> */
     public function integrationStatus(): array
     {
@@ -138,6 +148,14 @@ final class AccountSetup extends Page
             'Google OAuth' => filled($integrations['google_client_id'] ?? null) && filled($integrations['google_client_secret'] ?? null),
             'Stripe API' => filled($integrations['stripe_secret'] ?? null),
         ];
+    }
+
+    /** @return array<string, string> */
+    public function timezoneOptions(): array
+    {
+        return collect(\DateTimeZone::listIdentifiers())
+            ->mapWithKeys(fn (string $timezone): array => [$timezone => str_replace('_', ' ', $timezone)])
+            ->all();
     }
 
     private function currentTeam(CurrentTeamResolver $resolver): Team
