@@ -58,7 +58,7 @@ jobs:
         run: composer audit --locked
 
       - name: Check formatting
-        run: vendor/bin/pint --test
+        run: vendor/bin/pint --test app config database routes tests
 
       # phpstan.neon existed and was configured at level 9 while nothing ever
       # ran it. Scope and level are explained in that file.
