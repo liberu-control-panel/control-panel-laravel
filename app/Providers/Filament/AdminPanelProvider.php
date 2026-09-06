@@ -9,6 +9,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -40,23 +41,24 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->navigationGroups([
-                'Accounts & Hosting',
-                'Web Hosting',
-                'Files & Access',
-                'Databases',
-                'DNS',
-                'Email & Messaging',
-                'Certificates',
-                'Backups',
-                'Monitoring',
-                'Automation & Integrations',
-                'Containers',
-                'Kubernetes',
-                'Server Management',
-                'Operations',
-                'Security & Compliance',
-                'Administration',
-                'Settings',
+                NavigationGroup::make('Workspace'),
+                NavigationGroup::make('Accounts & Hosting'),
+                NavigationGroup::make('Web Hosting'),
+                NavigationGroup::make('Files & Access')->collapsed(),
+                NavigationGroup::make('Databases')->collapsed(),
+                NavigationGroup::make('DNS')->collapsed(),
+                NavigationGroup::make('Email & Messaging')->collapsed(),
+                NavigationGroup::make('Certificates')->collapsed(),
+                NavigationGroup::make('Backups')->collapsed(),
+                NavigationGroup::make('Monitoring')->collapsed(),
+                NavigationGroup::make('Automation & Integrations')->collapsed(),
+                NavigationGroup::make('Containers')->collapsed(),
+                NavigationGroup::make('Kubernetes')->collapsed(),
+                NavigationGroup::make('Server Management')->collapsed(),
+                NavigationGroup::make('Operations')->collapsed(),
+                NavigationGroup::make('Security & Compliance')->collapsed(),
+                NavigationGroup::make('Administration')->collapsed(),
+                NavigationGroup::make('Settings')->collapsed(),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([

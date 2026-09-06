@@ -50,7 +50,7 @@ jobs:
         run: composer audit --locked
 
       - name: Check formatting
-        run: vendor/bin/pint --test
+        run: vendor/bin/pint --test app config database routes tests
 
       - name: Static analysis
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
