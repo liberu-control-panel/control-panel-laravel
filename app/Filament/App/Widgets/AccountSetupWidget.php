@@ -17,16 +17,21 @@ final class AccountSetupWidget extends Widget
 
     public bool $needsSetup = false;
 
+    public static function canView(): bool
+    {
+        return AccountSetup::canAccess();
+    }
+
     public function mount(CurrentTeamResolver $resolver, ScopedSettings $settings): void
     {
         $user = auth()->user();
         $team = $user === null ? null : $resolver->resolve($user, $user->current_team_id);
-        if ($team === null) {
+        if ($team === null || (string) $team->getAttribute('user_id') !== (string) $user->getAuthIdentifier()) {
             return;
         }
 
         $stored = $settings->resolve('team.setup', ['team' => $team->getKey()], ['completed_steps' => []]);
-        $this->needsSetup = ! in_array(3, array_map('intval', $stored['completed_steps'] ?? []), true);
+        $this->needsSetup = array_diff([1, 2, 3], array_map('intval', $stored['completed_steps'] ?? [])) !== [];
     }
 
     public function setupUrl(): string
