@@ -17,7 +17,7 @@ class ManageSiteSettings extends SettingsPage
 
     protected static string $settings = SiteSettings::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|\UnitEnum|null $navigationGroup = 'Preferences';
 
     protected static ?string $title = 'Site Settings';
 
