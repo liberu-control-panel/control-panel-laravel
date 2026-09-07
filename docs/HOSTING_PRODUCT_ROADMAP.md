@@ -27,6 +27,10 @@ These are configuration indicators, not uptime probes. The overview does not ass
 
 ## Prioritized delivery backlog
 
+Onboarding hardening now binds the wizard to its originating team, rechecks owner access, derives step eligibility from persisted progress, and uses a locked revision plus a database transaction to reject stale-tab updates. Optional OAuth pairs are validated and secrets are not loaded back into inputs. The setup UI uses Filament-native controls and labels stored credentials as unverified storage. Runtime consumers for those team credentials and real connection verification remain outstanding.
+
+Source inspection also confirms that `CreateDomain`, `CreateVirtualHost`, and `ActivateDomain` currently write records; those actions alone do not configure a remote web server. A launch wizard must integrate a real execution/reconciliation adapter and verify the result rather than call these three actions and declare the site deployed.
+
 | Priority | Workflow | Existing surface to build on | Acceptance gate |
 | --- | --- | --- | --- |
 | P0 | Secure onboarding and connection readiness | Account setup, scoped settings, connected accounts, node credentials | Team owners authorize changes; stored credentials are distinguished from tested connections; reconnect, expiry and revoked-access paths are tested; no secret appears in client state or logs. |
