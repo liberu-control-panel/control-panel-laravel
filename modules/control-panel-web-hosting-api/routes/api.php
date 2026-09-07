@@ -29,6 +29,9 @@ Route::prefix('api/v1/control-panel/web-hosting')
         Route::get('/cron-jobs/{job}/executions', [DomainController::class, 'cronExecutions'])->name('control-panel.web-hosting.cron-jobs.executions.index');
         Route::post('/cron-jobs/{job}/executions', [DomainController::class, 'recordCronExecution'])->name('control-panel.web-hosting.cron-jobs.executions.store');
         Route::post('/domains/{domain}/virtual-hosts', [DomainController::class, 'virtualHost'])->name('control-panel.web-hosting.virtual-hosts.store');
+        Route::post('/domains/{domain}/launches', [DomainController::class, 'launch'])->name('control-panel.web-hosting.launches.store');
+        Route::post('/launches/{launch}/run', [DomainController::class, 'runLaunch'])->name('control-panel.web-hosting.launches.run');
+        Route::get('/launches/{launch}', [DomainController::class, 'showLaunch'])->name('control-panel.web-hosting.launches.show');
         Route::patch('/virtual-hosts/{virtualHost}', [DomainController::class, 'updateVirtualHost'])->name('control-panel.web-hosting.virtual-hosts.update');
         Route::delete('/virtual-hosts/{virtualHost}', [DomainController::class, 'deleteVirtualHost'])->name('control-panel.web-hosting.virtual-hosts.delete');
         Route::post('/domains/{domain}/redirects', [DomainController::class, 'redirect'])->name('control-panel.web-hosting.redirects.store');
@@ -50,6 +53,11 @@ Route::prefix('api/v1/control-panel/web-hosting')
         Route::get('/applications/{application}/performance', [DomainController::class, 'applicationPerformance'])->name('control-panel.web-hosting.applications.performance');
         Route::post('/applications/{application}/health-checks', [DomainController::class, 'applicationHealth'])->name('control-panel.web-hosting.applications.health');
         Route::post('/applications/{application}/wordpress-update-checks', [DomainController::class, 'wordpressUpdate'])->name('control-panel.web-hosting.applications.wordpress-update-check');
+        Route::post('/applications/{application}/wordpress/clone', [DomainController::class, 'wordpressClone'])->name('control-panel.web-hosting.applications.wordpress.clone');
+        Route::post('/applications/{application}/wordpress/update', [DomainController::class, 'wordpressUpdateOperation'])->name('control-panel.web-hosting.applications.wordpress.update');
+        Route::post('/applications/{application}/wordpress/rollback', [DomainController::class, 'wordpressRollback'])->name('control-panel.web-hosting.applications.wordpress.rollback');
+        Route::post('/wordpress-operations/{operation}/run', [DomainController::class, 'runWordPressOperation'])->name('control-panel.web-hosting.wordpress-operations.run');
+        Route::get('/wordpress-operations/{operation}', [DomainController::class, 'showWordPressOperation'])->name('control-panel.web-hosting.wordpress-operations.show');
         Route::post('/domains/{domain}/hotlink-protection', [WebProtectionController::class, 'hotlink'])->name('control-panel.web-hosting.hotlink-protection.store');
         Route::post('/domains/{domain}/directory-protections', [WebProtectionController::class, 'directory'])->name('control-panel.web-hosting.directory-protections.store');
         Route::post('/directory-protections/{protection}/users', [WebProtectionController::class, 'directoryUser'])->name('control-panel.web-hosting.directory-protections.users.store');

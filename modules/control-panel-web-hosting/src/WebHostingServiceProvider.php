@@ -16,6 +16,8 @@ use Liberu\ControlPanel\WebHosting\Actions\CreateMimeType;
 use Liberu\ControlPanel\WebHosting\Actions\CreateRedirect;
 use Liberu\ControlPanel\WebHosting\Actions\CreateSubdomain;
 use Liberu\ControlPanel\WebHosting\Actions\CreateVirtualHost;
+use Liberu\ControlPanel\WebHosting\Actions\CreateWebsiteLaunch;
+use Liberu\ControlPanel\WebHosting\Actions\CreateWordPressOperation;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteCronJob;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteCustomErrorPage;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteDirectoryProtection;
@@ -29,20 +31,28 @@ use Liberu\ControlPanel\WebHosting\Actions\RegisterGitDeployment;
 use Liberu\ControlPanel\WebHosting\Actions\RegisterHostingResource;
 use Liberu\ControlPanel\WebHosting\Actions\RemoveDirectoryProtectionUser;
 use Liberu\ControlPanel\WebHosting\Actions\RequestCertificate;
+use Liberu\ControlPanel\WebHosting\Actions\RunWebsiteLaunch;
+use Liberu\ControlPanel\WebHosting\Actions\RunWordPressOperation;
 use Liberu\ControlPanel\WebHosting\Actions\SaveCustomErrorPage;
 use Liberu\ControlPanel\WebHosting\Actions\SavePhpConfiguration;
 use Liberu\ControlPanel\WebHosting\Actions\SuspendDomain;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateCronJob;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateRedirect;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateSubdomain;
+use Liberu\ControlPanel\WebHosting\Contracts\WebsiteLaunchExecutor;
+use Liberu\ControlPanel\WebHosting\Contracts\WordPressLifecycleExecutor;
 use Liberu\ControlPanel\WebHosting\Queries\ListDomains;
 use Liberu\ControlPanel\WebHosting\Queries\ListGitDeployments;
 use Liberu\ControlPanel\WebHosting\Queries\ListResourceUsage;
+use Liberu\ControlPanel\WebHosting\Services\UnavailableWebsiteLaunchExecutor;
+use Liberu\ControlPanel\WebHosting\Services\UnavailableWordPressLifecycleExecutor;
 
 final class WebHostingServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->scoped(WebsiteLaunchExecutor::class, UnavailableWebsiteLaunchExecutor::class);
+        $this->app->scoped(WordPressLifecycleExecutor::class, UnavailableWordPressLifecycleExecutor::class);
         $this->app->scoped(AddDirectoryProtectionUser::class);
         $this->app->scoped(ConfigureHotlinkProtection::class);
         $this->app->scoped(CreateDirectoryProtection::class);
@@ -76,6 +86,10 @@ final class WebHostingServiceProvider extends ServiceProvider
         $this->app->scoped(SavePhpConfiguration::class);
         $this->app->scoped(SuspendDomain::class);
         $this->app->scoped(UpdateRedirect::class);
+        $this->app->scoped(CreateWebsiteLaunch::class);
+        $this->app->scoped(RunWebsiteLaunch::class);
+        $this->app->scoped(CreateWordPressOperation::class);
+        $this->app->scoped(RunWordPressOperation::class);
     }
 
     public function boot(): void

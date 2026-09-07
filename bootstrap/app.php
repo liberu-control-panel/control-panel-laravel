@@ -1,9 +1,11 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Liberu\ControlPanel\Backups\BackupsServiceProvider;
 use Liberu\Foundation\ApplicationCore\Http\Middleware\SecurityHeaders;
 use Liberu\Foundation\Localization\Http\Middleware\SetLocale;
 
@@ -15,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        if (app()->providerIsLoaded(BackupsServiceProvider::class)) {
+            $schedule->command('hosting:run-backup-schedules')->everyMinute()->onOneServer()->withoutOverlapping();
+            $schedule->command('hosting:prune-files')->dailyAt('02:00')->onOneServer()->withoutOverlapping();
+        }
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', [SetLocale::class, SecurityHeaders::class]);
     })
