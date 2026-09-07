@@ -31,6 +31,8 @@ Onboarding hardening now binds the wizard to its originating team, rechecks owne
 
 Source inspection also confirms that `CreateDomain`, `CreateVirtualHost`, and `ActivateDomain` currently write records; those actions alone do not configure a remote web server. A launch wizard must integrate a real execution/reconciliation adapter and verify the result rather than call these three actions and declare the site deployed.
 
+The first real recovery executor is documented in [Encrypted local-file backups](FILE_BACKUP_EXECUTOR.md): operator-allowlisted sources, encrypted file archives, authenticated team/snapshot ownership, checksum verification, and non-overwriting restores tested against disposable filesystem fixtures. Database-consistent backups, remote/offsite storage, scheduling, retention and live application recovery remain required for the broader backup workflow.
+
 | Priority | Workflow | Existing surface to build on | Acceptance gate |
 | --- | --- | --- | --- |
 | P0 | Secure onboarding and connection readiness | Account setup, scoped settings, connected accounts, node credentials | Team owners authorize changes; stored credentials are distinguished from tested connections; reconnect, expiry and revoked-access paths are tested; no secret appears in client state or logs. |
