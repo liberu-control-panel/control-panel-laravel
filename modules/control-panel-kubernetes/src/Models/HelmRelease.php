@@ -6,6 +6,7 @@ namespace Liberu\ControlPanel\Kubernetes\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class HelmRelease extends Model
 {
@@ -18,5 +19,10 @@ final class HelmRelease extends Model
     protected function casts(): array
     {
         return ['values' => 'array'];
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(HelmRevision::class, 'release_id');
     }
 }

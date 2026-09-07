@@ -31,6 +31,17 @@ return [
 
     'connections' => [
 
+        // This connection intentionally shares the application database so requests
+        // and queued jobs commit atomically. Run a dedicated worker for this queue.
+        'hosting-backups' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'hosting-backups',
+            'retry_after' => 960,
+            'after_commit' => false,
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],

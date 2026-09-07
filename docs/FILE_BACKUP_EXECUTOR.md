@@ -1,6 +1,6 @@
 # Encrypted local-file backup and restore
 
-The host now supplies a real file executor alongside the backup module's snapshot and restore records. It is opt-in and operator-only: it does not expose arbitrary filesystem paths to panel users, invoke shell commands, or automatically process every queued backup record.
+The host supplies a real file executor alongside the backup module's snapshot and restore records. Configuration is opt-in and operator-controlled; team owners can request approved backups and private restores through the panels. It does not expose arbitrary filesystem paths to panel users, invoke shell commands, or automatically process every queued backup record.
 
 ## What it does
 
@@ -11,7 +11,7 @@ The host now supplies a real file executor alongside the backup module's snapsho
 - On restore, checks the archive checksum and HMAC, verifies all entries, writes into a newly generated private directory, then hashes the files read back from disk. No existing website or restore directory is replaced.
 - Records success/failure in the backup module's existing snapshot/restore tables. Ordinary failures clean up the newly created staging/restore directory. A process kill or cleanup failure can leave private partial directories for operator inspection; do not serve them as websites.
 
-This is a **file-only** backup. It does not create database dumps, snapshot a live application atomically, back up remote nodes, upload offsite, apply retention, restore ownership/ACLs, or activate the restored website. A verified archive is not proof of application consistency or recoverability of a live database. Quiesce the application or point the source at a stable filesystem snapshot before running it.
+This is a **file-only** backup. It does not create database dumps, snapshot a live application atomically, back up remote nodes, upload offsite, restore ownership/ACLs, or activate the restored website. The operator can apply policy-based retention to verified local-file snapshots with `hosting:prune-files`; it deletes only expired archives and their records, and skips snapshots with queued or running restores. A verified archive is not proof of application consistency or recoverability of a live database. Quiesce the application or point the source at a stable filesystem snapshot before running it.
 
 ## Configure deliberately
 
@@ -39,6 +39,7 @@ Configuration changes require the usual Laravel configuration-cache refresh. The
 ```bash
 php artisan hosting:backup-files customer-site
 php artisan hosting:restore-files SNAPSHOT_UUID --team=123
+php artisan hosting:prune-files --team=123
 ```
 
 The backup command returns a verified snapshot UUID. Restore returns a restore UUID and its generated private directory. Inspect the restored files and validate the application with a disposable database before any deliberate cutover. Restored files use mode `0600` and directories `0700`; ownership, executable modes and deployment permissions must be applied separately by the operator.
@@ -47,6 +48,26 @@ The commands return nonzero on failure. Detailed errors go to the operator log; 
 
 For key rotation, add a new entry under `keys`, change `active_key`, and retain old keys until every corresponding snapshot is retired. Existing snapshots select their recorded key ID. Rotation does not re-encrypt old archives.
 
+## Panel requests and background worker
+
+After deploying the migrations, team owners can use **Backups → File backup & recovery** in the app panel or their selected admin tenant. Members without ownership cannot execute these operations. The page lists only approved source aliases and the team's latest 50 verified file snapshots, not paths or encryption keys. Requests and their database queue jobs are committed atomically.
+
+Run a dedicated supervised worker under the least-privileged account described above:
+
+```bash
+php artisan queue:work hosting-backups --queue=hosting-backups --timeout=900 --tries=1
+```
+
+This uses the application's database and `jobs` table, independently of the default queue connection. A Redis/Horizon worker does not consume this queue. Keep its 960-second visibility timeout above the 900-second job timeout; allow graceful worker termination longer than the job timeout. Refresh configuration and restart workers after changing source aliases, keys or limits.
+
+The worker rechecks ownership, active team access, policy eligibility, source configuration and limits before execution. Only one pending/running request per team is allowed; pending work can be cancelled. The panel polls request status, and shows snapshot/restore IDs on completion. An administrator must inspect the private restored directory before any cutover. Retention is an operator action; run `hosting:prune-files` from a supervised maintenance schedule after confirming that no worker is still using the archives.
+
+Default panel limits are 20 retained snapshot records and five restore copies per team. They are admission limits, not filesystem quotas. Configure operating-system disk quotas and run the retention command according to each policy; never delete records merely to reset counters while leaving their files behind.
+
+An interrupted running job retains its team reservation as `review_required`; a hard kill can leave it `running`. Do not blindly retry, cancel or clear its reservation: stop and confirm the old worker is no longer executing, inspect the snapshot/restore records and private partial directories, and reconcile the filesystem outcome before an operator updates the request and releases `active_key`. Automatic interruption reconciliation is not implemented.
+
 ## Verification scope
 
 `tests/Feature/LocalFileBackupsTest.php` uses isolated real filesystem fixtures and ZIP encryption, not mocked file contents. It covers binary/Unicode/hidden files, empty trees, repeated non-overwriting restores, corrupted archives, wrong-team access, metadata team reassignment, key rotation, unsafe links and paths, resource limits, and the CLI path. These tests do not establish remote-host, database, offsite-storage or live-application recovery guarantees.
+
+`tests/Feature/FileBackupWorkflowTest.php` covers Filament actions through serialized database-queue execution and real restored bytes, tenant isolation, revoked access, changed configuration, limits, cancellation, duplicate deliveries and interrupted workers. Livewire component tests do not substitute for real-browser or staging-host acceptance testing.

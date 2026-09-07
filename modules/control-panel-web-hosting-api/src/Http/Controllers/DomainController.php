@@ -18,6 +18,8 @@ use Liberu\ControlPanel\WebHosting\Actions\CreateMimeType;
 use Liberu\ControlPanel\WebHosting\Actions\CreateRedirect;
 use Liberu\ControlPanel\WebHosting\Actions\CreateSubdomain;
 use Liberu\ControlPanel\WebHosting\Actions\CreateVirtualHost;
+use Liberu\ControlPanel\WebHosting\Actions\CreateWebsiteLaunch;
+use Liberu\ControlPanel\WebHosting\Actions\CreateWordPressOperation;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteCronJob;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteHostedApplication;
 use Liberu\ControlPanel\WebHosting\Actions\DeleteRedirect;
@@ -29,6 +31,8 @@ use Liberu\ControlPanel\WebHosting\Actions\RegisterGitDeployment;
 use Liberu\ControlPanel\WebHosting\Actions\RegisterHostingResource;
 use Liberu\ControlPanel\WebHosting\Actions\RequestCertificate;
 use Liberu\ControlPanel\WebHosting\Actions\RequestGitDeployment;
+use Liberu\ControlPanel\WebHosting\Actions\RunWebsiteLaunch;
+use Liberu\ControlPanel\WebHosting\Actions\RunWordPressOperation;
 use Liberu\ControlPanel\WebHosting\Actions\SavePhpConfiguration;
 use Liberu\ControlPanel\WebHosting\Actions\SuspendDomain;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateCronJob;
@@ -37,6 +41,7 @@ use Liberu\ControlPanel\WebHosting\Actions\UpdateHostedApplication;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateRedirect;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateSubdomain;
 use Liberu\ControlPanel\WebHosting\Actions\UpdateVirtualHost;
+use Liberu\ControlPanel\WebHosting\Enums\WordPressOperationType;
 use Liberu\ControlPanel\WebHosting\Models\CronExecution;
 use Liberu\ControlPanel\WebHosting\Models\CronJob;
 use Liberu\ControlPanel\WebHosting\Models\Domain;
@@ -52,6 +57,8 @@ use Liberu\ControlPanel\WebHosting\Models\SslCertificate;
 use Liberu\ControlPanel\WebHosting\Models\Subdomain;
 use Liberu\ControlPanel\WebHosting\Models\VirtualHost;
 use Liberu\ControlPanel\WebHosting\Models\WebServer;
+use Liberu\ControlPanel\WebHosting\Models\WebsiteLaunch;
+use Liberu\ControlPanel\WebHosting\Models\WordPressOperation;
 use Liberu\ControlPanel\WebHosting\Queries\ApplicationStatistics;
 use Liberu\ControlPanel\WebHosting\Queries\ListDomains;
 use Liberu\ControlPanel\WebHosting\Queries\ListGitDeployments;
@@ -467,6 +474,35 @@ final class DomainController
         return response()->json(['data' => $check->execute($application)]);
     }
 
+    public function wordpressClone(Request $request, HostedApplication $application, CreateWordPressOperation $create): JsonResponse
+    {
+        return $this->createWordPressOperation($request, $application, WordPressOperationType::Clone, $create);
+    }
+
+    public function wordpressUpdateOperation(Request $request, HostedApplication $application, CreateWordPressOperation $create): JsonResponse
+    {
+        return $this->createWordPressOperation($request, $application, WordPressOperationType::Update, $create);
+    }
+
+    public function wordpressRollback(Request $request, HostedApplication $application, CreateWordPressOperation $create): JsonResponse
+    {
+        return $this->createWordPressOperation($request, $application, WordPressOperationType::Rollback, $create);
+    }
+
+    public function runWordPressOperation(Request $request, string $operation, RunWordPressOperation $run): JsonResponse
+    {
+        $item = WordPressOperation::query()->whereKey($operation)->where('team_id', $this->teamId($request))->firstOrFail();
+
+        return response()->json(['data' => self::wordpressOperationResource($run->execute($item))]);
+    }
+
+    public function showWordPressOperation(Request $request, string $operation): JsonResponse
+    {
+        $item = WordPressOperation::query()->whereKey($operation)->where('team_id', $this->teamId($request))->firstOrFail();
+
+        return response()->json(['data' => self::wordpressOperationResource($item)]);
+    }
+
     public function deployments(Request $request, ListGitDeployments $list): JsonResponse
     {
         $teamId = $request->user()?->current_team_id;
@@ -490,6 +526,32 @@ final class DomainController
         $deployment = $register->execute($domain, $data);
 
         return response()->json(['data' => self::deploymentResource($deployment)], 201);
+    }
+
+    public function launch(Request $request, Domain $domain, CreateWebsiteLaunch $create): JsonResponse
+    {
+        $this->assertTeam($request, $domain);
+        $data = $request->validate([
+            'node_id' => ['required', 'string', 'max:255'],
+            'idempotency_key' => ['required', 'string', 'max:255'],
+            'config' => ['sometimes', 'array'],
+        ]);
+
+        return response()->json(['data' => self::launchResource($create->execute($domain, array_merge($data, ['team_id' => $this->teamId($request)])))], 202);
+    }
+
+    public function runLaunch(Request $request, string $launch, RunWebsiteLaunch $run): JsonResponse
+    {
+        $item = WebsiteLaunch::query()->whereKey($launch)->where('team_id', $this->teamId($request))->firstOrFail();
+
+        return response()->json(['data' => self::launchResource($run->execute($item))]);
+    }
+
+    public function showLaunch(Request $request, string $launch): JsonResponse
+    {
+        $item = WebsiteLaunch::query()->whereKey($launch)->where('team_id', $this->teamId($request))->firstOrFail();
+
+        return response()->json(['data' => self::launchResource($item)]);
     }
 
     public function deploy(Request $request, string $deployment, RequestGitDeployment $requestDeployment): JsonResponse
@@ -638,6 +700,33 @@ final class DomainController
     private static function deploymentResource(GitDeployment $deployment): array
     {
         return ['id' => $deployment->getKey(), 'type' => 'control-panel-git-deployment', 'attributes' => $deployment->only(['domain_id', 'repository_url', 'repository_type', 'branch', 'deploy_path', 'use_oauth', 'status', 'auto_deploy', 'last_deployed_at', 'last_commit_hash'])];
+    }
+
+    /** @return array<string, mixed> */
+    private static function launchResource(WebsiteLaunch $launch): array
+    {
+        return ['id' => $launch->getKey(), 'type' => 'control-panel-website-launch', 'attributes' => $launch->only(['domain_id', 'node_id', 'idempotency_key', 'status', 'current_stage', 'config', 'result', 'steps', 'error', 'started_at', 'finished_at'])];
+    }
+
+    /** @return array<string, mixed> */
+    private static function wordpressOperationResource(WordPressOperation $operation): array
+    {
+        return ['id' => $operation->getKey(), 'type' => 'control-panel-wordpress-operation', 'attributes' => $operation->only(['application_id', 'target_application_id', 'operation', 'idempotency_key', 'status', 'result', 'error', 'started_at', 'finished_at'])];
+    }
+
+    private function createWordPressOperation(Request $request, HostedApplication $application, WordPressOperationType $type, CreateWordPressOperation $create): JsonResponse
+    {
+        $this->assertApplicationTeam($request, $application);
+        $data = $request->validate([
+            'idempotency_key' => ['required', 'string', 'max:255'],
+            'target_domain_id' => ['nullable', 'uuid'],
+            'target_application_id' => ['nullable', 'uuid'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'document_root' => ['nullable', 'string', 'starts_with:/', 'max:2048'],
+            'config' => ['sometimes', 'array'],
+        ]);
+
+        return response()->json(['data' => self::wordpressOperationResource($create->execute($application, $type, array_merge($data, ['team_id' => $this->teamId($request)])))], 202);
     }
 
     /** @return array<string, mixed> */

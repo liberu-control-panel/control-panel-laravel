@@ -2,6 +2,7 @@
 
 use App\Hosting\Backups\EncryptedFileArchive;
 use App\Hosting\Backups\LocalFileBackups;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Liberu\ControlPanel\Backups\Actions\CreatePolicy;
@@ -160,6 +161,39 @@ it('executes the operator backup and restore commands', function (): void {
     $this->artisan('hosting:restore-files', ['snapshot' => $snapshot->getKey(), '--team' => 'team-1'])->assertSuccessful();
     $this->artisan('hosting:restore-files', ['snapshot' => $snapshot->getKey()])->assertFailed();
     $this->artisan('hosting:backup-files', ['source' => 'missing'])->assertFailed();
+    $this->artisan('hosting:restore-files', ['snapshot' => $snapshot->getKey(), '--team' => 'another-team'])->assertFailed();
+});
+
+it('refuses the backup command when the module is disabled', function (): void {
+    $providers = new ReflectionProperty(app(), 'loadedProviders');
+    $loaded = $providers->getValue(app());
+    $disabled = $loaded;
+    unset($disabled[BackupsServiceProvider::class]);
+    $providers->setValue(app(), $disabled);
+    try {
+        $this->artisan('hosting:backup-files', ['source' => 'fixture'])
+            ->expectsOutput('Enable the control-panel-backups module before executing backups.')->assertFailed();
+    } finally {
+        $providers->setValue(app(), $loaded);
+    }
+});
+
+it('removes the new private restore directory if recording completion fails', function (): void {
+    $snapshot = app(LocalFileBackups::class)->backup('fixture');
+    $event = 'eloquent.updating: '.BackupRestore::class;
+    Event::listen($event, function (BackupRestore $restore): void {
+        if ($restore->getAttribute('status')->value === 'completed') {
+            throw new RuntimeException('Simulated completion write failure');
+        }
+    });
+    try {
+        expect(fn () => app(LocalFileBackups::class)->restore((string) $snapshot->getKey(), 'team-1'))->toThrow(RuntimeException::class);
+        $restore = BackupRestore::query()->firstOrFail();
+        expect($restore->getAttribute('status')->value)->toBe('failed')
+            ->and(is_dir($restore->getAttribute('target')))->toBeFalse();
+    } finally {
+        Event::forget($event);
+    }
 });
 
 it('authenticates the owning team as well as the archive bytes', function (): void {

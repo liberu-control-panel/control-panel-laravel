@@ -17,6 +17,7 @@ use Liberu\ControlPanel\Backups\Actions\RequestRestore;
 use Liberu\ControlPanel\Backups\Actions\UpdateDestination;
 use Liberu\ControlPanel\Backups\Actions\UpdatePolicy;
 use Liberu\ControlPanel\Backups\Actions\UpdateSchedule;
+use Liberu\ControlPanel\Backups\Services\BackupScheduleCalculator;
 
 final class BackupsServiceProvider extends ServiceProvider
 {
@@ -34,6 +35,7 @@ final class BackupsServiceProvider extends ServiceProvider
         $this->app->scoped(UpdatePolicy::class);
         $this->app->scoped(UpdateDestination::class);
         $this->app->scoped(UpdateSchedule::class);
+        $this->app->scoped(BackupScheduleCalculator::class);
     }
 
     public function boot(): void

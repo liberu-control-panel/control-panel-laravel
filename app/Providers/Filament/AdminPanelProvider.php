@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Pages\FileRecovery;
 use App\Filament\App\Pages\Websites;
 use App\Filament\ModulePlugins;
 use App\Support\ThemeColors;
@@ -41,6 +42,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 Websites::class,
+                FileRecovery::class,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Workspace'),

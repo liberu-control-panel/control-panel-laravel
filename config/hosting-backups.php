@@ -16,4 +16,8 @@ return [
     'max_files' => 10000,
     'max_bytes' => 1024 * 1024 * 1024,
     'max_manifest_bytes' => 4 * 1024 * 1024,
+    // Panel requests stop at these record counts; operators retire copies explicitly.
+    // Enforce filesystem quotas too: these limits are not byte-level disk quotas.
+    'max_panel_snapshots' => 20,
+    'max_panel_restores' => 5,
 ];

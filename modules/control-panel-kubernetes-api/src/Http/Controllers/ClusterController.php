@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Liberu\ControlPanel\Kubernetes\Actions\ArchiveCluster;
+use Liberu\ControlPanel\Kubernetes\Actions\ReconcileWorkload;
 use Liberu\ControlPanel\Kubernetes\Actions\RecordKubernetesResource;
 use Liberu\ControlPanel\Kubernetes\Actions\RegisterCluster;
 use Liberu\ControlPanel\Kubernetes\Actions\RegisterKubernetesAsset;
+use Liberu\ControlPanel\Kubernetes\Actions\RollbackHelmRelease;
 use Liberu\ControlPanel\Kubernetes\Actions\SuspendCluster;
 use Liberu\ControlPanel\Kubernetes\Models\Cluster;
 use Liberu\ControlPanel\Kubernetes\Models\HelmRelease;
@@ -152,6 +154,25 @@ final class ClusterController
         $item = $register->execute(array_merge($data['payload'], ['kind' => $data['kind'], 'team_id' => $teamId]));
 
         return response()->json(['data' => ['id' => $item->getKey(), 'type' => 'control-panel-kubernetes-'.$data['kind'], 'attributes' => $item->only(self::ASSET_FIELDS[$data['kind']])]], 201);
+    }
+
+    public function reconcileWorkload(Request $request, KubernetesWorkload $workload, ReconcileWorkload $reconcile): JsonResponse
+    {
+        abort_if($request->user()?->current_team_id === null, 403, 'A current team is required.');
+        abort_unless((string) $workload->team_id === (string) $request->user()?->current_team_id, 404);
+        $item = $reconcile->execute($workload);
+
+        return response()->json(['data' => ['id' => $item->getKey(), 'type' => 'control-panel-kubernetes-workload', 'attributes' => $item->only(self::ASSET_FIELDS['workload'])]]);
+    }
+
+    public function rollbackHelmRelease(Request $request, HelmRelease $release, RollbackHelmRelease $rollback): JsonResponse
+    {
+        abort_if($request->user()?->current_team_id === null, 403, 'A current team is required.');
+        abort_unless((string) $release->team_id === (string) $request->user()?->current_team_id, 404);
+        $data = $request->validate(['revision' => ['required', 'integer', 'min:1']]);
+        $item = $rollback->execute($release, $data['revision']);
+
+        return response()->json(['data' => ['id' => $item->getKey(), 'type' => 'control-panel-kubernetes-helm', 'attributes' => $item->only(self::ASSET_FIELDS['helm'])]]);
     }
 
     private static function resource(Cluster $item): array

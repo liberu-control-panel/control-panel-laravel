@@ -48,6 +48,18 @@ final class RegisterKubernetesAsset
         } else {
             unset($a['kind']);
         }
+        if ($kind === 'autoscaling') {
+            $target = trim((string) ($a['target'] ?? ''));
+            $min = (int) ($a['min_replicas'] ?? 0);
+            $max = (int) ($a['max_replicas'] ?? 0);
+            if ($target === '' || $min < 1 || $max < $min) {
+                throw ValidationException::withMessages(['autoscaling' => 'An autoscaler needs a target and valid replica bounds.']);
+            }
+            $a['metric'] = strtolower(trim((string) ($a['metric'] ?? 'cpu')));
+            if (! in_array($a['metric'], ['cpu', 'memory', 'requests-per-second'], true)) {
+                throw ValidationException::withMessages(['metric' => 'Unsupported autoscaler metric.']);
+            }
+        }
 
         return $map[$kind]::query()->create($a);
     }

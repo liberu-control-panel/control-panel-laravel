@@ -45,6 +45,14 @@ it('rejects unknown Kubernetes assets', function (): void {
     expect(fn () => app(RegisterKubernetesAsset::class)->execute(['team_id' => 'team-1', 'kind' => 'unknown']))->toThrow(ValidationException::class);
 });
 
+it('validates autoscaler targets, bounds, and metrics', function (): void {
+    $action = app(RegisterKubernetesAsset::class);
+    expect(fn () => $action->execute(['team_id' => 'team-1', 'kind' => 'autoscaling', 'name' => 'web', 'target' => 'deployment/web', 'min_replicas' => 5, 'max_replicas' => 2]))->toThrow(ValidationException::class);
+    expect(fn () => $action->execute(['team_id' => 'team-1', 'kind' => 'autoscaling', 'name' => 'web', 'target' => 'deployment/web', 'min_replicas' => 1, 'max_replicas' => 2, 'metric' => 'latency']))->toThrow(ValidationException::class);
+    $autoscaler = $action->execute(['team_id' => 'team-1', 'kind' => 'autoscaling', 'name' => 'web', 'target' => 'deployment/web', 'min_replicas' => 1, 'max_replicas' => 2, 'metric' => 'MEMORY']);
+    expect($autoscaler->metric)->toBe('memory');
+});
+
 it('lists Kubernetes assets for the current team', function (): void {
     $team = Team::factory()->create();
     $otherTeam = Team::factory()->create();
